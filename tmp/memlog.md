@@ -1,0 +1,103 @@
+| Date and time | Entry | Summary |
+|---|---|---|
+| 2026-11-25 05:37 UTC | [D]000001 | Entries are append-only, use UTC, and share one number sequence; a new decision resolves a question by citing it. Earlier decisions are stamped when recorded. |
+| 2026-11-25 05:37 UTC | [D]000002 | Every change starts with an issue; milestones are epics, and issues are stories with a type, area label, Priority, and Effort. |
+| 2026-11-25 05:37 UTC | [D]000003 | High Effort must be split; each PR of a split change gets its own sub-issue, and Claude closes the parent after the last one merges. |
+| 2026-11-25 05:37 UTC | [D]000004 | The maintainer merges PRs; nobody pushes or force pushes to master. |
+| 2026-11-25 05:37 UTC | [D]000005 | Keep the current ruleset, which the maintainer tested with their own PRs, and revisit it later. |
+| 2026-11-25 05:37 UTC | [D]000006 | PRs use issue-numbered branches, Conventional Commit titles, a four-section description, and a 400-line limit with a maintainer override. |
+| 2026-11-25 05:37 UTC | [D]000007 | Run code-review-swarm before creating or pushing to a PR; Claude instruction files get claude-whisperer instead. |
+| 2026-11-25 05:37 UTC | [D]000008 | claude-wordsmith writes Claude instruction files, and every agent run uses a new subagent to avoid prompt cache rewrites. |
+| 2026-11-25 05:37 UTC | [D]000009 | Every PR raises one shared semantic version; each merge releases it, starting at v0.1.0, and branches must be up to date. |
+| 2026-11-25 05:37 UTC | [D]000010 | The project is public, MIT licensed, and includes contributing, security, and conduct documents; outside contributors start with an issue. |
+| 2026-11-25 05:37 UTC | [D]000011 | The bootstrap is limited to health checks, a hello world page with color settings, a migration-only database, and repository standards. |
+| 2026-11-25 05:37 UTC | [D]000012 | Use npm workspaces with domain, backend, CLI, and frontend packages; only domain may be imported across packages. |
+| 2026-11-25 05:37 UTC | [D]000013 | The backend uses Fastify with a REST API, chosen over Express, Hono, NestJS, and Koa. |
+| 2026-11-25 05:37 UTC | [D]000014 | Use node:sqlite, plain SQL, and forward-only transactional migrations, with no backups for now. |
+| 2026-11-25 05:37 UTC | [D]000015 | Only the install command runs migrations. |
+| 2026-11-25 05:37 UTC | [D]000016 | The database and YAML settings file live in the Git-ignored .claude-plans directory in the repository. |
+| 2026-11-25 05:37 UTC | [D]000017 | The backend stores theme and color vision settings; the system theme is the default, and pages load without a color flash. |
+| 2026-11-25 05:37 UTC | [D]000018 | Style with CSS Modules and shared color variables, without a component library, and meet WCAG AA contrast. |
+| 2026-11-25 05:37 UTC | [D]000019 | The CLI starts and stops the server, with a --detached option; the server is local only, has no login, and checks request origins. |
+| 2026-11-25 05:37 UTC | [D]000020 | Enforce standards with automated checks; never suppress or skip lint, type, test, or coverage requirements. |
+| 2026-11-25 05:37 UTC | [D]000021 | Use Vitest, Storybook, and Playwright, with 80% coverage per package excluding E2E and a time limit per suite. |
+| 2026-11-25 05:37 UTC | [D]000022 | CI runs static checks on Linux, unit and integration tests on three systems, and browser tests on Linux with Chromium. |
+| 2026-11-25 05:37 UTC | [D]000023 | Scripts use Python 3.12 or newer in .venv and meet the same quality standards as other code. |
+| 2026-11-25 05:37 UTC | [D]000024 | ADRs hold one costly decision, are never superseded, and end with a UTC changelog; design documents have none. |
+| 2026-11-25 05:37 UTC | [D]000025 | ADR frontmatter has title, description, and date; design frontmatter has title and description; neither has status. |
+| 2026-11-25 05:37 UTC | [D]000026 | Ignore .claude-plans, .serena, local Claude settings, Claude worktrees, and common generated, environment, and IDE files. |
+| 2026-11-25 05:37 UTC | [D]000027 | The tmp directory is temporary; the last bootstrap PR removes it after preserving anything worth keeping. |
+| 2026-11-25 05:37 UTC | [A]000028 | The start command refuses outdated or newer databases; the reply approving the other items did not name this one. |
+| 2026-11-25 05:37 UTC | [A]000029 | The CLI runs the backend as a separate program, and stop uses a protected local API; the reply did not name this item. |
+| 2026-11-25 05:37 UTC | [A]000030 | Each worktree has its own .claude-plans directory; the reply did not name this item. |
+| 2026-11-25 05:37 UTC | [A]000031 | Claude closes a parent issue when told of the last merge or on finding it during later work in the repository. |
+| 2026-11-25 05:37 UTC | [A]000032 | Node.js 24 is the required major version because it is installed locally and node:sqlite worked on 24.18.0. |
+| 2026-11-25 05:37 UTC | [A]000033 | The 400-line limit counts additions plus deletions. |
+| 2026-11-25 05:37 UTC | [A]000034 | Document numbering is separate for ADRs and designs, and an ADR date is its UTC creation date. |
+| 2026-11-25 05:37 UTC | [O]000035 | Confirm the official stability status of node:sqlite before writing its ADR. |
+| 2026-11-25 05:37 UTC | [O]000036 | Which bootstrap decisions need ADRs? Candidates are SQLite access, migrations, package boundaries, and Fastify. |
+| 2026-11-25 05:37 UTC | [O]000037 | What time limit should each test suite have? |
+| 2026-11-25 05:37 UTC | ~~[O]000038~~ | How is the claude-plans command put on the user's path during local setup? |
+| 2026-11-25 05:37 UTC | ~~[O]000039~~ | How is the default port overridden, and how do clients find a changed port? |
+| 2026-11-25 05:37 UTC | ~~[O]000040~~ | How do tests isolate local data from the .claude-plans directory? |
+| 2026-11-25 05:37 UTC | [O]000041 | How is bootstrap implementation split into issues and sub-issues, and what order do the CI checks arrive in? |
+| 2026-11-25 05:37 UTC | [O]000042 | What should plans contain, how should they be stored, and are YAML files their source? This is future work. |
+| 2026-11-25 05:37 UTC | [O]000043 | How should comments, events, and Claude's thread monitoring work? This is future work. |
+| 2026-11-25 05:39 UTC | [D]000044 | Keep the memlog as a Markdown table with one row per entry, so it renders well. |
+| 2026-11-25 05:41 UTC | [D]000045 | Claude creates the labels and milestones. |
+| 2026-11-25 05:41 UTC | [D]000046 | The maintainer is the code owner; the bootstrap adds a CODEOWNERS file naming them. |
+| 2026-11-25 05:41 UTC | [A]000047 | The origin check also validates the Host header, which blocks DNS rebinding from other websites. |
+| 2026-11-25 05:41 UTC | [O]000048 | Worktrees share default port 4310; how do clients reach only their own server, and what if the port is taken? |
+| 2026-11-25 05:41 UTC | [O]000049 | How do the 10-file and 300-line limits treat lockfiles, generated files, the repository root, and migrations? |
+| 2026-11-25 05:41 UTC | [O]000050 | What does install do when a server is running or the database is newer than the application supports? |
+| 2026-11-25 22:24 UTC | [D]000051 | Add logging to ease debugging, using rotating files in .claude-plans/logs/. |
+| 2026-11-25 22:24 UTC | [A]000052 | The backend and CLI write separate log files, so two programs never rotate the same file. |
+| 2026-11-25 22:24 UTC | [A]000053 | Log entries are JSON lines with a UTC time, level, and message; errors include stack traces. |
+| 2026-11-25 22:24 UTC | [A]000054 | Log levels are error, warn, info, and debug, with info as the default. |
+| 2026-11-25 22:24 UTC | ~~[A]000055~~ | Each program rotates its log at 10 MB and keeps five rotated files. |
+| 2026-11-25 22:24 UTC | [A]000056 | A detached server logs like a foreground server, including startup failures. |
+| 2026-11-25 22:24 UTC | [A]000057 | Logs never contain secrets or request and response bodies. |
+| 2026-11-25 22:24 UTC | [O]000058 | How is the log level changed? |
+| 2026-11-25 22:24 UTC | [O]000059 | Where does logging code shared by the backend and CLI live, given that only domain may be imported? |
+| 2026-11-25 22:24 UTC | [O]000060 | Are web page errors recorded in the log files? |
+| 2026-11-25 22:24 UTC | [O]000061 | What rotates log files reliably on every supported system, including with several CLI commands at once? |
+| 2026-11-25 22:40 UTC | [D]000062 | Resolves O000038: install puts claude-plans on the user's path; the first run uses a script inside the repository. |
+| 2026-11-25 22:43 UTC | [D]000063 | Development, including branches in the maintainer's own copy, must never lose or alter real data; Claude respects it. |
+| 2026-11-25 22:43 UTC | ~~[O]000064~~ | How is real data kept apart from development, given that A000030 does not cover branches in the same directory? |
+| 2026-11-25 22:43 UTC | [O]000065 | Which copy of the code does the claude-plans command on the path run? Depends on O000064. |
+| 2026-11-25 22:43 UTC | [O]000066 | Should install back up the database before migrating, revisiting the no-backups part of D000014? |
+| 2026-11-25 22:45 UTC | [D]000067 | Resolves O000064: data stays in the repository by default; install and start accept another data directory. |
+| 2026-11-25 22:45 UTC | [D]000068 | Resolves the override part of O000039: the port can be overridden by an option. |
+| 2026-11-25 22:45 UTC | [D]000069 | Claude develops with its own data directory, such as its job's temporary directory, following written instructions. |
+| 2026-11-25 22:45 UTC | [A]000070 | The options are --data-directory and --port; the data directory holds the database, settings, and logs. |
+| 2026-11-25 22:45 UTC | [A]000071 | stop and health take --data-directory, find the recorded port, and confirm the server's directory before acting. |
+| 2026-11-25 22:45 UTC | [A]000072 | install with another data directory leaves the claude-plans command on the user's path unchanged. |
+| 2026-11-25 22:45 UTC | ~~[O]000073~~ | What protects real data if Claude omits the data directory option? |
+| 2026-11-25 22:48 UTC | [D]000074 | Resolves O000073: do not block Claude's commands, as it will use real data for plans; testing development changes must not. |
+| 2026-11-25 22:50 UTC | [D]000075 | Resolves O000039: the default port is overridden by the YAML settings file, which a command option overrides. |
+| 2026-11-25 22:51 UTC | [D]000076 | The port option belongs to start only, not install; install still accepts another data directory. |
+| 2026-11-25 22:51 UTC | [D]000077 | Resolves O000040: tests use their own temporary data directory and port on every branch, never the real data. |
+| 2026-11-25 22:53 UTC | [D]000078 | install builds the application; if the build and package.json versions differ, commands block and say to run it. |
+| 2026-11-25 22:53 UTC | [A]000079 | The build records its version, and any difference counts, whether the source is newer or older. |
+| 2026-11-25 22:53 UTC | [A]000080 | install and stop are never blocked by an outdated build. |
+| 2026-11-25 22:53 UTC | [A]000081 | The CLI also blocks when the running server's version differs, and says to stop, install, and start. |
+| 2026-11-25 22:53 UTC | ~~[O]000082~~ | Should the build check also catch source changes that do not change the version? |
+| 2026-11-25 22:54 UTC | [D]000083 | Resolves the migrations part of the 10-file question in O000049: migrations may stay in one flat directory. |
+| 2026-11-25 22:55 UTC | [D]000084 | Resolves the running-server part of O000050: install stops the server, installs, and says to start it again. |
+| 2026-11-25 22:55 UTC | [A]000085 | install stops only the server using the same data directory, so a development install leaves the real one running. |
+| 2026-11-25 22:55 UTC | [A]000086 | If the server cannot be stopped, install fails without changing anything. |
+| 2026-11-25 22:55 UTC | [D]000087 | Rotate logs by date instead of by size, replacing A000055. |
+| 2026-11-25 22:55 UTC | [A]000088 | A new log file starts each UTC day, and its name includes the date. |
+| 2026-11-25 22:55 UTC | [A]000089 | Each program keeps 14 days of log files and deletes older ones. |
+| 2026-11-25 22:56 UTC | [D]000090 | Strike through the ID of a replaced or fully answered entry; this is the only edit allowed to an earlier row, as an exception to D000001. |
+| 2026-11-25 23:12 UTC | [D]000091 | Resolves O000082: the build check compares only versions; outdated builds from unversioned changes are accepted. |
+| 2026-11-25 23:12 UTC | [D]000092 | Dependabot changes carry no version change, so their PRs are exempt from the version rise in D000009. |
+| 2026-11-25 23:12 UTC | [A]000093 | A merge that does not change the version creates no release. |
+| 2026-11-25 23:12 UTC | ~~[O]000094~~ | Which other PR rules, such as the linked issue, title, and description, apply to Dependabot PRs? |
+| 2026-11-25 23:13 UTC | [D]000095 | Resolves O000094: Dependabot PRs pass the process rules, but tests, builds, and other quality checks must pass. |
+| 2026-11-25 23:19 UTC | [D]000096 | Git ignores the .idea directory. |
+| 2026-11-25 23:22 UTC | [A]000097 | npm run dev uses its own data directory and port, never the real data, and Vite connects to that backend. |
+| 2026-11-25 23:22 UTC | [A]000098 | start refuses when a server already runs on the same data directory, whatever the port; a stale record does not block it. |
+| 2026-11-25 23:22 UTC | [O]000099 | On a branch in the maintainer's own copy, what stops the outdated-build message leading to a plain install on real data? |
+| 2026-11-25 23:22 UTC | [O]000100 | How is a development build kept from replacing the build that runs against real data? |
+| 2026-11-25 23:22 UTC | [O]000101 | Do Dependabot PRs keep their exemption after someone else adds commits? |
