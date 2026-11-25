@@ -8,12 +8,12 @@
 | 2026-11-25 05:37 UTC | [D]000006 | PRs use issue-numbered branches, Conventional Commit titles, a four-section description, and a 400-line limit with a maintainer override. |
 | 2026-11-25 05:37 UTC | [D]000007 | Run code-review-swarm before creating or pushing to a PR; Claude instruction files get claude-whisperer instead. |
 | 2026-11-25 05:37 UTC | [D]000008 | claude-wordsmith writes Claude instruction files, and every agent run uses a new subagent to avoid prompt cache rewrites. |
-| 2026-11-25 05:37 UTC | [D]000009 | Every PR raises one shared semantic version; each merge releases it, starting at v0.1.0, and branches must be up to date. |
+| 2026-11-25 05:37 UTC | ~~[D]000009~~ | Every PR raises one shared semantic version; each merge releases it, starting at v0.1.0, and branches must be up to date. |
 | 2026-11-25 05:37 UTC | [D]000010 | The project is public, MIT licensed, and includes contributing, security, and conduct documents; outside contributors start with an issue. |
 | 2026-11-25 05:37 UTC | [D]000011 | The bootstrap is limited to health checks, a hello world page with color settings, a migration-only database, and repository standards. |
-| 2026-11-25 05:37 UTC | [D]000012 | Use npm workspaces with domain, backend, CLI, and frontend packages; only domain may be imported across packages. |
+| 2026-11-25 05:37 UTC | ~~[D]000012~~ | Use npm workspaces with domain, backend, CLI, and frontend packages; only domain may be imported across packages. |
 | 2026-11-25 05:37 UTC | [D]000013 | The backend uses Fastify with a REST API, chosen over Express, Hono, NestJS, and Koa. |
-| 2026-11-25 05:37 UTC | [D]000014 | Use node:sqlite, plain SQL, and forward-only transactional migrations, with no backups for now. |
+| 2026-11-25 05:37 UTC | ~~[D]000014~~ | Use node:sqlite, plain SQL, and forward-only transactional migrations, with no backups for now. |
 | 2026-11-25 05:37 UTC | [D]000015 | Only the install command runs migrations. |
 | 2026-11-25 05:37 UTC | [D]000016 | The database and YAML settings file live in the Git-ignored .claude-plans directory in the repository. |
 | 2026-11-25 05:37 UTC | [D]000017 | The backend stores theme and color vision settings; the system theme is the default, and pages load without a color flash. |
@@ -77,7 +77,7 @@
 | 2026-11-25 22:50 UTC | [D]000075 | Resolves O000039: the default port is overridden by the YAML settings file, which a command option overrides. |
 | 2026-11-25 22:51 UTC | [D]000076 | The port option belongs to start only, not install; install still accepts another data directory. |
 | 2026-11-25 22:51 UTC | [D]000077 | Resolves O000040: tests use their own temporary data directory and port on every branch, never the real data. |
-| 2026-11-25 22:53 UTC | [D]000078 | install builds the application; if the build and package.json versions differ, commands block and say to run it. |
+| 2026-11-25 22:53 UTC | ~~[D]000078~~ | install builds the application; if the build and package.json versions differ, commands block and say to run it. |
 | 2026-11-25 22:53 UTC | [A]000079 | The build records its version, and any difference counts, whether the source is newer or older. |
 | 2026-11-25 22:53 UTC | [A]000080 | install and stop are never blocked by an outdated build. |
 | 2026-11-25 22:53 UTC | [A]000081 | The CLI also blocks when the running server's version differs, and says to stop, install, and start. |
@@ -121,7 +121,7 @@
 | 2026-11-25 23:38 UTC | [D]000119 | Resolves O000037: suite limits start at unit 30s, integration 2m, component 3m, and E2E 5m. |
 | 2026-11-25 23:38 UTC | [D]000120 | Suite limits may rise when tests cannot reliably be faster; reporting individual slow tests matters more. |
 | 2026-11-25 23:38 UTC | [D]000121 | Resolves O000036: Claude decides which ADRs to write, as long as each meets the ADR criteria. |
-| 2026-11-25 23:38 UTC | [D]000122 | Resolves O000041: issues #3 to #38 split the bootstrap; checks arrive with the work in issues #4, #12, #16, and #33. |
+| 2026-11-25 23:38 UTC | ~~[D]000122~~ | Resolves O000041: issues #3 to #38 split the bootstrap; checks arrive with the work in issues #4, #12, #16, and #33. |
 | 2026-11-25 23:38 UTC | [D]000123 | Until issue #24 is complete, development does not run against real data. |
 | 2026-11-25 23:38 UTC | [D]000124 | Until issue #34, versions are checked by hand; they stay below 0.1.0 until the final release and are not released. |
 | 2026-11-25 23:38 UTC | [D]000125 | Claude asks before making CI checks and up-to-date branches required. |
@@ -132,3 +132,11 @@
 | 2026-11-25 23:45 UTC | [O]000130 | How are the database and server recovered when a migration fails partway? |
 | 2026-11-25 23:45 UTC | [O]000131 | Where are backups kept, given that deleting the data directory deletes anything stored in it? |
 | 2026-11-25 23:45 UTC | [O]000132 | How does a Dependabot PR meet the normal rules, such as branch naming, after another commit, even a merge from master? |
+| 2026-11-25 23:51 UTC | [D]000133 | Replaces D000009: PRs except Dependabot's raise one shared version; from v0.1.0, merges that raise it release it; branches must be up to date. |
+| 2026-11-25 23:51 UTC | [D]000134 | Replaces D000012: npm workspaces hold domain, logging, backend, CLI, and frontend; backend, CLI, and frontend may import domain, and only backend and CLI may import logging. |
+| 2026-11-25 23:51 UTC | [D]000135 | Replaces D000014: use node:sqlite, plain SQL, and forward-only transactional migrations; backups follow D000109. |
+| 2026-11-25 23:51 UTC | [D]000136 | Replaces D000078: install builds the app; if the saved build and local master versions differ, commands that depend on the build block and say to run it. |
+| 2026-11-25 23:51 UTC | [D]000137 | Resolves O000041 and replaces D000122. Scope by issue: #3 decisions; #4 repository setup; #9 Claude setup; #12 repository and PR checks; #15 documentation; #18 backend; #24 CLI; #29 web page; #33 releases; #36 finish. |
+| 2026-11-25 23:51 UTC | [D]000138 | Checks arrive in order: #6 lint and format; #7 Python; #8 CI, tests, secrets, and audits; #13 structure; #14 PR rules; #16 documents; #19 import boundaries; #32 end-to-end; #34 version. |
+| 2026-11-25 23:51 UTC | [A]000139 | Proposed answer to O000130: if a migration fails, install restores the backup it just made, and reports its location if the restore fails. |
+| 2026-11-25 23:51 UTC | [A]000140 | Proposed answer to O000131: backups go in backups/ in the data directory, so deleting that directory also deletes them. |

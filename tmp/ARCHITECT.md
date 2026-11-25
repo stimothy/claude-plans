@@ -54,8 +54,8 @@ The data directory holds the SQLite database, a YAML settings file, and logs. Th
 `.claude-plans/` directory in the maintainer's own copy.
 
 A plain `install` also saves the built application there. The `claude-plans` command on the user's path always runs
-that saved copy with the real data, whichever branch or directory is open. Switching branches or building new code
-does not change it.
+that saved copy, whichever branch or directory is open. It uses the real data unless an option names another
+data directory. Switching branches or building new code does not change the saved copy.
 
 A plain `install` works only from the maintainer's own copy, on `master`, with no local code changes.
 Otherwise, it changes nothing and explains how to use a separate data directory.
@@ -136,6 +136,9 @@ The following details are proposed:
 - There are no down migrations.
 - Before `install` migrates an existing database, it backs the database up. As proposed, a failed backup stops
   the migration.
+- As proposed, backups go in `backups/` in the data directory. If any migration fails, `install` restores
+  the backup it just made, so the previous saved application still works. If the restore also fails,
+  `install` says where the backup is. Both points await confirmation in [memlog.md](memlog.md).
 - Only `claude-plans install` runs migrations.
 - `start` refuses a database that is behind or ahead of the application's schema version.
 
