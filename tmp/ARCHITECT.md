@@ -38,23 +38,75 @@ it runs the backend as a separate program without importing its source code.
 - `stop` asks the server to shut down through a protected local API.
   This behaves the same on every supported operating system.
 - `npm run dev` starts the backend and Vite for development. The built application is served on one port.
-- The server accepts connections only from the local computer. The default port, 4310, can be changed.
+- The server accepts connections only from the local computer. The default port is 4310. The YAML settings file
+  in the data directory overrides it, and a command option overrides both.
+- As a proposed safeguard, `start` refuses when a server is already running on the same data directory,
+  whatever its port, even if two starts happen at once. A record left by a crashed server does not block it.
 - There is no login. The server checks each request's `Host` and `Origin` headers so other websites cannot use its APIs.
 
 ## Local data
 
-All local data lives in the Git-ignored `.claude-plans/` directory in the repository:
-the SQLite database and a YAML settings file. Each Git worktree has its own directory,
+The data directory holds the SQLite database, a YAML settings file, and logs. By default, it is the Git-ignored
+`.claude-plans/` directory in the repository. Each Git worktree has its own default directory,
 so work in one worktree does not touch another's data.
 
-The settings file holds `theme` (`system`, `light`, `dark`) and `colorVision`
-(`default`, `protan`, `deutan`, `tritan`). Only the backend writes it, and it exposes APIs to read and update it.
+`install` and `start` accept a different data directory, and `start` also accepts a different port.
+Development uses these options to stay apart from the real data that [SPEC.md](SPEC.md) protects.
+The options alone do not guarantee that protection. On a branch in the maintainer's own copy,
+a plain `install` still uses the real data, and a development install may replace the build that uses it.
+Both gaps are open questions in [memlog.md](memlog.md).
+
+The following details are proposed:
+
+- The options are `--data-directory <path>` and `--port <number>`.
+- `npm run dev` never uses the real data. It has its own data directory and port, and Vite connects to that backend.
+- `stop` and `health` also accept `--data-directory`, and find the port that the running server recorded there.
+- Before acting, they confirm that the server they reach uses the expected data directory.
+- `install` with a different data directory leaves the `claude-plans` command on the user's path unchanged.
+
+Besides any port override, the settings file holds `theme` (`system`, `light`, `dark`)
+and `colorVision` (`default`, `protan`, `deutan`, `tritan`).
+Only the backend writes it, and it exposes APIs to read and update it.
 
 To prevent a color flash, the backend adds the saved choices to the HTML before sending it.
 During development, Vite does the same with values from the backend. With `system`,
 CSS follows the operating system immediately.
 
 Styling uses CSS Modules with shared color variables, without a component library.
+
+## Logging
+
+The studio writes logs to `logs/` in the data directory, by default `.claude-plans/logs/`. Log files rotate
+by date rather than by size.
+
+The following details are proposed defaults:
+
+- The backend and the CLI write separate files, so two programs never rotate the same file.
+- Each entry is one line of JSON with a UTC time, a level, and a message. Errors include their stack traces.
+- The levels are `error`, `warn`, `info`, and `debug`. The default is `info`.
+- A new file starts each day, based on the UTC date, which appears in the file name.
+- Each program keeps 14 days of log files and deletes older ones.
+- A detached server logs to the same files as a foreground server, including failures during startup.
+- Logs never contain secrets or the bodies of requests and responses.
+
+## Install and outdated builds
+
+`claude-plans install` builds the application. If a server is running, `install` stops it first,
+and its closing message says to start the server again.
+
+If the version in the root `package.json` no longer matches the build, `claude-plans` commands that depend on it
+refuse to run. They say to run `claude-plans install`.
+
+The check compares only versions. It does not detect an outdated build after a change that keeps the same version,
+such as a Dependabot update. This is accepted.
+
+The following details are proposed:
+
+- `install` stops only the server that uses the same data directory.
+- If that server cannot be stopped, `install` fails without changing anything.
+- The build records its version. Any difference counts, whether the source is newer or older.
+- `install` and `stop` are never blocked, so a user can always recover.
+- The CLI also checks a running server's version. If it differs, the CLI says to stop the server, install, and start it.
 
 ## Database and migrations
 

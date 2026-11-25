@@ -14,6 +14,7 @@ The bootstrap delivers only this:
 - A backend health check, which the command-line interface (CLI) can also show.
 - A hello world web page with theme and color vision settings.
 - A database with no tables except the one that tracks migrations.
+- Logging to rotating files, so problems are easier to debug.
 - The repository rules, tooling, documentation, scripts, and checks described below.
 
 The repository is public and may accept outside contributions, so it is written as an open source project.
@@ -48,12 +49,20 @@ It uses the MIT license and includes a contributing guide, a security policy, an
   The `claude-wordsmith` agent writes them.
 - Each agent run uses a new subagent, because the five-minute prompt cache makes reuse costly.
 
+## Dependabot
+
+Dependabot's PRs are exempt from this file's rules for how a change is proposed and described, because the repository
+cannot control all of what it creates. This covers issues, branch names, titles, descriptions, size, and version
+increases. Tests, builds, and the other quality checks must still pass, to show that the new versions work.
+The maintainer still merges these PRs.
+
 ## Releases
 
 - The root `package.json` holds one semantic version, and every package matches it.
-- Every PR raises the version. CI fails if it is not higher than the version on `master`.
+- Every PR raises the version, except Dependabot's. When a PR must raise it, CI fails if the version
+  is not higher than the one on `master`.
 - Branches must be up to date with `master` before merging.
-- Each merge creates a release tagged like `v1.2.3`, with notes from PR titles.
+- Each merge that raises the version creates a release tagged like `v1.2.3`, with notes from PR titles.
 - The first release is `v0.1.0`. Versions stay below `1.0.0` until the maintainer calls the project stable.
 
 ## Code standards
@@ -65,8 +74,19 @@ It uses the MIT license and includes a contributing guide, a security policy, an
 - Split directories logically as they grow. Grab-bag names such as `utils`, `helpers`, `common`, and `misc`
   are banned. A directory holds at most 10 files, and a file holds at most 300 lines.
 - The directory rules do not apply to `docs/adrs/`, `docs/designs/`, or their `assets/` directories.
+- Database migrations may stay in one flat directory, exempt from the 10-file limit.
 - Never suppress or skip a lint, type, test, or coverage requirement. Change the code so it passes.
 - Never commit secrets.
+
+## Real data
+
+The maintainer's local copy of `master` holds their real data. Development work must never lose or alter it.
+This includes work in worktrees and on branches created directly in that copy.
+Claude must respect the real database at all times.
+
+Claude may use the real data to work with the maintainer's plans. Testing development changes, such as code on
+a branch other than `master`, must not. For that, Claude installs and starts the studio with its own data directory,
+such as its job's temporary directory, and its own port. The Claude rules give instructions for both cases.
 
 ## Testing
 
@@ -77,6 +97,8 @@ It uses the MIT license and includes a contributing guide, a security policy, an
 - Consider CPU time, memory, and CI minutes. Efficiency must not reduce quality.
 - Each package needs 80% coverage of lines, branches, functions, and statements, combined across all tests
   except E2E. Only generated files, stories, configuration, and type-only files are excluded.
+- Tests that use data or run a server use their own temporary data directory and port, on every branch.
+  They never use the real data.
 - Each test suite has a time limit.
 
 ## Documentation
@@ -126,7 +148,7 @@ A script builds it from document metadata, and CI fails if it is out of date.
 
 ## Ignored files
 
-Git ignores `.claude-plans/`, `.serena/`, `.claude/settings.local.json`, `.claude/worktrees/`,
+Git ignores `.claude-plans/`, `.serena/`, `.idea/`, `.claude/settings.local.json`, `.claude/worktrees/`,
 and common IDE, operating system, dependency, build, cache, environment, and log files.
 The shared `.claude/settings.json` is committed.
 

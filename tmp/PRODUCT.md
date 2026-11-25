@@ -39,6 +39,14 @@ so every component can be checked in all eight palettes.
 | `claude-plans health` | A readable health report |
 | `claude-plans health --json` | The same report as JSON, for Claude |
 
+- `install` also puts `claude-plans` on the user's path. Before the first run the command is not there yet,
+  so the first `install` runs through a script inside the repository. Later commands use `claude-plans` directly.
+- `install` and `start` offer an option for a different data directory, and `start` offers one for the port.
+  Without them, the studio uses `.claude-plans/` in the repository.
+  The port is 4310 unless the YAML settings file sets another, and the command option overrides both.
+- If a server is running, `install` stops it, installs, and ends with a message to start the server again.
+- If the build's version does not match the source, commands that depend on the build do not run.
+  They say to run `claude-plans install`. As proposed, `install` and `stop` are never blocked.
 - The health report shows status, application version, database access, and migration version.
 - If the server is not running, `health` says so clearly and does not start it.
 - If the database is out of date, `start` refuses to run and says to run `claude-plans install`.
