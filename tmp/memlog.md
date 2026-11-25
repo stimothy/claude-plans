@@ -2,7 +2,7 @@
 |---|---|---|
 | 2026-11-25 05:37 UTC | [D]000001 | Entries are append-only, use UTC, and share one number sequence; a new decision resolves a question by citing it. Earlier decisions are stamped when recorded. |
 | 2026-11-25 05:37 UTC | [D]000002 | Every change starts with an issue; milestones are epics, and issues are stories with a type, area label, Priority, and Effort. |
-| 2026-11-25 05:37 UTC | [D]000003 | High Effort must be split; each extra PR gets a sub-issue, and Claude closes the parent after the last one merges. |
+| 2026-11-25 05:37 UTC | [D]000003 | High Effort must be split; each PR of a split change gets its own sub-issue, and Claude closes the parent after the last one merges. |
 | 2026-11-25 05:37 UTC | [D]000004 | The maintainer merges PRs; nobody pushes or force pushes to master. |
 | 2026-11-25 05:37 UTC | [D]000005 | Keep the current ruleset, which the maintainer tested with their own PRs, and revisit it later. |
 | 2026-11-25 05:37 UTC | [D]000006 | PRs use issue-numbered branches, Conventional Commit titles, a four-section description, and a 400-line limit with a maintainer override. |
@@ -43,4 +43,10 @@
 | 2026-11-25 05:37 UTC | [O]000041 | How is bootstrap implementation split into issues and sub-issues, and what order do the CI checks arrive in? |
 | 2026-11-25 05:37 UTC | [O]000042 | What should plans contain, how should they be stored, and are YAML files their source? This is future work. |
 | 2026-11-25 05:37 UTC | [O]000043 | How should comments, events, and Claude's thread monitoring work? This is future work. |
-| 2026-11-25 05:45 UTC | [D]000044 | Keep the memlog as a Markdown table with one row per entry, so it renders well. |
+| 2026-11-25 05:39 UTC | [D]000044 | Keep the memlog as a Markdown table with one row per entry, so it renders well. |
+| 2026-11-25 05:41 UTC | [D]000045 | Claude creates the labels and milestones. |
+| 2026-11-25 05:41 UTC | [D]000046 | The maintainer is the code owner; the bootstrap adds a CODEOWNERS file naming them. |
+| 2026-11-25 05:41 UTC | [A]000047 | The origin check also validates the Host header, which blocks DNS rebinding from other websites. |
+| 2026-11-25 05:41 UTC | [O]000048 | Worktrees share default port 4310; how do clients reach only their own server, and what if the port is taken? |
+| 2026-11-25 05:41 UTC | [O]000049 | How do the 10-file and 300-line limits treat lockfiles, generated files, the repository root, and migrations? |
+| 2026-11-25 05:41 UTC | [O]000050 | What does install do when a server is running or the database is newer than the application supports? |

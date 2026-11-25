@@ -39,7 +39,7 @@ it runs the backend as a separate program without importing its source code.
   This behaves the same on every supported operating system.
 - `npm run dev` starts the backend and Vite for development. The built application is served on one port.
 - The server accepts connections only from the local computer. The default port, 4310, can be changed.
-- There is no login. The server checks request origins so other websites cannot use its APIs.
+- There is no login. The server checks each request's `Host` and `Origin` headers so other websites cannot use its APIs.
 
 ## Local data
 
@@ -95,7 +95,7 @@ Linux jobs do not fully test WSL. Secret scanning also runs locally.
 ## Repository protection
 
 A ruleset on `master` blocks deletion and force pushes, requires a PR and code owner review,
-and allows only squash merges. A `CODEOWNERS` file names the maintainer.
+and allows only squash merges. The bootstrap adds a `CODEOWNERS` file naming the maintainer.
 The maintainer has tested that this ruleset does not block merging their own PRs.
 
 The ruleset is intentionally simple and will be revisited. Once CI exists, it should require those checks

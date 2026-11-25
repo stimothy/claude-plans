@@ -22,6 +22,7 @@ It uses the MIT license and includes a contributing guide, a security policy, an
 ## Issues and milestones
 
 - Every change starts with a GitHub issue. Milestones are epics, and issues are stories.
+- Claude creates the labels and milestones.
 - Every issue and sub-issue has a type, an area label, a milestone, Priority, and Effort.
 - Types are Task, Bug, Feature, Documentation, and Spike.
 - Area labels are `area:` plus `backend`, `frontend`, `cli`, `shared`, `docs`, `tooling`, `ci`, or `claude`.
