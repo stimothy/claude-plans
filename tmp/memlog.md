@@ -142,3 +142,12 @@
 | 2026-11-25 23:51 UTC | ~~[A]000140~~ | Proposed answer to O000131: backups go in backups/ in the data directory, so deleting that directory also deletes them. |
 | 2026-11-25 23:52 UTC | [D]000141 | Resolves O000130, replacing A000139: if a migration fails, install restores the backup it just made, and reports its location if the restore fails. |
 | 2026-11-25 23:52 UTC | [D]000142 | Resolves O000131, replacing A000140: backups go in backups/ in the data directory, so deleting that directory also deletes them. |
+| 2026-11-25 23:54 UTC | [D]000143 | Sub-issues of #4: #5 open source and ignored files; #6 TypeScript workspaces, lint, and format; #7 Python tooling; #8 CI, security scans, and Dependabot. |
+| 2026-11-25 23:54 UTC | [D]000144 | Sub-issues of #9: #10 CLAUDE.md and rules; #11 Claude settings and Git hooks against unsafe actions. |
+| 2026-11-25 23:54 UTC | [D]000145 | Sub-issues of #12: #13 structure, naming, and suppression checks; #14 PR checks with the Dependabot exemption. |
+| 2026-11-25 23:54 UTC | [D]000146 | Sub-issues of #15: #16 scripts to create, index, and check documents; #17 first architecture design document. |
+| 2026-11-25 23:54 UTC | [D]000147 | Sub-issues of #18: #19 domain package and import boundaries; #20 data directories and settings; #21 logging; #22 database and migrations; #23 health check, server controls, and request protection. |
+| 2026-11-25 23:54 UTC | [D]000148 | Sub-issues of #24: #25 start, stop, and health; #26 saved app and install protections; #27 pre-migration backups; #28 outdated-build blocking. |
+| 2026-11-25 23:54 UTC | [D]000149 | Sub-issues of #29: #30 hello world page and Storybook; #31 themes and color vision without a color flash; #32 end-to-end tests. |
+| 2026-11-25 23:54 UTC | [D]000150 | Sub-issues of #33: #34 version check; #35 automated releases. |
+| 2026-11-25 23:54 UTC | [D]000151 | Sub-issues of #36: #37 README and final design documents; #38 remove tmp and publish v0.1.0. |
