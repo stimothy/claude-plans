@@ -129,8 +129,8 @@
 | 2026-11-25 23:45 UTC | [A]000127 | Naming the real data directory in an option does not bypass its protections, and development scripts reject it. |
 | 2026-11-25 23:45 UTC | [A]000128 | An outdated-build message says a plain install needs the main copy on an unchanged master. |
 | 2026-11-25 23:45 UTC | [A]000129 | install replaces the saved app only after the backup and all migrations succeed; backups are never overwritten. |
-| 2026-11-25 23:45 UTC | [O]000130 | How are the database and server recovered when a migration fails partway? |
-| 2026-11-25 23:45 UTC | [O]000131 | Where are backups kept, given that deleting the data directory deletes anything stored in it? |
+| 2026-11-25 23:45 UTC | ~~[O]000130~~ | How are the database and server recovered when a migration fails partway? |
+| 2026-11-25 23:45 UTC | ~~[O]000131~~ | Where are backups kept, given that deleting the data directory deletes anything stored in it? |
 | 2026-11-25 23:45 UTC | [O]000132 | How does a Dependabot PR meet the normal rules, such as branch naming, after another commit, even a merge from master? |
 | 2026-11-25 23:51 UTC | [D]000133 | Replaces D000009: PRs except Dependabot's raise one shared version; from v0.1.0, merges that raise it release it; branches must be up to date. |
 | 2026-11-25 23:51 UTC | [D]000134 | Replaces D000012: npm workspaces hold domain, logging, backend, CLI, and frontend; backend, CLI, and frontend may import domain, and only backend and CLI may import logging. |
@@ -138,5 +138,7 @@
 | 2026-11-25 23:51 UTC | [D]000136 | Replaces D000078: install builds the app; if the saved build and local master versions differ, commands that depend on the build block and say to run it. |
 | 2026-11-25 23:51 UTC | [D]000137 | Resolves O000041 and replaces D000122. Scope by issue: #3 decisions; #4 repository setup; #9 Claude setup; #12 repository and PR checks; #15 documentation; #18 backend; #24 CLI; #29 web page; #33 releases; #36 finish. |
 | 2026-11-25 23:51 UTC | [D]000138 | Checks arrive in order: #6 lint and format; #7 Python; #8 CI, tests, secrets, and audits; #13 structure; #14 PR rules; #16 documents; #19 import boundaries; #32 end-to-end; #34 version. |
-| 2026-11-25 23:51 UTC | [A]000139 | Proposed answer to O000130: if a migration fails, install restores the backup it just made, and reports its location if the restore fails. |
-| 2026-11-25 23:51 UTC | [A]000140 | Proposed answer to O000131: backups go in backups/ in the data directory, so deleting that directory also deletes them. |
+| 2026-11-25 23:51 UTC | ~~[A]000139~~ | Proposed answer to O000130: if a migration fails, install restores the backup it just made, and reports its location if the restore fails. |
+| 2026-11-25 23:51 UTC | ~~[A]000140~~ | Proposed answer to O000131: backups go in backups/ in the data directory, so deleting that directory also deletes them. |
+| 2026-11-25 23:52 UTC | [D]000141 | Resolves O000130, replacing A000139: if a migration fails, install restores the backup it just made, and reports its location if the restore fails. |
+| 2026-11-25 23:52 UTC | [D]000142 | Resolves O000131, replacing A000140: backups go in backups/ in the data directory, so deleting that directory also deletes them. |

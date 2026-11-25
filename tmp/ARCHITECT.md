@@ -136,9 +136,9 @@ The following details are proposed:
 - There are no down migrations.
 - Before `install` migrates an existing database, it backs the database up. As proposed, a failed backup stops
   the migration.
-- As proposed, backups go in `backups/` in the data directory. If any migration fails, `install` restores
-  the backup it just made, so the previous saved application still works. If the restore also fails,
-  `install` says where the backup is. Both points await confirmation in [memlog.md](memlog.md).
+- Backups go in `backups/` in the data directory, so deleting that directory also deletes them.
+- If any migration fails, `install` restores the backup it just made, so the previous saved application
+  still works. If the restore also fails, `install` says where the backup is.
 - Only `claude-plans install` runs migrations.
 - `start` refuses a database that is behind or ahead of the application's schema version.
 
