@@ -56,13 +56,15 @@ cannot control all of what it creates. This covers issues, branch names, titles,
 increases. Tests, builds, and the other quality checks must still pass, to show that the new versions work.
 The maintainer still merges these PRs.
 
+A PR counts as Dependabot's when Dependabot is its author. Once someone else adds a commit, the normal rules apply.
+
 ## Releases
 
 - The root `package.json` holds one semantic version, and every package matches it.
 - Every PR raises the version, except Dependabot's. When a PR must raise it, CI fails if the version
   is not higher than the one on `master`.
 - Branches must be up to date with `master` before merging.
-- Each merge that raises the version creates a release tagged like `v1.2.3`, with notes from PR titles.
+- From `v0.1.0` on, each merge that raises the version creates a release tagged like `v1.2.3`, with notes from PR titles.
 - The first release is `v0.1.0`. Versions stay below `1.0.0` until the maintainer calls the project stable.
 
 ## Code standards
@@ -74,7 +76,9 @@ The maintainer still merges these PRs.
 - Split directories logically as they grow. Grab-bag names such as `utils`, `helpers`, `common`, and `misc`
   are banned. A directory holds at most 10 files, and a file holds at most 300 lines.
 - The directory rules do not apply to `docs/adrs/`, `docs/designs/`, or their `assets/` directories.
-- Database migrations may stay in one flat directory, exempt from the 10-file limit.
+- Lockfiles and generated files are exempt from the file and directory limits. The repository's top-level
+  directory is exempt from the 10-file limit.
+- Database migrations may stay in one flat directory, exempt from the 10-file limit. Each keeps the 300-line limit.
 - Never suppress or skip a lint, type, test, or coverage requirement. Change the code so it passes.
 - Never commit secrets.
 
@@ -84,9 +88,15 @@ The maintainer's local copy of `master` holds their real data. Development work 
 This includes work in worktrees and on branches created directly in that copy.
 Claude must respect the real database at all times.
 
-Claude may use the real data to work with the maintainer's plans. Testing development changes, such as code on
-a branch other than `master`, must not. For that, Claude installs and starts the studio with its own data directory,
-such as its job's temporary directory, and its own port. The Claude rules give instructions for both cases.
+Claude works with the maintainer on the real data. This includes starting the real server, building plans through
+the CLI, and later watching for comments. When asked to diagnose a problem, Claude only reads logs and data,
+and asks before making a fix.
+
+What matters is the task, not the branch or directory. Development and testing must not use the real data.
+For them, Claude uses scripts in the repository with a separate data directory, such as its job's temporary
+directory, a separate port, and a separate build. The Claude rules give instructions for both cases.
+They also forbid any `git clean` that removes ignored files, including with `-x` or `-X`, in the maintainer's
+own copy, because it can delete the data.
 
 ## Testing
 
@@ -99,7 +109,9 @@ such as its job's temporary directory, and its own port. The Claude rules give i
   except E2E. Only generated files, stories, configuration, and type-only files are excluded.
 - Tests that use data or run a server use their own temporary data directory and port, on every branch.
   They never use the real data.
-- Each test suite has a time limit.
+- Reports identify individual slow tests, so they can be improved. This matters more than suite totals.
+- Each test suite has a time limit. The defaults are 30 seconds for unit, 2 minutes for integration,
+  3 minutes for component, and 5 minutes for E2E tests. A limit may rise when tests cannot reliably be made faster.
 
 ## Documentation
 
@@ -115,7 +127,7 @@ Each may have an `assets/` directory for images and screenshots.
 - Documentation changes ship with the code they describe.
 - When sources disagree, ADRs outrank code, and code outranks design documents.
 
-**ADRs** record one decision each, only when it would be hard or costly to reverse.
+**ADRs** record one decision each, only when it would be hard or costly to reverse. Claude decides which to write.
 They are living documents and are never superseded, so searches do not surface outdated decisions.
 Each ends with a changelog, newest last, using entries like `2026-11-25 05:37 UTC - Summary`.
 

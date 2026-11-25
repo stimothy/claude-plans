@@ -12,6 +12,7 @@ It uses npm workspaces, Node.js 24, strict TypeScript, and ES modules.
 | `packages/domain` | Shared models and API contracts, validated with Zod |
 | `packages/backend` | Fastify REST API, database, settings, and delivery of the built web page |
 | `packages/cli` | The `claude-plans` command |
+| `packages/logging` | Logging for the backend and the CLI |
 | `packages/frontend` | React and TypeScript web page, built with Vite, plus Storybook |
 
 ## Module boundaries
@@ -20,14 +21,16 @@ It uses npm workspaces, Node.js 24, strict TypeScript, and ES modules.
 flowchart TD
     backend --> domain
     cli --> domain
+    backend --> logging
+    cli --> logging
     frontend --> domain
     cli -. HTTP .-> backend
     frontend -. HTTP .-> backend
 ```
 
 Solid arrows are allowed imports, and dotted arrows are runtime calls.
-`backend`, `cli`, and `frontend` may import `domain`, but never one another.
-`domain` imports none of them. Automated checks enforce these directions.
+`backend`, `cli`, and `frontend` may import `domain`, but never one another. Only `backend` and `cli`
+may import `logging`. Neither `domain` nor `logging` imports those three. Automated checks enforce these directions.
 
 The CLI reads data only through the backend API. For `install` and `start`,
 it runs the backend as a separate program without importing its source code.
@@ -40,33 +43,42 @@ it runs the backend as a separate program without importing its source code.
 - `npm run dev` starts the backend and Vite for development. The built application is served on one port.
 - The server accepts connections only from the local computer. The default port is 4310. The YAML settings file
   in the data directory overrides it, and a command option overrides both.
+- Development picks a free port. If the real server's port is taken, it reports an error instead of switching.
 - As a proposed safeguard, `start` refuses when a server is already running on the same data directory,
   whatever its port, even if two starts happen at once. A record left by a crashed server does not block it.
 - There is no login. The server checks each request's `Host` and `Origin` headers so other websites cannot use its APIs.
 
 ## Local data
 
-The data directory holds the SQLite database, a YAML settings file, and logs. By default, it is the Git-ignored
-`.claude-plans/` directory in the repository. Each Git worktree has its own default directory,
-so work in one worktree does not touch another's data.
+The data directory holds the SQLite database, a YAML settings file, and logs. The real one is the Git-ignored
+`.claude-plans/` directory in the maintainer's own copy.
+
+A plain `install` also saves the built application there. The `claude-plans` command on the user's path always runs
+that saved copy, whichever branch or directory is open. It uses the real data unless an option names another
+data directory. Switching branches or building new code does not change the saved copy.
+
+A plain `install` works only from the maintainer's own copy, on `master`, with no local code changes.
+Otherwise, it changes nothing and explains how to use a separate data directory.
 
 `install` and `start` accept a different data directory, and `start` also accepts a different port.
-Development uses these options to stay apart from the real data that [SPEC.md](SPEC.md) protects.
-The options alone do not guarantee that protection. On a branch in the maintainer's own copy,
-a plain `install` still uses the real data, and a development install may replace the build that uses it.
-Both gaps are open questions in [memlog.md](memlog.md).
+An install with a different data directory builds apart from the saved application.
+Development scripts never use the real data by default.
+
+These protections greatly lower the risk of accidents to the data that [SPEC.md](SPEC.md) protects.
+They cannot stop other code running under the user's account from reaching the files.
 
 The following details are proposed:
 
 - The options are `--data-directory <path>` and `--port <number>`.
-- `npm run dev` never uses the real data. It has its own data directory and port, and Vite connects to that backend.
+- `npm run dev` has its own data directory and port, and Vite connects to that backend.
+- A plain `install` also refuses when local `master` has commits that the remote `master` does not.
+- Naming the real data directory in an option does not bypass these protections, and development scripts reject it.
 - `stop` and `health` also accept `--data-directory`, and find the port that the running server recorded there.
 - Before acting, they confirm that the server they reach uses the expected data directory.
-- `install` with a different data directory leaves the `claude-plans` command on the user's path unchanged.
 
-Besides any port override, the settings file holds `theme` (`system`, `light`, `dark`)
+Besides any port and log level overrides, the settings file holds `theme` (`system`, `light`, `dark`)
 and `colorVision` (`default`, `protan`, `deutan`, `tritan`).
-Only the backend writes it, and it exposes APIs to read and update it.
+Only the backend writes it, keeping any overrides, and it exposes APIs to read and update it.
 
 To prevent a color flash, the backend adds the saved choices to the HTML before sending it.
 During development, Vite does the same with values from the backend. With `system`,
@@ -77,13 +89,14 @@ Styling uses CSS Modules with shared color variables, without a component librar
 ## Logging
 
 The studio writes logs to `logs/` in the data directory, by default `.claude-plans/logs/`. Log files rotate
-by date rather than by size.
+by date rather than by size. The default log level is `info`. The YAML settings file overrides it,
+and `start --log-level` overrides both. Web page errors stay in the browser console during the bootstrap.
 
 The following details are proposed defaults:
 
 - The backend and the CLI write separate files, so two programs never rotate the same file.
 - Each entry is one line of JSON with a UTC time, a level, and a message. Errors include their stack traces.
-- The levels are `error`, `warn`, `info`, and `debug`. The default is `info`.
+- The levels are `error`, `warn`, `info`, and `debug`.
 - A new file starts each day, based on the UTC date, which appears in the file name.
 - Each program keeps 14 days of log files and deletes older ones.
 - A detached server logs to the same files as a foreground server, including failures during startup.
@@ -94,8 +107,12 @@ The following details are proposed defaults:
 `claude-plans install` builds the application. If a server is running, `install` stops it first,
 and its closing message says to start the server again.
 
-If the version in the root `package.json` no longer matches the build, `claude-plans` commands that depend on it
-refuse to run. They say to run `claude-plans install`.
+If the database is newer than the application supports, `install` explains the problem and changes nothing.
+A running server stays running.
+
+If the version in the root `package.json` on local `master` no longer matches the saved build,
+`claude-plans` commands that depend on it refuse to run. They say to run `claude-plans install`.
+Work on another branch does not trigger this check.
 
 The check compares only versions. It does not detect an outdated build after a change that keeps the same version,
 such as a Dependabot update. This is accepted.
@@ -105,7 +122,10 @@ The following details are proposed:
 - `install` stops only the server that uses the same data directory.
 - If that server cannot be stopped, `install` fails without changing anything.
 - The build records its version. Any difference counts, whether the source is newer or older.
-- `install` and `stop` are never blocked, so a user can always recover.
+- This check never blocks `install` or `stop`. Its message also says that a plain `install` needs the user's
+  own copy on an unchanged `master`.
+- `install` replaces the saved application only after the backup and every migration succeed.
+- A new backup never overwrites an earlier one.
 - The CLI also checks a running server's version. If it differs, the CLI says to stop the server, install, and start it.
 
 ## Database and migrations
@@ -113,7 +133,12 @@ The following details are proposed:
 - Use SQLite through Node's built-in `node:sqlite` module, with plain SQL and no object-relational mapper.
 - Start with only the migration tracking table.
 - Track the schema version. Numbered migrations move both schema and data forward, each in a transaction.
-- There are no down migrations and no backups for now.
+- There are no down migrations.
+- Before `install` migrates an existing database, it backs the database up. As proposed, a failed backup stops
+  the migration.
+- Backups go in `backups/` in the data directory, so deleting that directory also deletes them.
+- If any migration fails, `install` restores the backup it just made, so the previous saved application
+  still works. If the restore also fails, `install` says where the backup is.
 - Only `claude-plans install` runs migrations.
 - `start` refuses a database that is behind or ahead of the application's schema version.
 
