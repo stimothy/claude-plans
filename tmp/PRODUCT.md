@@ -41,12 +41,18 @@ so every component can be checked in all eight palettes.
 
 - `install` also puts `claude-plans` on the user's path. Before the first run the command is not there yet,
   so the first `install` runs through a script inside the repository. Later commands use `claude-plans` directly.
-- `install` and `start` offer an option for a different data directory, and `start` offers one for the port.
-  Without them, the studio uses `.claude-plans/` in the repository.
-  The port is 4310 unless the YAML settings file sets another, and the command option overrides both.
+- The `claude-plans` command on the user's path works with the real data from any branch or directory.
+- A plain `install` works only from the user's own copy, on `master`, with no local code changes.
+  Otherwise, it changes nothing and explains how to use a separate data directory.
+- `install` and `start` offer an option for a different data directory. `start` also offers options
+  for the port and log level. Development runs these through scripts in the repository.
+- The port is 4310 and the log level is `info` unless the YAML settings file sets another.
+  A command option overrides both. If the port is taken, the real server reports an error.
+- Before `install` migrates an existing database, it makes a backup.
+- If the database is newer than the application supports, `install` explains why and changes nothing.
 - If a server is running, `install` stops it, installs, and ends with a message to start the server again.
-- If the build's version does not match the source, commands that depend on the build do not run.
-  They say to run `claude-plans install`. As proposed, `install` and `stop` are never blocked.
+- If the saved build's version does not match local `master`, commands that depend on the build do not run.
+  They say to run `claude-plans install`. As proposed, this check never blocks `install` or `stop`.
 - The health report shows status, application version, database access, and migration version.
 - If the server is not running, `health` says so clearly and does not start it.
 - If the database is out of date, `start` refuses to run and says to run `claude-plans install`.

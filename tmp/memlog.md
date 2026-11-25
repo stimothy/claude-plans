@@ -29,27 +29,27 @@
 | 2026-11-25 05:37 UTC | [D]000027 | The tmp directory is temporary; the last bootstrap PR removes it after preserving anything worth keeping. |
 | 2026-11-25 05:37 UTC | [A]000028 | The start command refuses outdated or newer databases; the reply approving the other items did not name this one. |
 | 2026-11-25 05:37 UTC | [A]000029 | The CLI runs the backend as a separate program, and stop uses a protected local API; the reply did not name this item. |
-| 2026-11-25 05:37 UTC | [A]000030 | Each worktree has its own .claude-plans directory; the reply did not name this item. |
+| 2026-11-25 05:37 UTC | ~~[A]000030~~ | Each worktree has its own .claude-plans directory; the reply did not name this item. |
 | 2026-11-25 05:37 UTC | [A]000031 | Claude closes a parent issue when told of the last merge or on finding it during later work in the repository. |
 | 2026-11-25 05:37 UTC | [A]000032 | Node.js 24 is the required major version because it is installed locally and node:sqlite worked on 24.18.0. |
 | 2026-11-25 05:37 UTC | [A]000033 | The 400-line limit counts additions plus deletions. |
 | 2026-11-25 05:37 UTC | [A]000034 | Document numbering is separate for ADRs and designs, and an ADR date is its UTC creation date. |
 | 2026-11-25 05:37 UTC | [O]000035 | Confirm the official stability status of node:sqlite before writing its ADR. |
-| 2026-11-25 05:37 UTC | [O]000036 | Which bootstrap decisions need ADRs? Candidates are SQLite access, migrations, package boundaries, and Fastify. |
-| 2026-11-25 05:37 UTC | [O]000037 | What time limit should each test suite have? |
+| 2026-11-25 05:37 UTC | ~~[O]000036~~ | Which bootstrap decisions need ADRs? Candidates are SQLite access, migrations, package boundaries, and Fastify. |
+| 2026-11-25 05:37 UTC | ~~[O]000037~~ | What time limit should each test suite have? |
 | 2026-11-25 05:37 UTC | ~~[O]000038~~ | How is the claude-plans command put on the user's path during local setup? |
 | 2026-11-25 05:37 UTC | ~~[O]000039~~ | How is the default port overridden, and how do clients find a changed port? |
 | 2026-11-25 05:37 UTC | ~~[O]000040~~ | How do tests isolate local data from the .claude-plans directory? |
-| 2026-11-25 05:37 UTC | [O]000041 | How is bootstrap implementation split into issues and sub-issues, and what order do the CI checks arrive in? |
+| 2026-11-25 05:37 UTC | ~~[O]000041~~ | How is bootstrap implementation split into issues and sub-issues, and what order do the CI checks arrive in? |
 | 2026-11-25 05:37 UTC | [O]000042 | What should plans contain, how should they be stored, and are YAML files their source? This is future work. |
 | 2026-11-25 05:37 UTC | [O]000043 | How should comments, events, and Claude's thread monitoring work? This is future work. |
 | 2026-11-25 05:39 UTC | [D]000044 | Keep the memlog as a Markdown table with one row per entry, so it renders well. |
 | 2026-11-25 05:41 UTC | [D]000045 | Claude creates the labels and milestones. |
 | 2026-11-25 05:41 UTC | [D]000046 | The maintainer is the code owner; the bootstrap adds a CODEOWNERS file naming them. |
 | 2026-11-25 05:41 UTC | [A]000047 | The origin check also validates the Host header, which blocks DNS rebinding from other websites. |
-| 2026-11-25 05:41 UTC | [O]000048 | Worktrees share default port 4310; how do clients reach only their own server, and what if the port is taken? |
-| 2026-11-25 05:41 UTC | [O]000049 | How do the 10-file and 300-line limits treat lockfiles, generated files, the repository root, and migrations? |
-| 2026-11-25 05:41 UTC | [O]000050 | What does install do when a server is running or the database is newer than the application supports? |
+| 2026-11-25 05:41 UTC | ~~[O]000048~~ | Worktrees share default port 4310; how do clients reach only their own server, and what if the port is taken? |
+| 2026-11-25 05:41 UTC | ~~[O]000049~~ | How do the 10-file and 300-line limits treat lockfiles, generated files, the repository root, and migrations? |
+| 2026-11-25 05:41 UTC | ~~[O]000050~~ | What does install do when a server is running or the database is newer than the application supports? |
 | 2026-11-25 22:24 UTC | [D]000051 | Add logging to ease debugging, using rotating files in .claude-plans/logs/. |
 | 2026-11-25 22:24 UTC | [A]000052 | The backend and CLI write separate log files, so two programs never rotate the same file. |
 | 2026-11-25 22:24 UTC | [A]000053 | Log entries are JSON lines with a UTC time, level, and message; errors include stack traces. |
@@ -57,15 +57,15 @@
 | 2026-11-25 22:24 UTC | ~~[A]000055~~ | Each program rotates its log at 10 MB and keeps five rotated files. |
 | 2026-11-25 22:24 UTC | [A]000056 | A detached server logs like a foreground server, including startup failures. |
 | 2026-11-25 22:24 UTC | [A]000057 | Logs never contain secrets or request and response bodies. |
-| 2026-11-25 22:24 UTC | [O]000058 | How is the log level changed? |
-| 2026-11-25 22:24 UTC | [O]000059 | Where does logging code shared by the backend and CLI live, given that only domain may be imported? |
-| 2026-11-25 22:24 UTC | [O]000060 | Are web page errors recorded in the log files? |
+| 2026-11-25 22:24 UTC | ~~[O]000058~~ | How is the log level changed? |
+| 2026-11-25 22:24 UTC | ~~[O]000059~~ | Where does logging code shared by the backend and CLI live, given that only domain may be imported? |
+| 2026-11-25 22:24 UTC | ~~[O]000060~~ | Are web page errors recorded in the log files? |
 | 2026-11-25 22:24 UTC | [O]000061 | What rotates log files reliably on every supported system, including with several CLI commands at once? |
 | 2026-11-25 22:40 UTC | [D]000062 | Resolves O000038: install puts claude-plans on the user's path; the first run uses a script inside the repository. |
 | 2026-11-25 22:43 UTC | [D]000063 | Development, including branches in the maintainer's own copy, must never lose or alter real data; Claude respects it. |
 | 2026-11-25 22:43 UTC | ~~[O]000064~~ | How is real data kept apart from development, given that A000030 does not cover branches in the same directory? |
-| 2026-11-25 22:43 UTC | [O]000065 | Which copy of the code does the claude-plans command on the path run? Depends on O000064. |
-| 2026-11-25 22:43 UTC | [O]000066 | Should install back up the database before migrating, revisiting the no-backups part of D000014? |
+| 2026-11-25 22:43 UTC | ~~[O]000065~~ | Which copy of the code does the claude-plans command on the path run? Depends on O000064. |
+| 2026-11-25 22:43 UTC | ~~[O]000066~~ | Should install back up the database before migrating, revisiting the no-backups part of D000014? |
 | 2026-11-25 22:45 UTC | [D]000067 | Resolves O000064: data stays in the repository by default; install and start accept another data directory. |
 | 2026-11-25 22:45 UTC | [D]000068 | Resolves the override part of O000039: the port can be overridden by an option. |
 | 2026-11-25 22:45 UTC | [D]000069 | Claude develops with its own data directory, such as its job's temporary directory, following written instructions. |
@@ -98,6 +98,37 @@
 | 2026-11-25 23:19 UTC | [D]000096 | Git ignores the .idea directory. |
 | 2026-11-25 23:22 UTC | [A]000097 | npm run dev uses its own data directory and port, never the real data, and Vite connects to that backend. |
 | 2026-11-25 23:22 UTC | [A]000098 | start refuses when a server already runs on the same data directory, whatever the port; a stale record does not block it. |
-| 2026-11-25 23:22 UTC | [O]000099 | On a branch in the maintainer's own copy, what stops the outdated-build message leading to a plain install on real data? |
-| 2026-11-25 23:22 UTC | [O]000100 | How is a development build kept from replacing the build that runs against real data? |
-| 2026-11-25 23:22 UTC | [O]000101 | Do Dependabot PRs keep their exemption after someone else adds commits? |
+| 2026-11-25 23:22 UTC | ~~[O]000099~~ | On a branch in the maintainer's own copy, what stops the outdated-build message leading to a plain install on real data? |
+| 2026-11-25 23:22 UTC | ~~[O]000100~~ | How is a development build kept from replacing the build that runs against real data? |
+| 2026-11-25 23:22 UTC | ~~[O]000101~~ | Do Dependabot PRs keep their exemption after someone else adds commits? |
+| 2026-11-25 23:38 UTC | [D]000102 | Claude works with real data, including the server, plans, and later comments; only development must not use it. |
+| 2026-11-25 23:38 UTC | [D]000103 | Diagnosis is read-only: Claude reads logs and data and asks before making a fix. |
+| 2026-11-25 23:38 UTC | [D]000104 | Resolves O000065 and O000100: plain install saves the real app in .claude-plans, apart from development builds. |
+| 2026-11-25 23:38 UTC | [D]000105 | Resolves O000099: plain install works only from the main copy on an unchanged master; otherwise it changes nothing. |
+| 2026-11-25 23:38 UTC | [D]000106 | The version check compares the saved app with local master, so work on other branches does not trigger it. |
+| 2026-11-25 23:38 UTC | [D]000107 | Development scripts never use real data by default, replacing A000030's per-worktree default. |
+| 2026-11-25 23:38 UTC | [D]000108 | Claude rules forbid any git clean that removes ignored files in the maintainer's own copy. |
+| 2026-11-25 23:38 UTC | [D]000109 | Resolves O000066: back up the database before install migrates it, replacing the no-backups part of D000014. |
+| 2026-11-25 23:38 UTC | [A]000110 | A failed backup stops the migration. |
+| 2026-11-25 23:38 UTC | [D]000111 | Resolves O000048: development picks a free port; the real server reports a taken port without switching. |
+| 2026-11-25 23:38 UTC | [D]000112 | Resolves the rest of O000049: lockfiles and generated files are exempt, as is the root from the 10-file limit. |
+| 2026-11-25 23:38 UTC | [D]000113 | Migrations keep the 300-line limit. |
+| 2026-11-25 23:38 UTC | [D]000114 | Resolves the rest of O000050: install changes nothing for a newer database and leaves the server running. |
+| 2026-11-25 23:38 UTC | [D]000115 | Resolves O000058: the log level is info by default, overridden by YAML, then by start --log-level. |
+| 2026-11-25 23:38 UTC | [D]000116 | Resolves O000060: web page errors are not logged to files during the bootstrap. |
+| 2026-11-25 23:38 UTC | [D]000117 | Resolves O000059: add packages/logging for only the backend and CLI, an exception to D000012. |
+| 2026-11-25 23:38 UTC | [D]000118 | Resolves O000101: Dependabot-authored PRs skip structure and version checks until someone else adds a commit. |
+| 2026-11-25 23:38 UTC | [D]000119 | Resolves O000037: suite limits start at unit 30s, integration 2m, component 3m, and E2E 5m. |
+| 2026-11-25 23:38 UTC | [D]000120 | Suite limits may rise when tests cannot reliably be faster; reporting individual slow tests matters more. |
+| 2026-11-25 23:38 UTC | [D]000121 | Resolves O000036: Claude decides which ADRs to write, as long as each meets the ADR criteria. |
+| 2026-11-25 23:38 UTC | [D]000122 | Resolves O000041: issues #3 to #38 split the bootstrap; checks arrive with the work in issues #4, #12, #16, and #33. |
+| 2026-11-25 23:38 UTC | [D]000123 | Until issue #24 is complete, development does not run against real data. |
+| 2026-11-25 23:38 UTC | [D]000124 | Until issue #34, versions are checked by hand; they stay below 0.1.0 until the final release and are not released. |
+| 2026-11-25 23:38 UTC | [D]000125 | Claude asks before making CI checks and up-to-date branches required. |
+| 2026-11-25 23:45 UTC | [A]000126 | A plain install refuses when local master has commits that the remote master does not. |
+| 2026-11-25 23:45 UTC | [A]000127 | Naming the real data directory in an option does not bypass its protections, and development scripts reject it. |
+| 2026-11-25 23:45 UTC | [A]000128 | An outdated-build message says a plain install needs the main copy on an unchanged master. |
+| 2026-11-25 23:45 UTC | [A]000129 | install replaces the saved app only after the backup and all migrations succeed; backups are never overwritten. |
+| 2026-11-25 23:45 UTC | [O]000130 | How are the database and server recovered when a migration fails partway? |
+| 2026-11-25 23:45 UTC | [O]000131 | Where are backups kept, given that deleting the data directory deletes anything stored in it? |
+| 2026-11-25 23:45 UTC | [O]000132 | How does a Dependabot PR meet the normal rules, such as branch naming, after another commit, even a merge from master? |
