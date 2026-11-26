@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -12,13 +12,18 @@
     "packages/*"
   ],
   "scripts": {
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "audit:dependencies": "npm run audit:node && npm run audit:python",
+    "audit:node": "npm audit --omit=dev && npm audit --audit-level=high",
+    "audit:python": "node scripts/launcher/launch.ts python -m pip_audit --requirement requirements.txt --require-hashes --disable-pip",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run scan:secrets && npm run audit:dependencies",
     "format": "prettier --write . && node scripts/launcher/launch.ts python -m ruff format",
     "format:check": "prettier --check . && node scripts/launcher/launch.ts python -m ruff format --check",
     "lint": "npm run lint:code && npm run lint:markdown && npm run lint:python",
     "lint:code": "eslint --max-warnings 0 .",
     "lint:markdown": "markdownlint-cli2",
     "lint:python": "node scripts/launcher/launch.ts python -m ruff check",
+    "lock:python": "node scripts/launcher/launch.ts python -m uv pip compile requirements.in --universal --python-version 3.12 --generate-hashes --output-file requirements.txt",
+    "scan:secrets": "gitleaks git --redact --no-banner && gitleaks git --pre-commit --redact --no-banner && gitleaks git --pre-commit --staged --redact --no-banner",
     "setup:python": "node scripts/launcher/launch.ts setup",
     "test": "npm run test:node && npm run test:python",
     "test:node": "node scripts/launcher/launch.ts node --time-limit 30 node_modules/vitest/vitest.mjs run --coverage",

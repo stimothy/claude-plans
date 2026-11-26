@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm:
+        update-types: [minor, patch]
+    ignore:
+      # typescript-eslint does not yet support TypeScript 7.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # These types follow the Node.js version that the project supports.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  # The uv ecosystem recompiles requirements.txt with uv. The pip ecosystem would use pip-compile.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    # "/" covers the workflows only, so the local action is named too.
+    directories: [/, /.github/actions/setup]
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
