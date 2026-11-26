@@ -1,0 +1,12 @@
+#!/bin/sh
+# claude-plans pre-push hook: rejects pushes to master.
+# `npm install` copies this file into Git's own hooks directory, which no checked-out branch can change.
+while read -r line; do
+  # Git gives the local ref and commit, then the remote ref and commit. The local ref may hold spaces.
+  remote="${line% *}"
+  if [ "${remote##* }" = refs/heads/master ]; then
+    echo "Pushing to master is not allowed. Push a branch and open a pull request." >&2
+    exit 1
+  fi
+done
+exit 0

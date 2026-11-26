@@ -30,6 +30,12 @@ You do not need Claude or any of its review tools to contribute.
 ## Open a pull request
 
 All changes to `master` go through a pull request. The maintainer reviews and merges it, using a squash merge.
+`npm ci` and `npm install` copy a Git hook that rejects pushes to `master` into your clone's hooks directory,
+unless you have your own `pre-push` hook or a `core.hooksPath` setting. If you use Claude Code, use version 2.1.295
+or newer, because older versions let a command run when the repository's check times out. Its settings stop Claude
+from pushing to `master`, force pushing, and merging a pull request. In your main checkout, they also stop
+`git clean` with `-x` or `-X`, and `git stash` with `-a` or `--all`, but not direct deletion such as `rm`. These
+catch mistakes and are not a security barrier.
 
 - Name your branch `<issue-number>-<kebab-summary>`, such as `42-add-health-check`.
 - Write the title as a [Conventional Commit](https://www.conventionalcommits.org), such as

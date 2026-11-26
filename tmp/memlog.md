@@ -174,3 +174,11 @@
 | 2026-11-26 01:29 UTC | [D]000170 | CI checks run on pull requests only, not on merges to master, since branches must be up to date. The release job still runs on merges to master. |
 | 2026-11-26 01:30 UTC | [D]000171 | The master ruleset now requires up-to-date branches and the eight CI checks from GitHub Actions; CodeRabbit is not required. |
 | 2026-11-26 01:43 UTC | [D]000172 | Extends D000108: in the main copy, Claude runs no command that removes or moves ignored files, including a stash of all files. |
+| 2026-11-26 04:40 UTC | [D]000173 | Claude settings block unsafe commands with deny rules plus a tested script that reads each shell command first. It catches mistakes, not deliberate disguises. |
+| 2026-11-26 04:40 UTC | ~~[D]000174~~ | npm install turns on the pre-push hook through core.hooksPath, unless the clone already uses its own Git hooks. |
+| 2026-11-26 04:40 UTC | [D]000175 | Extends D000172: outside worktrees, Claude settings block git clean with -x or -X and a stash of all files. |
+| 2026-11-26 04:40 UTC | [A]000176 | The Claude check needs only Python 3.12 or newer, not .venv, and blocks the command if it cannot run. |
+| 2026-11-26 04:40 UTC | [A]000177 | The Claude check runs from the project directory, or from a worktree under it while the project directory has no check. |
+| 2026-11-26 04:51 UTC | [D]000178 | Replaces D000174: npm install copies the pre-push hook into the clone's own hooks directory, because a core.hooksPath that points into the tree would run any checked-out branch's hooks. |
+| 2026-11-26 04:51 UTC | [A]000179 | When the checked-out branch cannot be told, as after cd, the Claude check blocks a push that does not name its branch. |
+| 2026-11-26 05:06 UTC | [A]000180 | The Claude check needs Claude Code 2.1.295 or newer, so that a check that times out blocks the command. |

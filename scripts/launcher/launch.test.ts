@@ -15,8 +15,8 @@ const surroundings = {
 };
 
 describe("plan", () => {
-  it("creates the environment with a suitable interpreter", () => {
-    const planned = plan(["setup"], surroundings);
+  it("runs a command with a suitable Python, without needing the environment", () => {
+    const planned = plan(["system", "-m", "scripts.environment.create"], { ...surroundings, exists: () => false });
 
     expect(planned).toEqual({ command: ["python3.12", "-m", "scripts.environment.create"] });
   });
