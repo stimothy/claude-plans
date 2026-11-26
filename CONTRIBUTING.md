@@ -61,6 +61,10 @@ version increases, until someone else adds a commit to them. Tests, builds, and 
 - Keep files to 300 lines and directories to 10 files. Do not create catch-all directories such as `utils`,
   `helpers`, `common`, or `misc`. Lockfiles, generated files, `docs/adrs/`, and `docs/designs/` are exempt from
   these limits. The top-level directory and database migrations are exempt from the 10-file limit.
+- `npm run lint` enforces these limits and names. It also rejects comments that turn a check off, tool ignore files
+  such as `.prettierignore`, and tests that are skipped or run alone. It checks new files too, but not ignored ones.
+  It catches common forms, so reviewers still watch for others, such as a rule turned off in a configuration file.
+  The check has no list of generated files yet. Add one with the first generated file that is committed.
 - Add TSDoc comments to everything a TypeScript file exports.
 - Never commit secrets.
 
