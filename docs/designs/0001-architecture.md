@@ -7,8 +7,8 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 
 claude-plans is meant to be a planning studio for plans made with Claude. The application does not exist yet. The
 root `package.json` reserves `packages/*` for it, and nothing is there. What exists is the repository around it:
-the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that every change
-goes through. This document describes those parts. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to
+the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run on pull
+requests. This document describes those parts. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to
 use them.
 
 ```mermaid
@@ -19,8 +19,8 @@ flowchart LR
     prepush --> request["Pull request"]
     request --> quality["CI workflow: quality checks"]
     request --> proposal["Pull request workflow: how it is proposed"]
-    quality --> master["master"]
-    proposal --> master
+    quality -->|required to merge| master["master"]
+    proposal -.->|reported, not required| master
 ```
 
 The diagram follows a change made with Claude. A change made without Claude skips the first step. The Git hook
@@ -56,8 +56,9 @@ Claude Code runs the first one before each shell command, as set in `.claude/set
 reads the command's text and blocks force pushes, pushes to `master`, and pull request merges. Outside a
 worktree, it also blocks Git commands that remove or move ignored files, because the real data will be stored in
 an ignored directory. Deny rules in the same settings also cover common forms of merging, force pushing, and
-pushing to `master`. If the script fails or times out, the command is blocked, so a broken check cannot silently
-allow everything. Reading command text cannot see through a deliberate disguise, or catch deletion by other
+pushing to `master`. If the script fails or times out, the command is blocked, so a broken check does not
+silently allow everything. Blocking after a timeout needs Claude Code 2.1.295 or newer, because older versions
+let the command run. Reading command text cannot see through a deliberate disguise, or catch deletion by other
 programs.
 
 The second one is a Git `pre-push` hook that rejects pushes to `master` from a clone, with or without Claude.
@@ -68,7 +69,8 @@ or a `core.hooksPath` setting keeps its own setup.
 ## Checks
 
 `npm run check` runs most quality checks locally. On a pull request, GitHub Actions runs checks in two
-workflows.
+workflows. The rules for `master` require every job of the CI workflow to pass before a merge. They do not
+require the Pull request workflow, so its failure is reported but does not block a merge.
 
 The CI workflow, in `.github/workflows/ci.yml`, has four kinds of job:
 
@@ -90,7 +92,6 @@ The Pull request workflow runs `scripts/pull_request`, which checks the branch n
 issue, and size of a pull request. It is separate from CI so that editing a title or changing a label can run it
 again without repeating the other jobs. It needs only Python's standard library, so it installs nothing.
 Dependabot's pull requests are exempt, because Dependabot cannot follow these rules.
-`npm run check:pull-request` can check a local branch's name and committed size before a pull request exists.
 
 Both workflows get read-only access, and they name outside actions by commit, so that a moved tag cannot change
 what runs. They run on pull requests only. A branch must be up to date before it merges, so checking `master`
