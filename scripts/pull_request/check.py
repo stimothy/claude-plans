@@ -25,7 +25,11 @@ def run_gh(arguments: Sequence[str]) -> str | None:
         result = subprocess.run(["gh", *arguments], capture_output=True, encoding="utf-8", timeout=60, check=False)
     except (OSError, UnicodeError, subprocess.TimeoutExpired):
         return None
-    return result.stdout if result.returncode == 0 else None
+    if result.returncode == 0:
+        return result.stdout
+    # This tells a missing issue from a missing sign-in, for example.
+    sys.stderr.write(result.stderr)
+    return None
 
 
 def _answer(gh: Gh, path: str) -> dict[str, Any]:
@@ -48,11 +52,22 @@ def _maintainer_allows_size(gh: Gh, pull: dict[str, Any], number: int) -> bool:
     """Tell whether the pull request has the override label, added by the repository's owner."""
     if rules.OVERRIDE_LABEL not in [label["name"] for label in pull["labels"]]:
         return False
-    query = f'.[] | select(.label.name == "{rules.OVERRIDE_LABEL}") | {{event, actor: .actor.login}}'
+    query = ".[] | {event, label: .label.name, actor: .actor.login}"
     events = _list(gh, f"repos/{{owner}}/{{repo}}/issues/{number}/events", query)
-    # The latest event tells who added the label that is there now.
-    owner = pull["base"]["repo"]["owner"]["login"]
-    return bool(events) and events[-1] == {"event": "labeled", "actor": owner}
+    # The label's latest event tells who added the one that is there now.
+    history = [event for event in events if event["label"] == rules.OVERRIDE_LABEL]
+    added = {"event": "labeled", "label": rules.OVERRIDE_LABEL, "actor": pull["base"]["repo"]["owner"]["login"]}
+    return history[-1:] == [added]
+
+
+def _issue_problems(gh: Gh, issue: int) -> list[str]:
+    """List what is wrong with the issue that a branch is named for."""
+    try:
+        found = _answer(gh, f"repos/{{owner}}/{{repo}}/issues/{issue}")
+    except NoAnswerError:
+        # A number with no issue gets no answer, so the other rules are still checked.
+        return [f"GitHub could not read issue #{issue}, which the branch is named for"]
+    return [f"#{issue} is not an issue, but a pull request"] if "pull_request" in found else []
 
 
 def _pull_request_problems(gh: Gh, number: int) -> list[str] | None:
@@ -60,18 +75,15 @@ def _pull_request_problems(gh: Gh, number: int) -> list[str] | None:
     path = f"repos/{{owner}}/{{repo}}/pulls/{number}"
     pull = _answer(gh, path)
     # The author never changes, so commits that others add leave the exemption in place.
-    if pull["user"] == {**pull["user"], "login": "dependabot[bot]", "type": "Bot"}:
+    if pull["user"]["login"] == "dependabot[bot]" and pull["user"]["type"] == "Bot":
         return None
     branch, body = pull["head"]["ref"], pull["body"] or ""
     problems = rules.branch_problems(branch) + rules.title_problems(pull["title"]) + rules.description_problems(body)
+    unlinked = rules.link_problems(branch, body)
+    problems += unlinked
     issue = rules.branch_issue(branch)
-    links = rules.linked_issues(body)
-    if not links:
-        problems.append("the description links no issue, with words such as 'Closes #42' or 'Part of #42'")
-    elif issue is not None and issue not in links:
-        problems.append(f"the description must link issue #{issue}, which the branch is named for")
-    elif issue is not None and "pull_request" in _answer(gh, f"repos/{{owner}}/{{repo}}/issues/{issue}"):
-        problems.append(f"#{issue} is not an issue, but a pull request")
+    if issue is not None and not unlinked:
+        problems += _issue_problems(gh, issue)
     files = _list(gh, f"{path}/files", ".[] | {filename, additions, deletions}")
     if len(files) != pull["changed_files"]:
         raise NoAnswerError(f"GitHub listed {len(files)} of {pull['changed_files']} files, so the size is unknown")

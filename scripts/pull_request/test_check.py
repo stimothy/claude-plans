@@ -18,8 +18,9 @@ EVENTS = "repos/{owner}/{repo}/issues/51/events"
 def github(
     changed: int = 10,
     labels: Sequence[str] = (),
-    events: Sequence[tuple[str, str]] = (),
+    events: Sequence[tuple[str, str, str]] = (),
     issue: dict[str, object] | None = None,
+    deleted: int = 0,
     **fields: object,
 ) -> dict[str, str]:
     """Make GitHub's answers about a pull request that follows the rules, with some facts changed."""
@@ -34,9 +35,11 @@ def github(
     }
     return {
         PULL: json.dumps(pull | fields),
-        f"{PULL}/files": json.dumps({"filename": "a.py", "additions": changed, "deletions": 0}),
+        f"{PULL}/files": json.dumps({"filename": "a.py", "additions": changed, "deletions": deleted}),
         ISSUE: json.dumps({"number": 14} if issue is None else issue),
-        EVENTS: "\n".join(json.dumps({"event": event, "actor": actor}) for event, actor in events),
+        EVENTS: "\n".join(
+            json.dumps({"event": event, "label": label, "actor": actor}) for event, label, actor in events
+        ),
     }
 
 
@@ -44,6 +47,9 @@ def check(answers: dict[str, str]) -> int:
     """Check pull request 51, with GitHub answering from the given text."""
 
     def gh(arguments: Sequence[str]) -> str | None:
+        # A list that is read without every page would be cut short.
+        if {f"{PULL}/files", EVENTS} & set(arguments) and "--paginate" not in arguments:
+            return None
         return next((answers[argument] for argument in arguments if argument in answers), None)
 
     return main(["51"], Path(), lambda _arguments, _directory: None, gh)
@@ -80,17 +86,23 @@ def test_the_linked_issue_must_be_the_branch_s_real_issue(
     assert expected in capsys.readouterr().err
 
 
+ADDED = ("labeled", "size:override", "maintainer")
+ADDED_BY_ANOTHER = ("labeled", "size:override", "someone")
+
+
 @pytest.mark.parametrize(
     ("labels", "events", "status"),
     [
-        (["size:override"], [("labeled", "maintainer")], 0),
-        (["size:override"], [("labeled", "maintainer"), ("unlabeled", "x"), ("labeled", "someone")], 1),
+        (["size:override"], [ADDED], 0),
+        (["size:override"], [ADDED, ("unlabeled", "size:override", "x"), ADDED_BY_ANOTHER], 1),
+        (["size:override"], [ADDED_BY_ANOTHER, ("labeled", "area:ci", "maintainer")], 1),
+        (["size:override"], [ADDED, ("labeled", "area:ci", "someone")], 0),
         (["size:override"], [], 1),
-        ([], [("labeled", "maintainer")], 1),
+        ([], [ADDED], 1),
     ],
 )
 def test_only_the_maintainer_s_label_allows_a_larger_change(
-    labels: list[str], events: list[tuple[str, str]], status: int
+    labels: list[str], events: list[tuple[str, str, str]], status: int
 ) -> None:
     """Check that only the label that the maintainer added allows a larger change."""
     assert check(github(changed=401, labels=labels, events=events)) == status
@@ -109,10 +121,34 @@ def test_a_pull_request_from_dependabot_is_exempt(capsys: pytest.CaptureFixture[
     assert "exempt" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    "user", [{"login": "github-actions[bot]", "type": "Bot"}, {"login": "dependabot[bot]", "type": "User"}]
+)
+def test_no_other_author_is_exempt(user: dict[str, str]) -> None:
+    """Check that another bot, or a user with Dependabot's name, keeps the rules."""
+    assert check(github(user=user, title="Bump")) == 1
+
+
+def test_deleted_lines_count_toward_the_limit() -> None:
+    """Check that deleted lines count toward the limit."""
+    assert check(github(changed=200, deleted=201)) == 1
+
+
+def test_a_missing_issue_is_listed_with_the_other_problems(capsys: pytest.CaptureFixture[str]) -> None:
+    """Check that an issue that cannot be read does not hide the other problems."""
+    answers = github(title="Checks", changed=401)
+    del answers[ISSUE]
+
+    assert check(answers) == 1
+    listed = capsys.readouterr().err
+    for expected in ("title 'Checks'", "could not read issue #14", "401 lines"):
+        assert expected in listed
+
+
 @pytest.mark.parametrize("missing", [PULL, f"{PULL}/files", EVENTS])
 def test_the_check_fails_when_github_does_not_answer(missing: str, capsys: pytest.CaptureFixture[str]) -> None:
     """Check that the check fails when GitHub does not answer."""
-    answers = github(changed=401, labels=["size:override"], events=[("labeled", "maintainer")])
+    answers = github(changed=401, labels=["size:override"], events=[ADDED])
     del answers[missing]
 
     assert check(answers) == 1
@@ -129,7 +165,7 @@ def test_the_check_fails_when_github_lists_only_some_files(capsys: pytest.Captur
     ("branch", "numstat", "status"),
     [
         ("14-check-rules", "10\t2\ta.py\n-\t-\timage.png\n900\t0\tpackage-lock.json", 0),
-        ("14-check-rules", "401\t0\ta.py", 1),
+        ("14-check-rules", "200\t201\ta.py", 1),
         ("checks", "", 1),
         ("14-check-rules", None, 1),
         (None, "", 1),
@@ -137,26 +173,42 @@ def test_the_check_fails_when_github_lists_only_some_files(capsys: pytest.Captur
 )
 def test_without_a_number_the_local_branch_is_checked(branch: str | None, numstat: str | None, status: int) -> None:
     """Check that the branch's name and committed size are checked without asking GitHub."""
-    answers = {"rev-parse": branch, "diff": numstat}
+    answers: dict[tuple[str, ...], str | None] = {
+        ("rev-parse", "--abbrev-ref", "HEAD"): branch,
+        # Three dots count only what the branch committed since it left master.
+        ("diff", "--numstat", "origin/master...HEAD"): numstat,
+    }
 
     def git(arguments: Sequence[str], _directory: Path) -> str | None:
-        return answers[arguments[0]]
+        return answers[tuple(arguments)]
 
     assert main([], Path(), git, lambda _arguments: None) == status
 
 
 @pytest.mark.parametrize("arguments", [["x"], ["1", "2"]])
-def test_other_arguments_are_rejected(arguments: list[str]) -> None:
+def test_other_arguments_are_rejected(arguments: list[str], capsys: pytest.CaptureFixture[str]) -> None:
     """Check that anything but one number is rejected."""
     assert main(arguments, Path(), lambda _arguments, _directory: None, lambda _arguments: None) == 1
+    assert "Give a pull request's number" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize(("code", "output"), [(0, "{}"), (1, None)])
 def test_gh_returns_output_or_nothing(monkeypatch: pytest.MonkeyPatch, code: int, output: str | None) -> None:
     """Check that gh returns its output, or nothing if it fails."""
-    monkeypatch.setattr("subprocess.run", lambda *_given, **_options: subprocess.CompletedProcess([], code, "{}"))
+    result = subprocess.CompletedProcess([], code, "{}", "")
+    monkeypatch.setattr("subprocess.run", lambda *_given, **_options: result)
 
     assert run_gh(["api"]) == output
+
+
+def test_gh_says_why_it_failed(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """Check that gh's own message is shown when it fails."""
+    failure = subprocess.CompletedProcess([], 1, "", "gh: Not Found\n")
+    monkeypatch.setattr("subprocess.run", lambda *_given, **_options: failure)
+
+    run_gh(["api"])
+
+    assert capsys.readouterr().err == "gh: Not Found\n"
 
 
 def test_gh_returns_nothing_when_it_cannot_start(monkeypatch: pytest.MonkeyPatch) -> None:

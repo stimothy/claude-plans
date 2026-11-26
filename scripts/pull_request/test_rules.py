@@ -6,6 +6,7 @@ from scripts.pull_request.rules import (
     branch_issue,
     changed_lines,
     description_problems,
+    link_problems,
     linked_issues,
     title_problems,
 )
@@ -30,7 +31,8 @@ def test_another_branch_name_gives_no_number(branch: str) -> None:
 
 @pytest.mark.parametrize(
     "title",
-    ["feat(backend): add health check", "ci: add checks", "fix!: drop a command", "refactor(command-line)!: split it"],
+    ["feat(backend): add health check", "ci: add checks", "fix!: drop a command", "refactor(command-line)!: split it"]
+    + [f"{kind}: change it" for kind in ("docs", "style", "perf", "test", "build", "chore", "revert")],
 )
 def test_a_conventional_commit_title_passes(title: str) -> None:
     """Check that a Conventional Commit title passes."""
@@ -77,6 +79,7 @@ def test_a_section_without_text_is_a_problem(filling: str) -> None:
         ("Part of #13. It stays open.", {13}),
         ("See #14.", set()),
         ("<!-- Closes #14 -->", set()),
+        ("<!-- one -->\nFixes: #14\n<!-- two -->", {14}),
         ("Discloses #14", set()),
     ],
 )
@@ -85,6 +88,29 @@ def test_only_linking_words_in_the_linked_issue_section_link_an_issue(text: str,
     body = f"## Summary\n\nCloses #99.\n\n## Linked issue\n\n{text}\n"
 
     assert linked_issues(body) == issues
+
+
+def test_a_line_that_starts_with_an_issue_number_is_text() -> None:
+    """Check that only a real heading is left out of a section's text."""
+    body = DESCRIPTION.replace("What.", "#13 added the other checks.")
+
+    assert description_problems(body) == []
+
+
+@pytest.mark.parametrize(
+    ("branch", "text", "problem"),
+    [
+        ("14-rules", "Closes #14.", None),
+        ("14-rules", "None.", "links no issue"),
+        ("14-rules", "Closes #15.", "must link issue #14"),
+        ("rules", "Closes #15.", None),
+    ],
+)
+def test_the_linked_issue_must_match_the_branch(branch: str, text: str, problem: str | None) -> None:
+    """Check that the description links the issue that the branch is named for."""
+    problems = link_problems(branch, f"## Linked issue\n\n{text}\n")
+
+    assert (problems == []) if problem is None else (problem in problems[0])
 
 
 def test_lines_in_lockfiles_do_not_count() -> None:

@@ -11,7 +11,7 @@ SECTIONS = ("Summary", "Linked issue", "Changes", "Testing")
 TYPES = "feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
 TITLE = re.compile(rf"({TYPES})(\([a-z0-9][a-z0-9-]*\))?!?: \S.*")
 BRANCH = re.compile(r"([1-9][0-9]*)(-[a-z0-9]+)+")
-LINK = re.compile(r"\b(?:close[sd]?|fix(?:es|ed)?|resolve[sd]?|part of) +#([0-9]+)", re.IGNORECASE)
+LINK = re.compile(r"\b(?:close[sd]?|fix(?:es|ed)?|resolve[sd]?|part of):? +#([0-9]+)", re.IGNORECASE)
 
 
 def branch_issue(branch: str) -> int | None:
@@ -36,25 +36,37 @@ def title_problems(title: str) -> list[str]:
 
 def _sections(body: str) -> dict[str, str]:
     """Return the text under each second-level heading, without comments."""
-    parts = re.split(r"^## +(.*?) *$", re.sub(r"<!--.*?-->", "", body, flags=re.DOTALL), flags=re.MULTILINE)
+    shown = re.sub(r"<!--.*?-->", "", body.replace("\r\n", "\n"), flags=re.DOTALL)
+    parts = re.split(r"^## +(.*?) *$", shown, flags=re.MULTILINE)
     return {heading.strip(): text for heading, text in zip(parts[1::2], parts[2::2], strict=True)}
 
 
 def description_problems(body: str) -> list[str]:
     """List the sections that a description lacks."""
-    sections = _sections(body.replace("\r\n", "\n"))
+    sections = _sections(body)
     return [
         f"the description has no '## {name}' section with text in it"
         for name in SECTIONS
-        # Headings inside a section are not text.
-        if not re.sub(r"^#.*$", "", sections.get(name, ""), flags=re.MULTILINE).strip()
+        # Headings inside a section are not text, but a line such as "#13 did this" is.
+        if not re.sub(r"^#{1,6}(\s.*)?$", "", sections.get(name, ""), flags=re.MULTILINE).strip()
     ]
 
 
 def linked_issues(body: str) -> set[int]:
     """Return the issues that the "Linked issue" section links."""
-    text = _sections(body.replace("\r\n", "\n")).get("Linked issue", "")
+    text = _sections(body).get("Linked issue", "")
     return {int(number) for number in LINK.findall(text)}
+
+
+def link_problems(branch: str, body: str) -> list[str]:
+    """List what is wrong with the issues that a description links."""
+    links = linked_issues(body)
+    if not links:
+        return ["the description links no issue, with words such as 'Closes #42' or 'Part of #42'"]
+    issue = branch_issue(branch)
+    if issue is None or issue in links:
+        return []
+    return [f"the description must link issue #{issue}, which the branch is named for"]
 
 
 def changed_lines(files: Iterable[tuple[str, int, int]]) -> int:
