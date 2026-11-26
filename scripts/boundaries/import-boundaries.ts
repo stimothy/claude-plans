@@ -21,7 +21,6 @@ const allowed = new Map([
 // Where each kind of import keeps the module's name.
 interface Importing {
   readonly source?: Part | null;
-  readonly argument?: Part & { readonly literal?: Part };
   readonly expression?: Part;
   readonly arguments?: readonly Part[];
 }
@@ -43,9 +42,7 @@ function plainText(part: Part): string | undefined {
 
 // Returns the part of an import that names its module. An export without "from" has none.
 function modulePart(node: Importing): Part | undefined {
-  // An import in a type holds its name in a literal type, and older parsers call that "argument".
-  const named = node.source ?? node.argument?.literal ?? node.expression ?? node.arguments?.[0];
-  return named ?? undefined;
+  return node.source ?? node.expression ?? node.arguments?.[0];
 }
 
 interface Problem {

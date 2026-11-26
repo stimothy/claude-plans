@@ -37,9 +37,13 @@ describe("the import boundaries", () => {
     ["frontend", "cli"],
     ["frontend", "logging"],
     ["domain", "backend"],
+    ["domain", "cli"],
+    ["domain", "frontend"],
     ["domain", "logging"],
+    ["logging", "backend"],
     ["logging", "domain"],
     ["logging", "cli"],
+    ["logging", "frontend"],
     // A package that the rule does not know may import nothing, and nothing may import it.
     ["other", "domain"],
     ["backend", "other"],
@@ -75,6 +79,7 @@ describe("the import boundaries", () => {
 
   it.each([
     "../../cli/source/start.ts",
+    "./../../cli/source/start.ts",
     "../../domain/source/index.ts",
     "../../../scripts/report.ts",
     "../node_modules/@claude-plans/cli",

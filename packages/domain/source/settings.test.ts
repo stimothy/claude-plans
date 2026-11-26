@@ -33,7 +33,28 @@ describe("a settings update", () => {
     },
   );
 
-  it.each([{}, { theme: "sepia" }, { theme: "dark", port: 80 }, { theme: undefined }])("rejects %j", (update) => {
-    expect(settingsContract.update.request.safeParse(update).success).toBe(false);
+  it.each([{}, { theme: "sepia" }, { colorVision: "mono" }, { theme: "dark", port: 80 }, { theme: undefined }])(
+    "rejects %j",
+    (update) => {
+      expect(settingsContract.update.request.safeParse(update).success).toBe(false);
+    },
+  );
+});
+
+describe("the settings API", () => {
+  it("reads with GET and changes with PATCH at one path", () => {
+    expect([settingsContract.path, settingsContract.read.method, settingsContract.update.method]).toEqual([
+      "/api/settings",
+      "GET",
+      "PATCH",
+    ]);
   });
+
+  it.each([settingsContract.read.response, settingsContract.update.response])(
+    "answers with all of the settings",
+    (response) => {
+      expect(response.safeParse(defaultColorSettings).success).toBe(true);
+      expect(response.safeParse({ theme: "dark" }).success).toBe(false);
+    },
+  );
 });
