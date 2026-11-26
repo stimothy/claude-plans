@@ -50,5 +50,6 @@ These load when you work with matching files:
 - [ci.md](.claude/rules/ci.md): files under `.github/`.
 - [docs.md](.claude/rules/docs.md): files under `docs/`.
 
-Before creating the first file that a path-scoped rule covers, or a script that writes such files, read that
-rule, because it may not have loaded yet.
+Before creating any file that a path-scoped rule covers, or a script that writes such files, read that rule if
+it has not loaded. A rule loads only once you work with a matching file, and running a script such as
+`npm run document:new` does not load it.

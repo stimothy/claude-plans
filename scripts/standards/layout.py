@@ -8,6 +8,10 @@ from pathlib import PurePosixPath
 MAXIMUM_LINES = 300
 MAXIMUM_FILES = 10
 LOCKFILES = ("package-lock.json", "requirements.txt")
+# Scripts write these, and a check keeps each one current.
+GENERATED_FILES = ("docs/README.md",)
+# These count toward no limit on files, directories, or a pull request's size.
+UNCOUNTED_FILES = LOCKFILES + GENERATED_FILES
 # Neither limit applies to these, nor do the rules for directory names.
 DOCUMENT_DIRECTORIES = (PurePosixPath("docs/adrs"), PurePosixPath("docs/designs"))
 GRAB_BAGS = {"util", "utils", "utility", "utilities", "helper", "helpers", "common", "misc"}
@@ -17,7 +21,7 @@ WORD_BOUNDARY = re.compile(r"[-_. ]+|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a
 
 def _is_exempt(path: PurePosixPath) -> bool:
     """Tell whether neither limit applies to a file."""
-    return str(path) in LOCKFILES or any(path.is_relative_to(directory) for directory in DOCUMENT_DIRECTORIES)
+    return str(path) in UNCOUNTED_FILES or any(path.is_relative_to(directory) for directory in DOCUMENT_DIRECTORIES)
 
 
 def _is_grab_bag(name: str, is_file: bool) -> bool:

@@ -3,7 +3,7 @@
 import re
 from collections.abc import Iterable
 
-from scripts.standards.layout import LOCKFILES
+from scripts.standards.layout import UNCOUNTED_FILES
 
 MAXIMUM_CHANGED_LINES = 400
 OVERRIDE_LABEL = "size:override"
@@ -71,8 +71,7 @@ def link_problems(branch: str, body: str) -> list[str]:
 
 def changed_lines(files: Iterable[tuple[str, int, int]]) -> int:
     """Count the added and deleted lines, given each file's path, additions, and deletions."""
-    # No generated file is committed yet. The first one must be left out here too.
-    return sum(added + deleted for path, added, deleted in files if path not in LOCKFILES)
+    return sum(added + deleted for path, added, deleted in files if path not in UNCOUNTED_FILES)
 
 
 def size_problems(lines: int) -> list[str]:
