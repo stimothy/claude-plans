@@ -1,12 +1,15 @@
+import { join } from "node:path";
+
 import eslint from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import jsdoc from "eslint-plugin-jsdoc";
 import tsdoc from "eslint-plugin-tsdoc";
-import { defineConfig, globalIgnores } from "eslint/config";
+import { defineConfig, includeIgnoreFile } from "eslint/config";
 import tseslint from "typescript-eslint";
 
 export default defineConfig(
-  globalIgnores(["**/dist/", "**/coverage/", "**/storybook-static/", ".claude/worktrees/", ".claude-plans/"]),
+  // Skip what Git ignores, as Prettier and markdownlint do.
+  includeIgnoreFile(join(import.meta.dirname, ".gitignore")),
   {
     linterOptions: {
       // Inline comments cannot turn rules off.
@@ -30,7 +33,7 @@ export default defineConfig(
     },
   },
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["**/*.{ts,tsx,mts,cts}"],
     plugins: { jsdoc, tsdoc },
     rules: {
       "jsdoc/require-jsdoc": [
@@ -45,12 +48,22 @@ export default defineConfig(
             MethodDefinition: true,
           },
           contexts: [
+            "ExportDefaultDeclaration > Identifier",
+            "ExportDefaultDeclaration > ObjectExpression",
             "ExportNamedDeclaration > VariableDeclaration",
+            "TSDeclareFunction",
             "TSEnumDeclaration",
             "TSInterfaceDeclaration",
             "TSTypeAliasDeclaration",
           ],
           enableFixer: false,
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ExportNamedDeclaration[source=null] > ExportSpecifier",
+          message: "Put export on the declaration itself, so that its TSDoc comment can be checked.",
         },
       ],
       "tsdoc/syntax": "error",

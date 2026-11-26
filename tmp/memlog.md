@@ -159,3 +159,4 @@
 | 2026-11-26 00:29 UTC | [A]000155 | The root package.json starts at version 0.0.1. |
 | 2026-11-26 00:29 UTC | [A]000156 | Prettier keeps the memlog table compact, so formatting never rewrites rows and no file is excluded. |
 | 2026-11-26 00:29 UTC | [O]000157 | How should #8's audit treat low and moderate findings in lint-only tools that have no clean fix? |
+| 2026-11-26 00:34 UTC | [A]000158 | npm run typecheck covers only root files; #19 must add the first package to it, and later packages must be added too. |
