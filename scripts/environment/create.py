@@ -17,8 +17,12 @@ class SetupError(Exception):
 
 
 def run_command(command: Sequence[str], directory: Path) -> int:
-    """Run a command in a directory and return its exit code."""
-    return subprocess.run(command, cwd=directory, check=False).returncode
+    """Run a command in a directory and return its exit code, which is 1 if it cannot start."""
+    try:
+        return subprocess.run(command, cwd=directory, check=False).returncode
+    except OSError as error:
+        print(error, file=sys.stderr)
+        return 1
 
 
 def environment_python(root: Path, system: str) -> Path:
@@ -28,27 +32,34 @@ def environment_python(root: Path, system: str) -> Path:
 
 
 def create(root: Path, interpreter: str, system: str, run: Run) -> None:
-    """Create the environment with an interpreter, or update the existing one.
+    """Install the tools into the environment, first creating it with an interpreter if it has no Python.
+
+    An environment that has a Python is kept, because creating it again would not replace the interpreter.
+    One whose Python is missing or a broken link is cleared, because creating over it fails.
 
     Raises:
-        SetupError: A step failed, or an existing environment uses a Python that is too old.
+        SetupError: A step failed, or an existing environment is broken or uses a Python that is too old.
     """
-    python = str(environment_python(root, system))
+    existing = environment_python(root, system)
+    python = str(existing)
     install = [python, "-m", "pip", "install", "--disable-pip-version-check", "--requirement"]
+    unusable = "The Python in .venv does not run or is older than 3.12. Delete .venv and run setup again."
     steps = [
-        ([interpreter, "-m", "venv", str(root / ".venv")], "The environment could not be created."),
-        ([python, "-c", VERSION_CHECK], "Delete .venv, which uses a Python older than 3.12, and run setup again."),
+        ([python, "-c", VERSION_CHECK], unusable),
         ([*install, str(root / "requirements.txt")], "The Python tools could not be installed."),
     ]
+    if not existing.exists():
+        venv = [interpreter, "-m", "venv", "--clear", str(root / ".venv")]
+        steps.insert(0, (venv, "The environment could not be created."))
     for command, message in steps:
         if run(command, root) != 0:
             raise SetupError(message)
 
 
-def main(run: Run = run_command) -> int:
-    """Set up this repository's environment and return the exit code."""
+def main(run: Run = run_command, root: Path = ROOT) -> int:
+    """Set up the repository's environment and return the exit code."""
     try:
-        create(ROOT, sys.executable, os.name, run)
+        create(root, sys.executable, os.name, run)
     except SetupError as error:
         print(error, file=sys.stderr)
         return 1
