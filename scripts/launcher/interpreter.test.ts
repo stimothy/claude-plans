@@ -59,6 +59,14 @@ describe("probeVersion", () => {
     expect(version).toBeUndefined();
   });
 
+  it("gives up on a command that ignores termination", () => {
+    const stubborn = "process.on('SIGTERM', () => {}); setTimeout(() => console.log('3 12'), 8000)";
+
+    const version = probeVersion([process.execPath, "-e", stubborn, "--"], 1000);
+
+    expect(version).toBeUndefined();
+  });
+
   it("asks a real Python for its major and minor version", () => {
     const python = findPython(process.env, probeVersion);
 

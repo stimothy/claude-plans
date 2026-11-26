@@ -80,13 +80,15 @@ describe("execute", () => {
     report.mockRestore();
   });
 
-  it("fails and names the signal when a signal ends the command", () => {
+  it("fails when a signal ends the command, and names it where the system reports it", () => {
     const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const status = run("process.kill(process.pid, 'SIGKILL')", 30);
 
     expect(status).toBe(1);
-    expect(report).toHaveBeenCalledWith(expect.stringContaining("SIG"));
+    // Windows ends the command with an exit code and reports no signal.
+    const messages = process.platform === "win32" ? [] : [["The command was ended by SIGKILL."]];
+    expect(report.mock.calls).toEqual(messages);
     report.mockRestore();
   });
 

@@ -15,8 +15,9 @@ const versionScript = "import sys; print('%d %d' % sys.version_info[:2])";
 export type Probe = (command: readonly string[]) => string | undefined;
 
 /** Asks a Python command for its major and minor version. */
-export const probeVersion: Probe = ([executable = "", ...options]) => {
-  const result = spawnSync(executable, [...options, "-c", versionScript], { encoding: "utf8", timeout: 10_000 });
+export const probeVersion = ([executable = "", ...options]: readonly string[], timeout = 10_000) => {
+  const settings = { encoding: "utf8", timeout, killSignal: "SIGKILL" } as const;
+  const result = spawnSync(executable, [...options, "-c", versionScript], settings);
   return result.status === 0 ? result.stdout.trim() : undefined;
 };
 
