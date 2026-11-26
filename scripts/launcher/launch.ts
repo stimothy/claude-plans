@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 
 import { findPython, probeVersion, type Probe } from "./interpreter.ts";
 
-const usage = "Usage: launch.ts setup | (python|node) [--time-limit <seconds>] <arguments...>";
+const usage = "Usage: launch.ts setup | system <arguments...> | (python|node) [--time-limit <seconds>] <arguments...>";
 
 /** What the launcher needs to know about the machine it runs on. */
 export interface Surroundings {
@@ -46,9 +46,9 @@ function environmentPython({ root, platform, exists }: Surroundings): string {
 /** Turns the launcher's arguments into the command to run. */
 export function plan(argumentList: readonly string[], surroundings: Surroundings): Plan {
   const [mode, ...rest] = argumentList;
-  if (mode === "setup") {
+  if (mode === "setup" || mode === "system") {
     const python = findPython(surroundings.environment, surroundings.probe);
-    return { command: [...python, "-m", "scripts.environment.create"] };
+    return { command: [...python, ...(mode === "setup" ? ["-m", "scripts.environment.create"] : rest)] };
   }
   if (mode !== "python" && mode !== "node") {
     throw new Error(usage);

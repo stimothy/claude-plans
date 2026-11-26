@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(gh pr merge:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push * --force*)",
+      "Bash(git push -f:*)",
+      "Bash(git push * -f)",
+      "Bash(git push * -f *)",
+      "Bash(git push * master)",
+      "Bash(git push * master *)",
+      "Bash(git push *:master)",
+      "Bash(git push *:master *)",
+      "Bash(git push *refs/heads/master)",
+      "Bash(git push *refs/heads/master *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Monitor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "root=\"$CLAUDE_PROJECT_DIR\"; if [ ! -f \"$root/scripts/guard/claude_hook.py\" ]; then top=\"$(git rev-parse --show-toplevel)\"; case \"$top\" in \"$root\"/.claude/worktrees/*) root=\"$top\" ;; esac; fi; node \"$root/scripts/launcher/launch.ts\" system -m scripts.guard.claude_hook || exit 2",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

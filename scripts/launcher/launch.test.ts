@@ -21,6 +21,12 @@ describe("plan", () => {
     expect(planned).toEqual({ command: ["python3.12", "-m", "scripts.environment.create"] });
   });
 
+  it("runs a command with a Python that needs no environment", () => {
+    const planned = plan(["system", "-m", "scripts.guard.claude_hook"], { ...surroundings, exists: () => false });
+
+    expect(planned).toEqual({ command: ["python3.12", "-m", "scripts.guard.claude_hook"] });
+  });
+
   it.each([
     ["linux" as const, join("/repository", ".venv", "bin", "python")],
     ["darwin" as const, join("/repository", ".venv", "bin", "python")],

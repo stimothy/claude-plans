@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -22,6 +22,7 @@
     "lint:code": "eslint --max-warnings 0 .",
     "lint:markdown": "markdownlint-cli2",
     "lint:python": "node scripts/launcher/launch.ts python -m ruff check",
+    "prepare": "node scripts/launcher/launch.ts system -m scripts.guard.git_hooks install",
     "lock:python": "node scripts/launcher/launch.ts python -m uv pip compile requirements.in --universal --python-version 3.12 --generate-hashes --output-file requirements.txt",
     "scan:secrets": "gitleaks git --redact --no-banner && gitleaks git --pre-commit --redact --no-banner && gitleaks git --pre-commit --staged --redact --no-banner",
     "setup:python": "node scripts/launcher/launch.ts setup",
