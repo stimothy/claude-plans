@@ -5,11 +5,10 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 
 ## Overview
 
-claude-plans is meant to be a planning studio for plans made with Claude. The application does not exist yet. The
-root `package.json` reserves `packages/*` for it, and nothing is there. What exists is the repository around it:
-the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run on pull
-requests. This document describes those parts. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to
-use them.
+claude-plans is meant to be a planning studio for plans made with Claude. The application cannot run yet. Its
+first package holds the models that its parts will share. Around it is the repository: the scripts that set it
+up and keep its documents, the safeguards for Claude, and the checks that run on pull requests. This document
+describes what exists. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
 
 ```mermaid
 flowchart LR
@@ -25,6 +24,24 @@ flowchart LR
 
 The diagram follows a change made with Claude. A change made without Claude skips the first step. The Git hook
 exists only in clones where it could be installed.
+
+## Packages
+
+The application's code lives in npm workspaces under `packages/`. So far there is one, `domain`. It defines the
+health report and the color settings, with the path and method of the API for each. Nothing serves those APIs
+yet. The definitions are Zod schemas, so a program can check the data it receives and get its TypeScript type
+from the same place.
+
+The planned web page will run in a browser, so `domain` must not depend on Node.js. One type check covers its
+source without the Node.js types, and another covers its tests, which do use them. The package exports its
+TypeScript source and has no build step.
+
+A lint rule in `scripts/boundaries` keeps imports between packages pointing one way. `backend`, `cli`, and
+`frontend` may import `domain` but never one another, so that they stay separate programs. Only `backend` and
+`cli` may import `logging`. `domain` and `logging` import no other package. A package that the rule does not
+know may import none. The rule also rejects a path that leaves its package, which would otherwise get around
+the names. It reads the imports in the code, not what runs, so it catches mistakes rather than deliberate
+disguises.
 
 ## Scripts and the launcher
 

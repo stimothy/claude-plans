@@ -1,0 +1,11 @@
+{
+  "name": "@claude-plans/domain",
+  "private": true,
+  "description": "Models and API contracts that the claude-plans packages share.",
+  "license": "MIT",
+  "type": "module",
+  "exports": "./source/index.ts",
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

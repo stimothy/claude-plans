@@ -1,0 +1,10 @@
+// The web page imports this package too, so its source may not depend on Node.js. The tests may.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // "webworker" gives the web types that Node.js also has, such as URL, which Zod's types need.
+    "lib": ["es2024", "webworker"],
+    "types": []
+  },
+  "exclude": ["source/**/*.test.ts"]
+}

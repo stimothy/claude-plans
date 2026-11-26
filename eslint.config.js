@@ -8,6 +8,8 @@ import unicorn from "eslint-plugin-unicorn";
 import { defineConfig, includeIgnoreFile } from "eslint/config";
 import tseslint from "typescript-eslint";
 
+import { importBoundaries } from "./scripts/boundaries/import-boundaries.ts";
+
 const exportRestriction = {
   selector: "ExportNamedDeclaration[source=null] > ExportSpecifier",
   message: "Put export on the declaration itself, so that its TSDoc comment can be checked.",
@@ -88,6 +90,11 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    // The rule itself looks only at files under packages/.
+    plugins: { boundaries: { rules: { imports: importBoundaries } } },
+    rules: { "boundaries/imports": "error" },
   },
   {
     files: ["**/*.{ts,tsx,mts,cts}"],

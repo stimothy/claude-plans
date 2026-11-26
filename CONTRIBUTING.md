@@ -79,6 +79,11 @@ version increases, even after someone else adds commits to them. Tests, builds, 
   Python and file names or in `eslint.config.js` for JavaScript and TypeScript. The latter skips names written
   only in capitals, such as `MAXIMUM_LEN`, so reviewers watch for those.
 - Add TSDoc comments to everything a TypeScript file exports.
+- Each package lives in `packages/`, with its code in `source/`. `backend`, `cli`, and `frontend` may import
+  `domain` but never one another. Only `backend` and `cli` may import `logging`. `domain` and `logging` import no
+  other package. Import another package by its name, such as `@claude-plans/domain`, never by a path.
+  `npm run lint` enforces this.
+- When you add a package, add its type check to the `typecheck` script in `package.json`.
 - Never commit secrets.
 
 Tests and development must use their own data directory and port. They must never use the data of an installed copy

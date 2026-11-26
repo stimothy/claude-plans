@@ -198,3 +198,6 @@
 | 2026-11-26 06:24 UTC | [A]000194 | The Linked issue section links the branch's issue with a closing word or "Part of", and only the repository owner's size:override label counts. |
 | 2026-11-26 06:41 UTC | [A]000195 | Frontmatter values are double-quoted; titles and descriptions are plain text. Numbers may skip; a new one follows the highest. |
 | 2026-11-26 06:41 UTC | [A]000196 | docs/README.md is a committed generated file, so it counts toward no file, directory, or PR size limit. |
+| 2026-11-26 18:19 UTC | [A]000197 | logging and any package the boundary rule does not list import no other package, and a relative path may not leave its package. |
+| 2026-11-26 18:19 UTC | [A]000198 | The APIs are GET /api/health and GET and PATCH /api/settings; health holds status, version, and database access and migration version. |
+| 2026-11-26 18:19 UTC | [A]000199 | Package code lives in source/, since src is an abbreviation. Packages export TypeScript source; install (#26) decides any build. |
