@@ -1,5 +1,7 @@
+# Decision log
+
 | Date and time | Entry | Summary |
-|---|---|---|
+| --- | --- | --- |
 | 2026-11-25 05:37 UTC | [D]000001 | Entries are append-only, use UTC, and share one number sequence; a new decision resolves a question by citing it. Earlier decisions are stamped when recorded. |
 | 2026-11-25 05:37 UTC | [D]000002 | Every change starts with an issue; milestones are epics, and issues are stories with a type, area label, Priority, and Effort. |
 | 2026-11-25 05:37 UTC | [D]000003 | High Effort must be split; each PR of a split change gets its own sub-issue, and Claude closes the parent after the last one merges. |
@@ -151,3 +153,9 @@
 | 2026-11-25 23:54 UTC | [D]000149 | Sub-issues of #29: #30 hello world page and Storybook; #31 themes and color vision without a color flash; #32 end-to-end tests. |
 | 2026-11-25 23:54 UTC | [D]000150 | Sub-issues of #33: #34 version check; #35 automated releases. |
 | 2026-11-25 23:54 UTC | [D]000151 | Sub-issues of #36: #37 README and final design documents; #38 remove tmp and publish v0.1.0. |
+| 2026-11-26 00:29 UTC | [D]000152 | Security and conduct reports use GitHub private vulnerability reporting, now enabled; no email is published. |
+| 2026-11-26 00:29 UTC | [A]000153 | Use TypeScript 6.0, because typescript-eslint does not yet support TypeScript 7. |
+| 2026-11-26 00:29 UTC | [A]000154 | Require Node.js 24.15 or newer within 24, which the JSDoc lint plugin needs. |
+| 2026-11-26 00:29 UTC | [A]000155 | The root package.json starts at version 0.0.1. |
+| 2026-11-26 00:29 UTC | [A]000156 | Prettier keeps the memlog table compact, so formatting never rewrites rows and no file is excluded. |
+| 2026-11-26 00:29 UTC | [O]000157 | How should #8's audit treat low and moderate findings in lint-only tools that have no clean fix? |

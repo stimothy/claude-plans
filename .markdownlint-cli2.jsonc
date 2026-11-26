@@ -1,0 +1,13 @@
+{
+  "globs": ["**/*.md"],
+  "gitignore": true,
+  // Inline comments cannot turn rules off.
+  "noInlineConfig": true,
+  "config": {
+    "default": true,
+    // Table rows cannot wrap.
+    "line-length": { "line_length": 120, "tables": false },
+    // The same heading may repeat under different parent headings.
+    "no-duplicate-heading": { "siblings_only": true },
+  },
+}

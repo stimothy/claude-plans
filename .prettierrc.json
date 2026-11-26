@@ -1,0 +1,9 @@
+{
+  "printWidth": 120,
+  "overrides": [
+    {
+      "files": "tmp/memlog.md",
+      "options": { "proseWrap": "never" }
+    }
+  ]
+}

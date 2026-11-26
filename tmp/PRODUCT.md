@@ -11,9 +11,9 @@ while Claude mainly uses the CLI.
 
 The page shows a hello world message and two settings:
 
-| Setting | Choices | Default |
-|---|---|---|
-| Theme | System, Light, Dark | System |
+| Setting      | Choices                         | Default |
+| ------------ | ------------------------------- | ------- |
+| Theme        | System, Light, Dark             | System  |
 | Color vision | Default, Protan, Deutan, Tritan | Default |
 
 - System follows the operating system's light or dark setting. The other theme choices override it.
@@ -30,14 +30,14 @@ so every component can be checked in all eight palettes.
 
 ## Command line
 
-| Command | What the user gets |
-|---|---|
-| `claude-plans install` | A database that is ready for the current version |
-| `claude-plans start` | A server running in the foreground |
-| `claude-plans start --detached` | A server running in the background |
-| `claude-plans stop` | A graceful shutdown of the server |
-| `claude-plans health` | A readable health report |
-| `claude-plans health --json` | The same report as JSON, for Claude |
+| Command                         | What the user gets                               |
+| ------------------------------- | ------------------------------------------------ |
+| `claude-plans install`          | A database that is ready for the current version |
+| `claude-plans start`            | A server running in the foreground               |
+| `claude-plans start --detached` | A server running in the background               |
+| `claude-plans stop`             | A graceful shutdown of the server                |
+| `claude-plans health`           | A readable health report                         |
+| `claude-plans health --json`    | The same report as JSON, for Claude              |
 
 - `install` also puts `claude-plans` on the user's path. Before the first run the command is not there yet,
   so the first `install` runs through a script inside the repository. Later commands use `claude-plans` directly.
