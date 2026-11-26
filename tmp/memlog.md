@@ -172,3 +172,4 @@
 | 2026-11-26 01:12 UTC | [D]000168 | Resolves O000166: requirements.in pins the direct Python tools, and uv generates requirements.txt, which locks them all with hashes. |
 | 2026-11-26 01:12 UTC | [A]000169 | pip-audit reports no severity and the Python packages are all development tools, so any known Python finding fails. |
 | 2026-11-26 01:29 UTC | [D]000170 | CI checks run on pull requests only, not on merges to master, since branches must be up to date. The release job still runs on merges to master. |
+| 2026-11-26 01:30 UTC | [D]000171 | The master ruleset now requires up-to-date branches and the eight CI checks from GitHub Actions; CodeRabbit is not required. |
