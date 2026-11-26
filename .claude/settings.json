@@ -23,7 +23,8 @@
           {
             "type": "command",
             "command": "root=\"$CLAUDE_PROJECT_DIR\"; if [ ! -f \"$root/scripts/guard/claude_hook.py\" ]; then top=\"$(git rev-parse --show-toplevel)\"; case \"$top\" in \"$root\"/.claude/worktrees/*) root=\"$top\" ;; esac; fi; node \"$root/scripts/launcher/launch.ts\" system -m scripts.guard.claude_hook || { echo \"The repository safety check in scripts/guard blocked this command or could not run. If there is no reason above this line, ask the user to fix it.\" >&2; exit 2; }",
-            "timeout": 90
+            "timeout": 90,
+            "onFailure": "block"
           }
         ]
       }

@@ -2,6 +2,7 @@
 
 import io
 import json
+import subprocess
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -9,7 +10,7 @@ import pytest
 
 from scripts.guard import claude_hook, git_hooks
 from scripts.guard.git_hooks import install
-from scripts.guard.repository import Git, run_git
+from scripts.guard.repository import LOCATION_VARIABLES, Git, run_git
 
 ROOT = Path(__file__).resolve().parents[2]
 OWN_HOOK = "#!/bin/sh\necho mine\n"
@@ -61,6 +62,8 @@ def test_the_settings_run_the_check_and_block_when_it_fails() -> None:
     assert entry["matcher"].split("|") == ["Bash", "PowerShell", "Monitor"]
     assert "scripts.guard.claude_hook" in command
     assert command.endswith("exit 2; }")
+    # Without this, a hook that times out lets the command run.
+    assert entry["hooks"][0]["onFailure"] == "block"
     assert "Bash(gh pr merge:*)" in settings["permissions"]["deny"]
 
 
@@ -116,6 +119,28 @@ def test_install_does_nothing_outside_a_git_repository(tmp_path: Path) -> None:
 
     assert result == 0
     assert not (tmp_path / ".git").exists()
+
+
+def test_run_git_ignores_variables_that_point_at_another_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Check that run_git ignores variables that point at another repository."""
+    seen: dict[str, str] = {}
+
+    def record(*_arguments: object, env: dict[str, str], **_options: object) -> subprocess.CompletedProcess[str]:
+        seen.update(env)
+        return subprocess.CompletedProcess([], 0, stdout="")
+
+    monkeypatch.setattr("subprocess.run", record)
+    for variable in LOCATION_VARIABLES:
+        monkeypatch.setenv(variable, "elsewhere")
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+
+    run_git(["--version"], tmp_path)
+
+    assert {"GIT_DIR", "GIT_COMMON_DIR", "GIT_OBJECT_DIRECTORY"} <= set(LOCATION_VARIABLES)
+    assert not set(LOCATION_VARIABLES) & set(seen)
+    assert seen["GIT_CONFIG_NOSYSTEM"] == "1"
 
 
 def test_run_git_returns_output_or_nothing(tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ import pytest
 
 from scripts.guard.commands import blocked_reason
 from scripts.guard.git_hooks import install
-from scripts.guard.repository import run_git
+from scripts.guard.repository import LOCATION_VARIABLES, run_git
 
 
 def git(directory: Path, *arguments: str) -> int:
@@ -22,7 +22,7 @@ def checkout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # The user's own Git settings, such as commit signing or hooks, must not reach these repositories.
     monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
     monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
-    for variable in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+    for variable in LOCATION_VARIABLES:
         monkeypatch.delenv(variable, raising=False)
     main = tmp_path / "main"
     (main / "sub").mkdir(parents=True)

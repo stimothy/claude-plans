@@ -80,7 +80,13 @@ def _judge_push(arguments: Sequence[str], directory: Path | None, git: Git) -> s
     if any(refspec.startswith("+") for refspec in refspecs):
         return FORCE
     destinations = [refspec.split(":")[-1] for refspec in refspecs]
-    if "--all" in long or "--branches" in long or any(name in MASTER or "*" in name for name in destinations):
+    # A lone colon pushes every branch that the remote also has, which includes master.
+    if (
+        "--all" in long
+        or "--branches" in long
+        or ":" in refspecs
+        or any(name in MASTER or "*" in name for name in destinations)
+    ):
         return PUSH_MASTER
     pushes_current = not refspecs or any(refspec in {"HEAD", "@"} for refspec in refspecs)
     if not pushes_current:
@@ -104,7 +110,7 @@ def _is_worktree(directory: Path | None, git: Git) -> bool:
 
 
 def _clean_removes_ignored(arguments: Sequence[str]) -> bool:
-    long, short, _ = _options(arguments, "e")
+    long, short, _ = _options(arguments, "e", ("--exclude",))
     return bool(short & {"x", "X"}) and "n" not in short and "--dry-run" not in long
 
 
@@ -119,7 +125,7 @@ def _judge_git(arguments: Sequence[str], directory: Path | None, git: Git) -> st
     remaining = list(arguments)
     while remaining and remaining[0].startswith("-"):
         option = remaining.pop(0)
-        if option in {"-C", "-c", "--git-dir", "--work-tree", "--namespace"} and remaining:
+        if option in {"-C", "-c", "--config-env", "--git-dir", "--work-tree", "--namespace"} and remaining:
             value = remaining.pop(0)
             if option == "-C" and directory:
                 directory = directory / Path(value).expanduser()
@@ -194,8 +200,9 @@ def blocked_reason(command: str, directory: Path | None, git: Git) -> str | None
             location = None
         if not words:
             continue
-        program = Path(words[0]).stem
-        if program.lower() in MOVES:
+        # Windows and macOS usually find a program whatever the case of its name.
+        program = Path(words[0]).stem.lower()
+        if program in MOVES:
             location = None
         elif reason := _judge_program(program, words[1:], location, git):
             return reason

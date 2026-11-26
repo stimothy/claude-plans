@@ -25,6 +25,13 @@ def fake_git(branch: str = "11-work", main_checkout: bool = False) -> Git:
 @pytest.mark.parametrize(
     "command",
     [
+        "git push origin :",
+        "Git push -f",
+        "GH pr merge 3",
+        "git --config-env user.name=NAME push -f",
+        "cat <<EOF > notes.txt\n$(git push -f)\nEOF",
+        "cat <<EOF\ntext `git push -f` text\nEOF",
+        "cat <<-EOF\n\t$(echo $(git push -f))\n\tEOF",
         "git push --branches origin",
         "gh api graphql -f query='mutation { enablePullRequestAutoMerge }'",
         "if true; then git push origin master; fi",
@@ -78,6 +85,7 @@ def test_unsafe_pushes_and_merges_are_blocked(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
+        "cat <<EOF > notes.md\nIt's $(date) and \\$(git push -f)\nEOF",
         "git push --follow-tags origin 11-work",
         "git push origin 11-work # not master",
         "git push -u origin 11-work 2>&1 | tail -5",
@@ -127,6 +135,10 @@ def test_pushing_the_checked_out_master_is_blocked(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
+        "git clean --exclude -n -fdx",
+        "git --config-env user.name=NAME clean -fdx",
+        "Git.exe clean -fdx",
+        "cat <<EOF > notes.txt\n$(git clean -fdx)\nEOF",
         "git clean -fdx -enode_modules",
         "git stash save -a",
         "# Don't touch tracked files\ngit clean -fdX\n# Now it's tidy",
