@@ -3,21 +3,13 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { ESLint } from "eslint";
-import tseslint from "typescript-eslint";
 import { describe, expect, it } from "vitest";
 
-const root = join(import.meta.dirname, "..", "..");
-
-// Type information is not needed for these rules, and loading it is slow.
-const eslint = new ESLint({ cwd: root, overrideConfig: tseslint.configs.disableTypeChecked });
+import { lintCode, root } from "../linting/lint-code.ts";
 
 async function brokenRules(code: string, file: string): Promise<string[]> {
-  const results = await eslint.lintText(code, { filePath: join(root, "scripts", file) });
-  return results
-    .flatMap((result) => result.messages)
-    .map((message) => message.ruleId ?? message.message)
-    .filter((rule) => checked.includes(rule));
+  const messages = await lintCode(code, join("scripts", file));
+  return messages.map((message) => message.ruleId ?? message.message).filter((rule) => checked.includes(rule));
 }
 
 const checked = ["no-warning-comments", "no-restricted-syntax", "unicorn/name-replacements"];
