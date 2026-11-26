@@ -6,13 +6,16 @@ The project is still being set up. This guide describes how changes are made.
 
 ## Set up and check your copy
 
-You need Node.js 24, at version 24.15 or newer, and Python 3.12 or newer. Install the Node.js dependencies with
+You need Node.js 24, at version 24.15 or newer, Python 3.12 or newer, and
+[gitleaks](https://github.com/gitleaks/gitleaks) 8.19 or newer. Install the Node.js dependencies with
 `npm ci`, then run `npm run setup:python`. That creates `.venv` and installs the Python tools. If setup does not
 find your Python, set the `PYTHON` environment variable to its path. Run setup again when `requirements.txt` changes.
 Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions.
 
-- `npm run check` runs the format check, both linters, the type checks, and the tests. Run it before you open a
-  pull request.
+- `npm run check` runs the format check, both linters, the type checks, the tests, a secret scan, and a dependency
+  audit. Run it before you open a pull request. GitHub runs the same checks, with tests on Linux, Windows, and macOS.
+- `npm run lock:python` updates `requirements.txt`, which locks every Python package with hashes. Run it after you
+  change `requirements.in`, and do not edit `requirements.txt` by hand.
 - `npm run format` rewrites files to match the formatters.
 - `npm test` runs the tests. It lists slow tests and fails a suite that runs for more than 30 seconds.
 

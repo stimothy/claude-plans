@@ -50,7 +50,8 @@ def test_create_builds_checks_and_fills_the_environment() -> None:
     python = str(Path("/repository/.venv/bin/python"))
     assert version_check == [python, "-c", VERSION_CHECK]
     requirements = str(Path("/repository/requirements.txt"))
-    assert install == [python, "-m", "pip", "install", "--disable-pip-version-check", "--requirement", requirements]
+    options = ["--disable-pip-version-check", "--require-hashes"]
+    assert install == [python, "-m", "pip", "install", *options, "--requirement", requirements]
 
 
 def test_create_keeps_an_environment_that_has_a_python(tmp_path: Path) -> None:

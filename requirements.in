@@ -1,0 +1,7 @@
+# The Python tools that scripts use. After a change, run `npm run lock:python` to update requirements.txt.
+mypy==2.4.1
+pip-audit==2.10.1
+pytest==9.2.0
+pytest-cov==7.1.0
+ruff==0.17.6
+uv==0.13.10

@@ -158,7 +158,7 @@
 | 2026-11-26 00:29 UTC | [A]000154 | Require Node.js 24.15 or newer within 24, which the JSDoc lint plugin needs. |
 | 2026-11-26 00:29 UTC | [A]000155 | The root package.json starts at version 0.0.1. |
 | 2026-11-26 00:29 UTC | [A]000156 | Prettier keeps the memlog table compact, so formatting never rewrites rows and no file is excluded. |
-| 2026-11-26 00:29 UTC | [O]000157 | How should #8's audit treat low and moderate findings in lint-only tools that have no clean fix? |
+| 2026-11-26 00:29 UTC | ~~[O]000157~~ | How should #8's audit treat low and moderate findings in lint-only tools that have no clean fix? |
 | 2026-11-26 00:34 UTC | [A]000158 | npm run typecheck covers only root files; #19 must add the first package to it, and later packages must be added too. |
 | 2026-11-26 00:43 UTC | [D]000159 | Deliver #7 as two sub-issues to stay within the size limit: #42 script launcher; #43 Python tools and environment setup. |
 | 2026-11-26 00:43 UTC | [A]000160 | A small TypeScript launcher in scripts/ finds Python and runs the scripts, since no one Python command name works on every system; the scripts themselves are Python. |
@@ -167,4 +167,7 @@
 | 2026-11-26 00:47 UTC | [O]000163 | A time limit stops only the command itself; should it stop the whole process tree once a suite starts other processes, as in #32? |
 | 2026-11-26 00:52 UTC | [A]000164 | Use mypy in strict mode, pytest, and pytest-cov; requirements.txt pins the direct Python tools. |
 | 2026-11-26 00:52 UTC | [A]000165 | Coverage.py reports no function percentage, so Python coverage checks lines and branches combined. |
-| 2026-11-26 01:02 UTC | [O]000166 | requirements.txt pins only the direct Python tools; should their dependencies also be locked with hashes, as package-lock.json does for npm, for #8? |
+| 2026-11-26 01:02 UTC | ~~[O]000166~~ | requirements.txt pins only the direct Python tools; should their dependencies also be locked with hashes, as package-lock.json does for npm, for #8? |
+| 2026-11-26 01:12 UTC | [D]000167 | Resolves O000157: npm audit fails on any finding in shipped dependencies, and in development tools only from high severity. |
+| 2026-11-26 01:12 UTC | [D]000168 | Resolves O000166: requirements.in pins the direct Python tools, and uv generates requirements.txt, which locks them all with hashes. |
+| 2026-11-26 01:12 UTC | [A]000169 | pip-audit reports no severity and the Python packages are all development tools, so any known Python finding fails. |

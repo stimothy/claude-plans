@@ -42,7 +42,8 @@ def create(root: Path, interpreter: str, system: str, run: Run) -> None:
     """
     existing = environment_python(root, system)
     python = str(existing)
-    install = [python, "-m", "pip", "install", "--disable-pip-version-check", "--requirement"]
+    options = ["--disable-pip-version-check", "--require-hashes"]
+    install = [python, "-m", "pip", "install", *options, "--requirement"]
     unusable = "The Python in .venv does not run or is older than 3.12. Delete .venv and run setup again."
     steps = [
         ([python, "-c", VERSION_CHECK], unusable),
