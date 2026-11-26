@@ -1,0 +1,40 @@
+# Real data
+
+The real data is the Git-ignored `.claude-plans/` directory in the main checkout, not a worktree, of the person
+you are working for, usually the maintainer. It holds the studio's database, settings, logs, backups, and
+installed application. Every protection below applies to that directory and that checkout. What you are doing
+decides which section below applies, not the branch or the directory you are in. If you cannot tell which
+applies, ask.
+
+## Using the studio
+
+When asked to use the studio, use the real data. This includes starting the real server, building plans through
+the `claude-plans` command, and later watching for comments.
+
+When asked to diagnose a problem in the real studio, only read: its logs in `.claude-plans/logs/`, its data,
+and its output. Open the database read-only, such as with `sqlite3 -readonly`, because a normal connection can
+write to it. Change nothing, including the data, the settings, the installed application, and the running
+server. Report what you found and ask before making a fix.
+
+## Developing and testing
+
+Development and testing must never use, lose, or alter the real data, on any branch and in any directory,
+including branches checked out in that main checkout. This covers writing and running tests, trying a change,
+reproducing a bug, and building, installing, or starting changed code.
+
+- Run development through the repository's scripts with a separate data directory, such as your job's
+  temporary directory, a separate port, and a separate build.
+- Never point a development command, test, or build at the real data directory.
+- Never run a plain `claude-plans install`, without another data directory, for development. It replaces the
+  installed application that runs on the real data.
+- To fix a problem found in the real studio, reproduce it this way, not in the real data.
+
+The command-line interface and its protections for the real data arrive with issue #24. Until then, nothing in
+the code stops a development command from reaching `.claude-plans/`, so give the separate data directory
+explicitly in every command.
+
+## Deleting ignored files
+
+In that main checkout, never run a Git command that removes or moves ignored files, such as `git clean -x`,
+`git clean -X`, or `git stash --all` (`-a`). `.claude-plans/` is ignored, so these delete or move the real data.
+To remove build output or caches, delete those directories by name.
