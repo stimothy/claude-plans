@@ -171,3 +171,4 @@
 | 2026-11-26 01:12 UTC | [D]000167 | Resolves O000157: npm audit fails on any finding in shipped dependencies, and in development tools only from high severity. |
 | 2026-11-26 01:12 UTC | [D]000168 | Resolves O000166: requirements.in pins the direct Python tools, and uv generates requirements.txt, which locks them all with hashes. |
 | 2026-11-26 01:12 UTC | [A]000169 | pip-audit reports no severity and the Python packages are all development tools, so any known Python finding fails. |
+| 2026-11-26 01:29 UTC | [D]000170 | CI checks run on pull requests only, not on merges to master, since branches must be up to date. The release job still runs on merges to master. |
