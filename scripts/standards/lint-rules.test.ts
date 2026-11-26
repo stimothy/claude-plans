@@ -1,3 +1,6 @@
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { ESLint } from "eslint";
@@ -14,8 +17,66 @@ async function brokenRules(code: string, file: string): Promise<string[]> {
   return results
     .flatMap((result) => result.messages)
     .map((message) => message.ruleId ?? message.message)
-    .filter((rule) => rule === "no-warning-comments" || rule === "no-restricted-syntax");
+    .filter((rule) => checked.includes(rule));
 }
+
+const checked = ["no-warning-comments", "no-restricted-syntax", "unicorn/name-replacements"];
+
+const repeated = `export function total(values) {
+  let sum = 0;
+  for (const value of values) {
+    sum += value > 0 ? value * 2 : -value;
+  }
+  return sum;
+}
+`;
+
+// Returns the exit code of the duplicate check, run on the given files with the repository's settings.
+function duplicateCheck(files: Record<string, string>): number | null {
+  const directory = mkdtempSync(join(tmpdir(), "duplicates-"));
+  try {
+    for (const [name, content] of Object.entries(files)) {
+      writeFileSync(join(directory, name), content);
+    }
+    const program = join(root, "node_modules", "jscpd", "run-jscpd.js");
+    return spawnSync(process.execPath, [program, "--config", join(root, ".jscpd.json"), directory]).status;
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
+describe("the duplicate check", () => {
+  it.each([
+    ["first.ts", "second.ts"],
+    ["first.test.ts", "second.test.ts"],
+    ["first.mjs", "second.cjs"],
+    ["first.ts", "second.tsx"],
+    ["first.jsx", "second.mjs"],
+  ])("rejects a copy in %s and %s", (first, second) => {
+    const files = { [first]: repeated, [second]: repeated };
+
+    const status = duplicateCheck(files);
+
+    expect(status).toBe(1);
+  });
+
+  it("rejects a copy in Python files", () => {
+    const code =
+      "def total(values):\n    result = 0\n    for value in values:\n        if value > 0:\n            result += value * 2\n    print(result, values, len(values))\n    return result\n";
+
+    const status = duplicateCheck({ "first.py": code, "second.py": code });
+
+    expect(status).toBe(1);
+  });
+
+  it("allows files that share no block", () => {
+    const files = { "first.ts": repeated, "second.ts": "export const answer = 42;\n" };
+
+    const status = duplicateCheck(files);
+
+    expect(status).toBe(0);
+  });
+});
 
 describe("the lint rules", () => {
   it.each([
@@ -96,6 +157,47 @@ describe("the lint rules", () => {
 
   it("allow a member named only outside tests", async () => {
     const rules = await brokenRules("export const value = options.only;\n", "tool.ts");
+
+    expect(rules).toEqual([]);
+  });
+
+  it.each([
+    "const cfg = 1;",
+    "function read(args) {\n  return args;\n}",
+    "class MsgReader {}",
+    "const maximumLen = 1;",
+  ])("reject the abbreviated name in %s", async (code) => {
+    const rules = await brokenRules(`${code}\n`, "tool.ts");
+
+    expect(rules).toContain("unicorn/name-replacements");
+  });
+
+  it("allow full words and names that outside code chose", async () => {
+    const code =
+      "const applications = 1;\nconst configuration = { env: applications, url: 2 };\nread(configuration.env);\n";
+
+    const rules = await brokenRules(code, "tool.ts");
+
+    expect(rules).toEqual([]);
+  });
+
+  it("reject the same words in JavaScript and TypeScript as in other names", () => {
+    const source = readFileSync(join(import.meta.dirname, "names.py"), "utf8");
+    const words = [...(/WORDS = """([^"]*)"""/.exec(source)?.[1] ?? "").matchAll(/(\w+)=/g)].map((match) => match[1]);
+    const rule = readFileSync(
+      join(root, "node_modules/eslint-plugin-unicorn/rules/shared/name-replacements.js"),
+      "utf8",
+    );
+    const list = rule.slice(0, rule.indexOf("defaultAllowList"));
+    const defaults = [...list.matchAll(/^\t(\w+): \{/gm)].map((match) => match[1]);
+    // Both full words are allowed, and splitting "stdDev" finds "dev".
+    const left = ["application", "applications", "configuration", "stdDev"];
+
+    expect(words.toSorted()).toEqual(defaults.filter((word) => !left.includes(word ?? "")).toSorted());
+  });
+
+  it("leave file names to the structure check", async () => {
+    const rules = await brokenRules("const value = 1;\n", "msg-cfg.ts");
 
     expect(rules).toEqual([]);
   });

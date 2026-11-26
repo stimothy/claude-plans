@@ -102,6 +102,8 @@ def test_a_migration_keeps_the_line_limit() -> None:
         ("source/date-helper.ts", "date-helper.ts"),
         ("source/Common/format.ts", "Common"),
         ("source/.utils/format.ts", ".utils"),
+        ("source/utilities/format.ts", "utilities"),
+        ("source/date-utility.ts", "date-utility.ts"),
     ],
 )
 def test_a_grab_bag_name_is_a_problem(path: str, name: str) -> None:

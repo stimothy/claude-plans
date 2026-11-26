@@ -10,7 +10,7 @@ MAXIMUM_FILES = 10
 LOCKFILES = ("package-lock.json", "requirements.txt")
 # Neither limit applies to these, nor do the rules for directory names.
 DOCUMENT_DIRECTORIES = (PurePosixPath("docs/adrs"), PurePosixPath("docs/designs"))
-GRAB_BAGS = {"util", "utils", "helper", "helpers", "common", "misc"}
+GRAB_BAGS = {"util", "utils", "utility", "utilities", "helper", "helpers", "common", "misc"}
 # A word at the start of a name can describe the rest of it, as in "common-prefix".
 WORD_BOUNDARY = re.compile(r"[-_. ]+|(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
 
