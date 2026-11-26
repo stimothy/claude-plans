@@ -56,7 +56,7 @@ cannot control all of what it creates. This covers issues, branch names, titles,
 increases. Tests, builds, and the other quality checks must still pass, to show that the new versions work.
 The maintainer still merges these PRs.
 
-A PR counts as Dependabot's when Dependabot is its author. Once someone else adds a commit, the normal rules apply.
+A PR counts as Dependabot's when Dependabot is its author. It stays exempt when someone else adds commits.
 
 ## Releases
 
