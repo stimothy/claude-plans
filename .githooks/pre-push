@@ -1,3 +1,0 @@
-#!/bin/sh
-# Rejects pushes to master. `npm install` turns this hook on.
-exec node scripts/launcher/launch.ts system -m scripts.guard.git_hooks pre-push

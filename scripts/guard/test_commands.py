@@ -25,6 +25,21 @@ def fake_git(branch: str = "11-work", main_checkout: bool = False) -> Git:
 @pytest.mark.parametrize(
     "command",
     [
+        "git push --branches origin",
+        "gh api graphql -f query='mutation { enablePullRequestAutoMerge }'",
+        "if true; then git push origin master; fi",
+        "{ git push -f; }",
+        "env A=1 git push -f",
+        "sudo -E git push -f",
+        "xargs -r git push -f",
+        "timeout 60 git push -f",
+        "git push \\\n  --force",
+        "git push origin \\\n  master",
+        "echo ok # note\ngit push -f",
+        "# Don't stop\ngit push -f\n# It's done",
+        "git push origin HEAD:master>/dev/null",
+        "bash <<'EOF'\ngit push -f\nEOF",
+        "cat <<'EOF'\ntext\nEOF\ngit push -f",
         "git push --force",
         "git push -f origin 11-work",
         "git push -uf origin 11-work",
@@ -63,6 +78,11 @@ def test_unsafe_pushes_and_merges_are_blocked(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
+        "git push --follow-tags origin 11-work",
+        "git push origin 11-work # not master",
+        "git push -u origin 11-work 2>&1 | tail -5",
+        "cat <<'EOF' > notes.md\ngit push -f\nIt's `git push origin master`\nEOF",
+        "echo $((1<<2))",
         "git push",
         "git push -u origin 11-fix-master",
         "git push -o ci.fast origin 11-work",
@@ -84,7 +104,19 @@ def test_safe_commands_are_allowed(command: str) -> None:
     assert reason is None
 
 
-@pytest.mark.parametrize("command", ["git push", "git push origin", "git push origin HEAD"])
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git push",
+        "git push origin",
+        "git push origin HEAD",
+        "git push origin 2>&1 | tail -5",
+        "git push >push.log",
+        "git push --push-option ci.skip origin",
+        "git push -o ci.skip origin",
+        "git push # publish it",
+    ],
+)
 def test_pushing_the_checked_out_master_is_blocked(command: str) -> None:
     """Check that pushing the checked out master is blocked."""
     reason = blocked_reason(command, HERE, fake_git(branch="master"))
@@ -95,6 +127,10 @@ def test_pushing_the_checked_out_master_is_blocked(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
+        "git clean -fdx -enode_modules",
+        "git stash save -a",
+        "# Don't touch tracked files\ngit clean -fdX\n# Now it's tidy",
+        "sudo -E git clean -fdx",
         "git clean -fdx",
         "git clean -f -X",
         "git stash --all",
@@ -114,6 +150,7 @@ def test_removing_ignored_files_is_blocked_only_in_a_main_checkout(command: str)
 @pytest.mark.parametrize(
     "command",
     [
+        "git clean -f -e -x",
         "git clean -fd",
         "git clean -ndx",
         "git clean -e x -f",
@@ -132,6 +169,12 @@ def test_commands_that_keep_ignored_files_are_allowed(command: str) -> None:
 @pytest.mark.parametrize(
     "command",
     [
+        "pushd /main && git clean -fdx",
+        "Set-Location C:/main; git clean -fdx",
+        "sl /main; git clean -fdx",
+        "GIT_WORK_TREE=/main git clean -fdx",
+        "git --work-tree=/main clean -fdx",
+        "git --git-dir=/main/.git clean -fdx",
         "cd /somewhere && git clean -fdx",
         "git --work-tree /main clean -fdx",
         "GIT_DIR=/main/.git git clean -fdx",
@@ -163,3 +206,29 @@ def test_the_directory_option_chooses_where_git_looks() -> None:
     blocked_reason("git -C nested push", HERE, run)
 
     assert seen == [HERE / "nested"]
+
+
+@pytest.mark.parametrize("command", ["cd /somewhere && git push", "GIT_DIR=/main/.git git push origin HEAD"])
+def test_a_push_from_an_unknown_place_must_name_its_branch(command: str) -> None:
+    """Check that a push from an unknown place must name its branch."""
+    reason = blocked_reason(command, HERE, fake_git())
+
+    assert reason is not None
+    assert "Name the branch" in reason
+
+
+@pytest.mark.parametrize("command", ["git clean 'unclosed", "git stash 'unclosed", "gh pr merge 'unclosed"])
+def test_a_risky_command_that_cannot_be_read_is_blocked(command: str) -> None:
+    """Check that a risky command that cannot be read is blocked."""
+    reason = blocked_reason(command, HERE, fake_git())
+
+    assert reason is not None
+
+
+def test_output_from_an_old_git_counts_as_a_main_checkout() -> None:
+    """Check that output from an old Git counts as a main checkout."""
+    output = "--path-format=absolute\n.git\n.git"
+
+    reason = blocked_reason("git clean -fdx", HERE, lambda _arguments, _directory: output)
+
+    assert reason is not None

@@ -1,45 +1,37 @@
-"""The repository's Git hooks, and turning them on. `npm install` runs `install`."""
+"""Installs the Git hook that rejects pushes to master. `npm install` runs this."""
 
 import sys
 from pathlib import Path
-from typing import TextIO
 
 from scripts.guard.repository import Git, run_git
 
 ROOT = Path(__file__).resolve().parents[2]
-HOOKS = ".githooks"
-
-
-def pre_push(refs: TextIO = sys.stdin) -> int:
-    """Reject a push to master. Git gives one line per ref: local ref and commit, then remote ref and commit."""
-    if any(line.split()[2:3] == ["refs/heads/master"] for line in refs):
-        print("Pushing to master is not allowed. Push a branch and open a pull request.", file=sys.stderr)
-        return 1
-    return 0
+SOURCE = Path(__file__).resolve().parent / "pre-push"
+# A hook that holds this line is a copy of ours, so it may be replaced.
+MARKER = "claude-plans pre-push hook"
 
 
 def install(root: Path = ROOT, git: Git = run_git) -> int:
-    """Turn the hooks on, unless that would turn off hooks that are already set up."""
-    shared = git(["rev-parse", "--path-format=absolute", "--git-common-dir"], root)
-    if shared is None:
+    """Copy the hook into Git's hooks directory, unless that would replace or sit beside your own hooks."""
+    top = git(["rev-parse", "--show-toplevel"], root)
+    common = git(["rev-parse", "--git-common-dir"], root)
+    # A copy of the source inside some other repository must not change that repository.
+    if top is None or common is None or Path(top).resolve() != root.resolve():
         return 0
-    configured = git(["config", "--get", "core.hooksPath"], root)
-    if configured == HOOKS:
-        return 0
-    hooks = Path(shared) / "hooks"
-    if configured or any(hook.suffix != ".sample" for hook in hooks.glob("*")):
-        print(f"Your own Git hooks were kept, so the hooks in {HOOKS}/ are off.", file=sys.stderr)
-        return 0
-    if git(["config", "core.hooksPath", HOOKS], root) is None:
-        print(f"The hooks in {HOOKS}/ could not be turned on.", file=sys.stderr)
+    hook = (root / common).resolve() / "hooks" / "pre-push"
+    try:
+        custom = git(["config", "--get", "core.hooksPath"], root)
+        if custom or (hook.exists() and MARKER not in hook.read_text(encoding="utf-8", errors="replace")):
+            print("Your own Git hooks were kept, so pushes to master are not blocked here.", file=sys.stderr)
+            return 0
+        hook.parent.mkdir(parents=True, exist_ok=True)
+        hook.write_bytes(SOURCE.read_bytes())
+        hook.chmod(0o755)
+    except OSError as error:
+        print(f"The Git hook could not be installed: {error}", file=sys.stderr)
         return 1
     return 0
 
 
-def main(hook: str) -> int:
-    """Run the named hook and return its exit code."""
-    return pre_push() if hook == "pre-push" else install()
-
-
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1]))
+    sys.exit(install())

@@ -30,9 +30,10 @@ You do not need Claude or any of its review tools to contribute.
 ## Open a pull request
 
 All changes to `master` go through a pull request. The maintainer reviews and merges it, using a squash merge.
-`npm ci` and `npm install` turn on a Git hook that rejects pushes to `master`, unless you already use your own
-Git hooks. If you use Claude Code, the repository's settings also stop it from force pushing, merging a pull
-request, and deleting ignored files in your main checkout. These catch mistakes and are not a security barrier.
+`npm ci` and `npm install` copy a Git hook that rejects pushes to `master` into your clone's hooks directory,
+unless you have your own `pre-push` hook or a `core.hooksPath` setting. If you use Claude Code, the repository's
+settings also stop it from pushing to `master`, force pushing, merging a pull request, and removing or moving ignored
+files in your main checkout. These catch mistakes and are not a security barrier.
 
 - Name your branch `<issue-number>-<kebab-summary>`, such as `42-add-health-check`.
 - Write the title as a [Conventional Commit](https://www.conventionalcommits.org), such as

@@ -10,7 +10,7 @@ import { join, resolve } from "node:path";
 
 import { findPython, probeVersion, type Probe } from "./interpreter.ts";
 
-const usage = "Usage: launch.ts setup | system <arguments...> | (python|node) [--time-limit <seconds>] <arguments...>";
+const usage = "Usage: launch.ts system <arguments...> | (python|node) [--time-limit <seconds>] <arguments...>";
 
 /** What the launcher needs to know about the machine it runs on. */
 export interface Surroundings {
@@ -46,9 +46,8 @@ function environmentPython({ root, platform, exists }: Surroundings): string {
 /** Turns the launcher's arguments into the command to run. */
 export function plan(argumentList: readonly string[], surroundings: Surroundings): Plan {
   const [mode, ...rest] = argumentList;
-  if (mode === "setup" || mode === "system") {
-    const python = findPython(surroundings.environment, surroundings.probe);
-    return { command: [...python, ...(mode === "setup" ? ["-m", "scripts.environment.create"] : rest)] };
+  if (mode === "system") {
+    return { command: [...findPython(surroundings.environment, surroundings.probe), ...rest] };
   }
   if (mode !== "python" && mode !== "node") {
     throw new Error(usage);
@@ -100,4 +99,8 @@ if (import.meta.main) {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;
   }
+} else if (process.argv[1]?.endsWith("launch.ts")) {
+  // An older Node.js leaves `import.meta.main` unset. Doing nothing would let the safety check pass.
+  console.error("The launcher needs Node.js 24.15 or newer.");
+  process.exitCode = 1;
 }
