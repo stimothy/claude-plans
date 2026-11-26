@@ -6,10 +6,12 @@ The project is still being set up. This guide describes how changes are made.
 
 ## Set up and check your copy
 
-You need Node.js 24, at version 24.15 or newer. Install the dependencies with `npm ci`.
+You need Node.js 24, at version 24.15 or newer, and Python 3.12 or newer. Install the dependencies with `npm ci`.
 
-- `npm run check` runs the format check, both linters, and the type check. Run it before you open a pull request.
+- `npm run check` runs the format check, both linters, the type check, and the tests. Run it before you open a
+  pull request.
 - `npm run format` rewrites files to match the formatter.
+- `npm test` runs the tests. It lists slow tests and fails a suite that runs for more than 30 seconds.
 
 ## Start with an issue
 
