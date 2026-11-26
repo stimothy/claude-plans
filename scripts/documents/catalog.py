@@ -31,7 +31,8 @@ KINDS = {
 NAME = re.compile(r"(?!0000)([0-9]{4})(-[a-z0-9]+)+\.md")
 FIELD = re.compile(r'([a-z]+): (".*")')
 # Markdown or the index's table would treat these as formatting. The formatter rewrites frontmatter with a quote.
-FORMATTING = re.compile(r'[|\[\]<>*\\"]|__')
+# An underscore is plain text only between letters or digits, as in "snake_case".
+FORMATTING = re.compile(r'[|\[\]<>*\\"`~]|(?<![^\W_])_|_(?![^\W_])')
 # Markdown turns these into links, and Markdown lint rejects them when they are bare.
 LINK = re.compile(r"://|\bwww\.|\S@\S+\.\S", re.IGNORECASE)
 
@@ -86,8 +87,9 @@ def metadata_problems(kind: Kind, fields: Mapping[str, str]) -> list[str]:
     """List what is wrong with a document's fields."""
     if set(fields) != set(kind.fields):
         return [f"the frontmatter needs exactly these fields: {', '.join(kind.fields)}"]
+    refused = 'without | [ ] < > * ~ ` \\ ", underscores outside words, double spaces, links, or emoji'
     problems = [
-        f'the {name} must be one line of plain text, without | [ ] < > * \\ " __, double spaces, links, or emoji'
+        f"the {name} must be one line of plain text, {refused}"
         for name in ("title", "description")
         if not _is_plain_text(fields[name])
     ]

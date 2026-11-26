@@ -104,6 +104,26 @@ def test_bad_metadata_is_a_problem(tmp_path: Path, content: str, expected: str) 
     assert expected in problems[0]
 
 
+@pytest.mark.parametrize("field", ["title", "description"])
+@pytest.mark.parametrize("value", ["Use `SQLite`", "_Important_ details", "An _aside", "~~Old~~ plan", "~Old~ plan"])
+def test_inline_formatting_is_a_problem(tmp_path: Path, field: str, value: str) -> None:
+    """Check that code, emphasis, and strikethrough are rejected, because the index would render them."""
+    old = "System" if field == "title" else "How it works."
+    write(tmp_path, "docs/designs/0001-system.md", DESIGN.replace(old, value))
+
+    _, problems = read_documents(tmp_path)
+
+    assert len(problems) == 1
+    assert f"{field} must be" in problems[0]
+
+
+def test_underscores_inside_words_are_allowed(tmp_path: Path) -> None:
+    """Check that a name written with underscores stays plain text."""
+    write(tmp_path, "docs/designs/0001-system.md", DESIGN.replace("System", "The read_only_mode flag"))
+
+    assert read_documents(tmp_path)[1] == []
+
+
 @pytest.mark.parametrize("date", ["2026-13-01", "20261125", "yesterday"])
 def test_an_adr_needs_a_real_date(tmp_path: Path, date: str) -> None:
     """Check that an ADR's date is a real date, written as year, month, and day."""
