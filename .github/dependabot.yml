@@ -15,7 +15,8 @@ updates:
       - dependency-name: "@types/node"
         update-types: ["version-update:semver-major"]
 
-  - package-ecosystem: pip
+  # The uv ecosystem recompiles requirements.txt with uv. The pip ecosystem would use pip-compile.
+  - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly

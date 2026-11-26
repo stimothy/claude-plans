@@ -21,7 +21,7 @@ def run_command(command: Sequence[str], directory: Path) -> int:
     try:
         return subprocess.run(command, cwd=directory, check=False).returncode
     except OSError as error:
-        print(error, file=sys.stderr)
+        print(f"{command[0]}: {error}", file=sys.stderr)
         return 1
 
 

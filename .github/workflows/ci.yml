@@ -9,8 +9,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  # A new push to a pull request replaces its older run. Every run on master finishes.
+  # A new push to a pull request replaces its older run. Each run on master has its own group, because a shared one
+  # would drop a waiting run when a newer one arrives.
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -67,11 +68,16 @@ jobs:
           echo "$SHA256  $archive" | sha256sum --check
           tar --extract --gzip --file "$archive" --directory "$RUNNER_TEMP" gitleaks
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-      - run: gitleaks git --redact --no-banner
+      - run: npm run scan:secrets
 
   audit:
-    name: Dependency audit
-    runs-on: ubuntu-latest
+    name: Dependency audit (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # pip-audit skips packages that this system would not install, so each system audits its own.
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

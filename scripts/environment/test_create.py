@@ -1,5 +1,6 @@
 """Tests for creating the Python environment."""
 
+import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -132,6 +133,22 @@ def test_run_command_returns_the_exit_code(tmp_path: Path) -> None:
 def test_run_command_fails_when_the_program_cannot_start(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     """A missing interpreter is a failed step, not a crash."""
     status = run_command([str(tmp_path / "missing-python")], tmp_path)
+
+    assert status == 1
+    assert "missing-python" in capsys.readouterr().err
+
+
+def test_run_command_names_the_program_when_the_error_does_not(
+    capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Windows reports a missing program without saying which one."""
+
+    def fail(*_arguments: object, **_options: object) -> None:
+        raise FileNotFoundError("The system cannot find the file specified")
+
+    monkeypatch.setattr(subprocess, "run", fail)
+
+    status = run_command(["missing-python"], tmp_path)
 
     assert status == 1
     assert "missing-python" in capsys.readouterr().err
