@@ -1,0 +1,56 @@
+# Local application data: database, settings, logs, backups, and the installed application
+.claude-plans/
+
+# Claude and other tools
+.claude/settings.local.json
+.claude/worktrees/
+.serena/
+
+# IDEs and editors
+.idea/
+.vscode/
+.vs/
+*.iml
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Operating systems
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Dependencies
+node_modules/
+.venv/
+
+# Build output
+dist/
+storybook-static/
+*.tsbuildinfo
+
+# Test output and caches
+coverage/
+htmlcov/
+.coverage
+.coverage.*
+playwright-report/
+test-results/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.eslintcache
+.vite/
+.cache/
+
+# Environment files, which may hold secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
