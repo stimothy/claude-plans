@@ -8,19 +8,19 @@ function probeKnowing(versions: Record<string, string>) {
 
 describe("findPython", () => {
   it("skips interpreters that are older than 3.12", () => {
-    const probe = probeKnowing({ python3: "3 9", python: "3 12" });
+    const probe = probeKnowing({ python3: "3 11", python: "3 12" });
 
     const command = findPython({}, probe);
 
     expect(command).toEqual(["python"]);
   });
 
-  it("prefers a versioned command over python3", () => {
-    const probe = probeKnowing({ "python3.12": "3 12", python3: "3 13" });
+  it.each(["python3.14", "python3.13", "python3.12"])("prefers %s over python3", (versioned) => {
+    const probe = probeKnowing({ [versioned]: "3 12", python3: "3 13" });
 
     const command = findPython({}, probe);
 
-    expect(command).toEqual(["python3.12"]);
+    expect(command).toEqual([versioned]);
   });
 
   it("falls back to the Windows launcher", () => {
@@ -59,9 +59,11 @@ describe("probeVersion", () => {
     expect(version).toBeUndefined();
   });
 
-  it("returns the output of a command that succeeds", () => {
-    const version = probeVersion([process.execPath, "-e", "console.log('3 12')", "--"]);
+  it("asks a real Python for its major and minor version", () => {
+    const python = findPython(process.env, probeVersion);
 
-    expect(version).toBe("3 12");
+    const version = probeVersion(python);
+
+    expect(version).toMatch(/^3 \d+$/);
   });
 });

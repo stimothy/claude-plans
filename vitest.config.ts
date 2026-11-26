@@ -10,8 +10,6 @@ export default defineConfig({
     allowOnly: false,
     coverage: {
       include: ["scripts/**/*.ts"],
-      // The command-line entry point only connects the tested functions to this process.
-      exclude: ["scripts/**/*.test.ts"],
       thresholds: { lines: 80, branches: 80, functions: 80, statements: 80 },
     },
   },

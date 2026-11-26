@@ -1,4 +1,6 @@
-import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
@@ -41,7 +43,7 @@ describe("plan", () => {
     expect(planned).toEqual({ command: [process.execPath, "tool.js"], timeLimitSeconds: 30 });
   });
 
-  it.each([["0"], ["-1"], ["soon"], [undefined]])("rejects the time limit %s", (limit) => {
+  it.each([["0"], ["-1"], ["soon"], ["Infinity"], [undefined]])("rejects the time limit %s", (limit) => {
     const argumentList = ["node", "--time-limit", ...(limit === undefined ? [] : [limit])];
 
     const planning = () => plan(argumentList, surroundings);
@@ -66,13 +68,25 @@ describe("execute", () => {
     expect(status).toBe(3);
   });
 
-  it("fails a command that exceeds its time limit", () => {
+  it("stops a command that ignores termination when its time limit passes", () => {
     const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const started = Date.now();
 
-    const status = run("setTimeout(() => {}, 10_000)", 0.2);
+    const status = run("process.on('SIGTERM', () => {}); setTimeout(() => {}, 10_000)", 1.001);
 
     expect(status).toBe(1);
-    expect(report).toHaveBeenCalledWith("The command exceeded its time limit of 0.2 seconds.");
+    expect(Date.now() - started).toBeLessThan(5000);
+    expect(report).toHaveBeenCalledWith("The command exceeded its time limit of 1.001 seconds.");
+    report.mockRestore();
+  });
+
+  it("fails and names the signal when a signal ends the command", () => {
+    const report = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const status = run("process.kill(process.pid, 'SIGKILL')", 30);
+
+    expect(status).toBe(1);
+    expect(report).toHaveBeenCalledWith(expect.stringContaining("SIG"));
     report.mockRestore();
   });
 
@@ -84,5 +98,27 @@ describe("execute", () => {
     expect(status).toBe(1);
     expect(report).toHaveBeenCalledWith(expect.stringContaining("claude-plans-missing-command"));
     report.mockRestore();
+  });
+});
+
+describe("the launcher program", () => {
+  const launch = (...argumentList: string[]) =>
+    spawnSync(process.execPath, [resolve(import.meta.dirname, "launch.ts"), ...argumentList], {
+      cwd: tmpdir(),
+      encoding: "utf8",
+    });
+
+  it("runs commands at the repository root and passes on their exit code", () => {
+    const result = launch("node", "-e", "console.log(process.cwd()); process.exit(3)");
+
+    expect(result.stdout.trim()).toBe(resolve(import.meta.dirname, "../.."));
+    expect(result.status).toBe(3);
+  });
+
+  it("fails and explains a usage error", () => {
+    const result = launch("ruby");
+
+    expect(result.stderr).toContain("Usage:");
+    expect(result.status).toBe(1);
   });
 });

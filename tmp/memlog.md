@@ -164,3 +164,4 @@
 | 2026-11-26 00:43 UTC | [A]000160 | A small TypeScript launcher in scripts/ finds Python and runs the scripts, since no one Python command name works on every system; the scripts themselves are Python. |
 | 2026-11-26 00:43 UTC | [A]000161 | Vitest arrives with #42 to test the launcher. |
 | 2026-11-26 00:43 UTC | [A]000162 | The 30-second unit limit applies to each language's suite separately. |
+| 2026-11-26 00:47 UTC | [O]000163 | A time limit stops only the command itself; should it stop the whole process tree once a suite starts other processes, as in #32? |

@@ -58,7 +58,7 @@ export function plan(argumentList: readonly string[], surroundings: Surroundings
     return { command: [program, ...rest] };
   }
   const timeLimitSeconds = Number(rest[1]);
-  if (!(timeLimitSeconds > 0)) {
+  if (!Number.isFinite(timeLimitSeconds) || timeLimitSeconds <= 0) {
     throw new Error("--time-limit needs a number of seconds above zero.");
   }
   return { command: [program, ...rest.slice(2)], timeLimitSeconds };
@@ -70,7 +70,7 @@ export function execute({ command, timeLimitSeconds }: Plan, directory: string):
   const result = spawnSync(program, programArguments, {
     cwd: directory,
     stdio: "inherit",
-    ...(timeLimitSeconds && { timeout: timeLimitSeconds * 1000, killSignal: "SIGKILL" }),
+    ...(timeLimitSeconds && { timeout: Math.ceil(timeLimitSeconds * 1000), killSignal: "SIGKILL" }),
   });
   if (result.error) {
     const timedOut = "code" in result.error && result.error.code === "ETIMEDOUT";
@@ -78,6 +78,9 @@ export function execute({ command, timeLimitSeconds }: Plan, directory: string):
       timedOut ? `The command exceeded its time limit of ${String(timeLimitSeconds)} seconds.` : result.error.message,
     );
     return 1;
+  }
+  if (result.signal) {
+    console.error(`The command was ended by ${result.signal}.`);
   }
   return result.status ?? 1;
 }
