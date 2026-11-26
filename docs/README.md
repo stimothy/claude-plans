@@ -10,4 +10,6 @@ None yet.
 
 ## Design documents
 
-None yet.
+| Document                                     | Description                                                       |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| [Architecture](designs/0001-architecture.md) | How the repository's tools, safeguards, and checks work, and why. |
