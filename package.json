@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
