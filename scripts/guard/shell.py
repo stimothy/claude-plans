@@ -5,8 +5,9 @@ import shlex
 
 SEPARATORS = ";&|()`\n"
 REDIRECTS = "<>"
-# The start of a command that Bash runs inside text, but not of arithmetic.
-SUBSTITUTION = re.compile(r"(?<!\\)(?:`(?P<backtick>[^`]*)`|\$\((?!\())")
+# The start of a command that Bash runs inside text, but not of arithmetic. Matching each escaped character, which
+# starts nothing, pairs backslashes from the left as Bash does.
+SUBSTITUTION = re.compile(r"(?P<escaped>\\[\s\S])|`(?P<backtick>[^`]*)`|\$\((?!\()")
 
 # The parts of shell text that decide what is code. Any other character stands alone.
 PARTS = re.compile(
@@ -30,6 +31,8 @@ def _substitutions(body: str) -> list[str]:
     """Return the commands that Bash runs while it reads the body of an unquoted heredoc."""
     commands = []
     for match in SUBSTITUTION.finditer(body):
+        if match["escaped"]:
+            continue
         if match["backtick"] is not None:
             commands.append(match["backtick"])
             continue

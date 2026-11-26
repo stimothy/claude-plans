@@ -32,6 +32,9 @@ def fake_git(branch: str = "11-work", main_checkout: bool = False) -> Git:
         "cat <<EOF > notes.txt\n$(git push -f)\nEOF",
         "cat <<EOF\ntext `git push -f` text\nEOF",
         "cat <<-EOF\n\t$(echo $(git push -f))\n\tEOF",
+        # Two backslashes make one literal backslash, so Bash still runs what follows.
+        "cat <<EOF\n\\\\$(git push -f)\nEOF",
+        "cat <<EOF\n\\\\`git push -f`\nEOF",
         "git push --branches origin",
         "gh api graphql -f query='mutation { enablePullRequestAutoMerge }'",
         "if true; then git push origin master; fi",
@@ -86,6 +89,8 @@ def test_unsafe_pushes_and_merges_are_blocked(command: str) -> None:
     "command",
     [
         "cat <<EOF > notes.md\nIt's $(date) and \\$(git push -f)\nEOF",
+        "cat <<EOF\n\\\\\\$(git push -f)\nEOF",
+        "cat <<EOF\n\\`git push -f\\`\nEOF",
         "git push --follow-tags origin 11-work",
         "git push origin 11-work # not master",
         "git push -u origin 11-work 2>&1 | tail -5",
