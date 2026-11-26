@@ -160,3 +160,7 @@
 | 2026-11-26 00:29 UTC | [A]000156 | Prettier keeps the memlog table compact, so formatting never rewrites rows and no file is excluded. |
 | 2026-11-26 00:29 UTC | [O]000157 | How should #8's audit treat low and moderate findings in lint-only tools that have no clean fix? |
 | 2026-11-26 00:34 UTC | [A]000158 | npm run typecheck covers only root files; #19 must add the first package to it, and later packages must be added too. |
+| 2026-11-26 00:43 UTC | [D]000159 | Deliver #7 as two sub-issues to stay within the size limit: #42 script launcher; #43 Python tools and environment setup. |
+| 2026-11-26 00:43 UTC | [A]000160 | A small TypeScript launcher in scripts/ finds Python and runs the scripts, since no one Python command name works on every system; the scripts themselves are Python. |
+| 2026-11-26 00:43 UTC | [A]000161 | Vitest arrives with #42 to test the launcher. |
+| 2026-11-26 00:43 UTC | [A]000162 | The 30-second unit limit applies to each language's suite separately. |

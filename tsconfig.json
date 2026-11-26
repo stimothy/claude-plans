@@ -3,7 +3,10 @@
   "compilerOptions": {
     "allowJs": true,
     "checkJs": true,
-    "noEmit": true
+    "noEmit": true,
+    // Node.js runs the TypeScript scripts directly, so they use only syntax it can strip.
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
-  "include": ["*.js"]
+  "include": ["*.js", "*.ts", "scripts/**/*.ts"]
 }
