@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -13,14 +13,18 @@
   ],
   "scripts": {
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "npm run lint:code && npm run lint:markdown",
+    "format": "prettier --write . && node scripts/launcher/launch.ts python -m ruff format",
+    "format:check": "prettier --check . && node scripts/launcher/launch.ts python -m ruff format --check",
+    "lint": "npm run lint:code && npm run lint:markdown && npm run lint:python",
     "lint:code": "eslint --max-warnings 0 .",
     "lint:markdown": "markdownlint-cli2",
-    "test": "npm run test:node",
+    "lint:python": "node scripts/launcher/launch.ts python -m ruff check",
+    "setup:python": "node scripts/launcher/launch.ts setup",
+    "test": "npm run test:node && npm run test:python",
     "test:node": "node scripts/launcher/launch.ts node --time-limit 30 node_modules/vitest/vitest.mjs run --coverage",
-    "typecheck": "tsc --project tsconfig.json"
+    "test:python": "node scripts/launcher/launch.ts python --time-limit 30 -m pytest",
+    "typecheck": "tsc --project tsconfig.json && npm run typecheck:python",
+    "typecheck:python": "node scripts/launcher/launch.ts python -m mypy"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

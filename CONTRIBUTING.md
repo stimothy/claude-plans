@@ -6,11 +6,14 @@ The project is still being set up. This guide describes how changes are made.
 
 ## Set up and check your copy
 
-You need Node.js 24, at version 24.15 or newer, and Python 3.12 or newer. Install the dependencies with `npm ci`.
+You need Node.js 24, at version 24.15 or newer, and Python 3.12 or newer. Install the Node.js dependencies with
+`npm ci`, then run `npm run setup:python`. That creates `.venv` and installs the Python tools. If setup does not
+find your Python, set the `PYTHON` environment variable to its path. Run setup again when `requirements.txt` changes.
+Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions.
 
-- `npm run check` runs the format check, both linters, the type check, and the tests. Run it before you open a
+- `npm run check` runs the format check, both linters, the type checks, and the tests. Run it before you open a
   pull request.
-- `npm run format` rewrites files to match the formatter.
+- `npm run format` rewrites files to match the formatters.
 - `npm test` runs the tests. It lists slow tests and fails a suite that runs for more than 30 seconds.
 
 ## Start with an issue

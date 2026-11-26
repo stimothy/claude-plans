@@ -1,0 +1,37 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["A", "ANN", "ARG", "B", "C4", "C90", "D", "E", "F", "I", "N", "PL", "PT", "PTH", "RET", "RUF", "SIM", "UP", "W"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+files = ["scripts"]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["scripts"]
+xfail_strict = true
+filterwarnings = ["error"]
+# The durations options list the slowest tests.
+addopts = [
+  "--strict-config",
+  "--strict-markers",
+  "--durations=10",
+  "--durations-min=0",
+  "--cov=scripts",
+  "--cov-report=term-missing",
+]
+
+[tool.coverage.run]
+branch = true
+omit = ["*/test_*.py"]
+
+[tool.coverage.report]
+fail_under = 80
