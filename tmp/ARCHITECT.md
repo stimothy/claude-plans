@@ -7,13 +7,13 @@ This file covers how the bootstrap is built. See [SPEC.md](SPEC.md) for scope an
 The studio runs locally on macOS, Linux, Windows, and Windows Subsystem for Linux (WSL).
 It uses npm workspaces, Node.js 24, strict TypeScript, and ES modules.
 
-| Package | Responsibility |
-|---|---|
-| `packages/domain` | Shared models and API contracts, validated with Zod |
-| `packages/backend` | Fastify REST API, database, settings, and delivery of the built web page |
-| `packages/cli` | The `claude-plans` command |
-| `packages/logging` | Logging for the backend and the CLI |
-| `packages/frontend` | React and TypeScript web page, built with Vite, plus Storybook |
+| Package             | Responsibility                                                           |
+| ------------------- | ------------------------------------------------------------------------ |
+| `packages/domain`   | Shared models and API contracts, validated with Zod                      |
+| `packages/backend`  | Fastify REST API, database, settings, and delivery of the built web page |
+| `packages/cli`      | The `claude-plans` command                                               |
+| `packages/logging`  | Logging for the backend and the CLI                                      |
+| `packages/frontend` | React and TypeScript web page, built with Vite, plus Storybook           |
 
 ## Module boundaries
 
@@ -144,14 +144,14 @@ The following details are proposed:
 
 ## Quality tooling
 
-| Concern | Tool or check |
-|---|---|
-| TypeScript lint and format | ESLint with strict type-aware rules, and Prettier |
-| Markdown lint and format | markdownlint and Prettier |
-| Python lint, format, and types | Ruff and a strict type checker |
-| Unit and integration tests | Vitest |
-| Component tests | Storybook with Vitest |
-| End-to-end tests | Playwright with Chromium |
+| Concern                        | Tool or check                                     |
+| ------------------------------ | ------------------------------------------------- |
+| TypeScript lint and format     | ESLint with strict type-aware rules, and Prettier |
+| Markdown lint and format       | markdownlint and Prettier                         |
+| Python lint, format, and types | Ruff and a strict type checker                    |
+| Unit and integration tests     | Vitest                                            |
+| Component tests                | Storybook with Vitest                             |
+| End-to-end tests               | Playwright with Chromium                          |
 
 Automated checks also cover TSDoc comments, abbreviations, import boundaries, duplicated code,
 complexity, file and directory limits, grab-bag names, and suppression comments.
@@ -160,11 +160,11 @@ TDD is a repository rule, because CI cannot prove that a test was written first.
 
 ## Continuous integration
 
-| Checks | Operating systems |
-|---|---|
-| Static checks | Linux |
-| Unit and integration tests | Linux, Windows, and macOS |
-| Component and end-to-end tests | Linux with Chromium |
+| Checks                         | Operating systems         |
+| ------------------------------ | ------------------------- |
+| Static checks                  | Linux                     |
+| Unit and integration tests     | Linux, Windows, and macOS |
+| Component and end-to-end tests | Linux with Chromium       |
 
 CI caches dependencies, cancels outdated runs, scans for secrets, and audits dependencies.
 Linux jobs do not fully test WSL. Secret scanning also runs locally.

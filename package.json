@@ -1,0 +1,35 @@
+{
+  "name": "claude-plans",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A planning studio for plans made with Claude.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "npm run format:check && npm run lint && npm run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "npm run lint:code && npm run lint:markdown",
+    "lint:code": "eslint --max-warnings 0 .",
+    "lint:markdown": "markdownlint-cli2",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.4",
+    "eslint": "^10.15.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsdoc": "^65.5.5",
+    "eslint-plugin-tsdoc": "^0.5.4",
+    "markdownlint-cli2": "^0.24.2",
+    "prettier": "^3.10.1",
+    "typescript": "~6.0",
+    "typescript-eslint": "^8.74.0"
+  }
+}

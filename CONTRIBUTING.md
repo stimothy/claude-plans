@@ -2,8 +2,14 @@
 
 Thank you for helping with claude-plans. Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md).
 
-The project is still being set up. This guide describes how changes are made. It will cover local setup and
-checks once the tooling exists.
+The project is still being set up. This guide describes how changes are made.
+
+## Set up and check your copy
+
+You need Node.js 24, at version 24.15 or newer. Install the dependencies with `npm ci`.
+
+- `npm run check` runs the format check, both linters, and the type check. Run it before you open a pull request.
+- `npm run format` rewrites files to match the formatter.
 
 ## Start with an issue
 
@@ -25,8 +31,8 @@ All changes to `master` go through a pull request. The maintainer reviews and me
   Split a larger change into several pull requests. Only the maintainer can approve an exception.
 - Update the documentation in the same pull request as the code it describes.
 
-Once the repository has a root `package.json`, every pull request also raises the version in it, and your branch
-must be up to date with `master` before it is merged.
+Every pull request also raises the version in the root `package.json`, and your branch must be up to date with
+`master` before it is merged.
 
 Dependabot's pull requests are exempt from the rules about issues, branch names, titles, descriptions, size, and
 version increases, until someone else adds a commit to them. Tests, builds, and other quality checks still apply.
