@@ -182,3 +182,9 @@
 | 2026-11-26 04:51 UTC | [D]000178 | Replaces D000174: npm install copies the pre-push hook into the clone's own hooks directory, because a core.hooksPath that points into the tree would run any checked-out branch's hooks. |
 | 2026-11-26 04:51 UTC | [A]000179 | When the checked-out branch cannot be told, as after cd, the Claude check blocks a push that does not name its branch. |
 | 2026-11-26 05:06 UTC | [A]000180 | The Claude check needs Claude Code 2.1.295 or newer, so that a check that times out blocks the command. |
+| 2026-11-26 05:30 UTC | [D]000181 | Abbreviated names: the unicorn lint rule alone for TypeScript; our own banned list for Python and file names. |
+| 2026-11-26 05:30 UTC | [D]000182 | Duplicated code: jscpd, which fails on any copied block above a minimum size, in tests too. |
+| 2026-11-26 05:30 UTC | [D]000183 | `docs/adrs/` and `docs/designs/` are exempt from both the 300-line and 10-file limits, and from directory name rules. |
+| 2026-11-26 05:30 UTC | [A]000184 | A directory named `migrations` is exempt from the 10-file limit, though its subdirectories are not. |
+| 2026-11-26 05:30 UTC | [A]000185 | A catch-all name is one that is, or ends in, util, utils, helper, helpers, or misc, or is exactly common. |
+| 2026-11-26 05:38 UTC | [A]000186 | No generated file is committed yet, so the first one adds the list that exempts generated files from the limits. |
