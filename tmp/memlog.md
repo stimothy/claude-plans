@@ -119,7 +119,7 @@
 | 2026-11-25 23:38 UTC | [D]000115 | Resolves O000058: the log level is info by default, overridden by YAML, then by start --log-level. |
 | 2026-11-25 23:38 UTC | [D]000116 | Resolves O000060: web page errors are not logged to files during the bootstrap. |
 | 2026-11-25 23:38 UTC | [D]000117 | Resolves O000059: add packages/logging for only the backend and CLI, an exception to D000012. |
-| 2026-11-25 23:38 UTC | [D]000118 | Resolves O000101: Dependabot-authored PRs skip structure and version checks until someone else adds a commit. |
+| 2026-11-25 23:38 UTC | ~~[D]000118~~ | Resolves O000101: Dependabot-authored PRs skip structure and version checks until someone else adds a commit. |
 | 2026-11-25 23:38 UTC | [D]000119 | Resolves O000037: suite limits start at unit 30s, integration 2m, component 3m, and E2E 5m. |
 | 2026-11-25 23:38 UTC | [D]000120 | Suite limits may rise when tests cannot reliably be faster; reporting individual slow tests matters more. |
 | 2026-11-25 23:38 UTC | [D]000121 | Resolves O000036: Claude decides which ADRs to write, as long as each meets the ADR criteria. |
@@ -133,7 +133,7 @@
 | 2026-11-25 23:45 UTC | [A]000129 | install replaces the saved app only after the backup and all migrations succeed; backups are never overwritten. |
 | 2026-11-25 23:45 UTC | ~~[O]000130~~ | How are the database and server recovered when a migration fails partway? |
 | 2026-11-25 23:45 UTC | ~~[O]000131~~ | Where are backups kept, given that deleting the data directory deletes anything stored in it? |
-| 2026-11-25 23:45 UTC | [O]000132 | How does a Dependabot PR meet the normal rules, such as branch naming, after another commit, even a merge from master? |
+| 2026-11-25 23:45 UTC | ~~[O]000132~~ | How does a Dependabot PR meet the normal rules, such as branch naming, after another commit, even a merge from master? |
 | 2026-11-25 23:51 UTC | [D]000133 | Replaces D000009: PRs except Dependabot's raise one shared version; from v0.1.0, merges that raise it release it; branches must be up to date. |
 | 2026-11-25 23:51 UTC | [D]000134 | Replaces D000012: npm workspaces hold domain, logging, backend, CLI, and frontend; backend, CLI, and frontend may import domain, and only backend and CLI may import logging. |
 | 2026-11-25 23:51 UTC | [D]000135 | Replaces D000014: use node:sqlite, plain SQL, and forward-only transactional migrations; backups follow D000109. |
@@ -194,3 +194,5 @@
 | 2026-11-26 06:09 UTC | [A]000190 | Replaces A000185: a catch-all name is, or ends in, util, utils, utility, utilities, helper, helpers, or misc, or is exactly common. |
 | 2026-11-26 06:09 UTC | [A]000191 | Adds to A000189: the Python check also allows double-underscore names and visit_ methods named after ast classes. |
 | 2026-11-26 06:09 UTC | [A]000192 | Under D000181, the lint rule skips JavaScript and TypeScript names written only in capitals, which is accepted. |
+| 2026-11-26 06:24 UTC | [D]000193 | Resolves O000132 and replaces D000118: a PR that Dependabot opened stays exempt, even after others add commits. |
+| 2026-11-26 06:24 UTC | [A]000194 | The Linked issue section links the branch's issue with a closing word or "Part of", and only the repository owner's size:override label counts. |

@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from scripts.guard.repository import Git, run_git
+from scripts.report import report
 from scripts.standards.layout import layout_problems
 from scripts.standards.names import name_problems
 from scripts.standards.suppressions import suppression_problems
@@ -28,9 +29,7 @@ def main(root: Path, git: Git) -> int:
     problems = layout_problems(files) + name_problems(files)
     for name, content in files.items():
         problems.extend(suppression_problems(name, content or ""))
-    for problem in problems:
-        print(problem, file=sys.stderr)
-    return 1 if problems else 0
+    return report(problems)
 
 
 if __name__ == "__main__":

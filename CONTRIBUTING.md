@@ -40,16 +40,24 @@ catch mistakes and are not a security barrier.
 - Name your branch `<issue-number>-<kebab-summary>`, such as `42-add-health-check`.
 - Write the title as a [Conventional Commit](https://www.conventionalcommits.org), such as
   `feat(backend): add health check`.
-- Give the description four sections: Summary, Linked issue, Changes, and Testing.
+- Give the description four sections, each a `##` heading with text under it: Summary, Linked issue, Changes, and
+  Testing. Under Linked issue, link the issue your branch is named for, with words such as `Closes #42`, or
+  `Part of #42` if the issue stays open.
 - Change at most 400 lines, counting additions and deletions. Lockfiles and generated files do not count.
-  Split a larger change into several pull requests. Only the maintainer can approve an exception.
+  Split a larger change into several pull requests. Only the maintainer can approve an exception, by adding the
+  `size:override` label.
 - Update the documentation in the same pull request as the code it describes.
 
 Every pull request also raises the version in the root `package.json`, and your branch must be up to date with
 `master` before it is merged.
 
+`npm run check:pull-request` checks your branch's name, and the size of its committed changes against your copy of
+`origin/master`. GitHub also checks the title, the description, and the linked issue. To run all of these on an open
+pull request, use `npm run check:pull-request -- <number>`, which needs the [GitHub CLI](https://cli.github.com).
+Neither checks the version yet.
+
 Dependabot's pull requests are exempt from the rules about issues, branch names, titles, descriptions, size, and
-version increases, until someone else adds a commit to them. Tests, builds, and other quality checks still apply.
+version increases, even after someone else adds commits to them. Tests, builds, and other quality checks still apply.
 
 ## Write the change
 

@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -15,6 +15,7 @@
     "audit:dependencies": "npm run audit:node && npm run audit:python",
     "audit:node": "npm audit --omit=dev && npm audit --audit-level=high",
     "audit:python": "node scripts/launcher/launch.ts python -m pip_audit --requirement requirements.txt --require-hashes --disable-pip",
+    "check:pull-request": "node scripts/launcher/launch.ts python -m scripts.pull_request.check",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run scan:secrets && npm run audit:dependencies",
     "format": "prettier --write . && node scripts/launcher/launch.ts python -m ruff format",
     "format:check": "prettier --check . && node scripts/launcher/launch.ts python -m ruff format --check",
