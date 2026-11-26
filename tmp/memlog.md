@@ -196,3 +196,5 @@
 | 2026-11-26 06:09 UTC | [A]000192 | Under D000181, the lint rule skips JavaScript and TypeScript names written only in capitals, which is accepted. |
 | 2026-11-26 06:24 UTC | [D]000193 | Resolves O000132 and replaces D000118: a PR that Dependabot opened stays exempt, even after others add commits. |
 | 2026-11-26 06:24 UTC | [A]000194 | The Linked issue section links the branch's issue with a closing word or "Part of", and only the repository owner's size:override label counts. |
+| 2026-11-26 06:41 UTC | [A]000195 | Frontmatter values are double-quoted; titles and descriptions are plain text. Numbers may skip; a new one follows the highest. |
+| 2026-11-26 06:41 UTC | [A]000196 | docs/README.md is a committed generated file, so it counts toward no file, directory, or PR size limit. |

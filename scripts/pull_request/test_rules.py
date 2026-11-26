@@ -113,9 +113,10 @@ def test_the_linked_issue_must_match_the_branch(branch: str, text: str, problem:
     assert (problems == []) if problem is None else (problem in problems[0])
 
 
-def test_lines_in_lockfiles_do_not_count() -> None:
-    """Check that additions and deletions count, except in the top-level lockfiles."""
+def test_lines_in_lockfiles_and_generated_files_do_not_count() -> None:
+    """Check that additions and deletions count, except in the top-level lockfiles and generated files."""
     files = [("a.py", 3, 2), ("package-lock.json", 500, 1), ("requirements.txt", 9, 9), ("web/requirements.txt", 4, 0)]
+    files.append(("docs/README.md", 50, 5))
 
     counted = 3 + 2 + 4
     assert changed_lines(files) == counted

@@ -72,7 +72,7 @@ version increases, even after someone else adds commits to them. Tests, builds, 
 - `npm run lint` enforces these limits and names. It also rejects comments that turn a check off, tool ignore files
   such as `.prettierignore`, and tests that are skipped or run alone. It checks new files too, but not ignored ones.
   It catches common forms, so reviewers still watch for others, such as a rule turned off in a configuration file.
-  The check has no list of generated files yet. Add one with the first generated file that is committed.
+  If you commit a new generated file, add it to the list in `scripts/standards/layout.py`.
 - `npm run lint` also rejects common abbreviations in names, and copied code: a block of at least 30 tokens and
   5 lines in JavaScript, TypeScript, or Python, tests included. Move shared code to one place instead. If the name
   check rejects a name that an outside tool requires, allow just that name, in `scripts/standards/names.py` for
@@ -83,6 +83,19 @@ version increases, even after someone else adds commits to them. Tests, builds, 
 
 Tests and development must use their own data directory and port. They must never use the data of an installed copy
 of the application.
+
+## Write documentation
+
+`docs/adrs/` holds architecture decision records, and `docs/designs/` holds design documents. `docs/README.md` is a
+generated index of both.
+
+- `npm run document:new -- adr "<title>" "<description>"` creates the next numbered record and rebuilds the index.
+  Use `design` in place of `adr` for a design document.
+- After you change a title or description, run `npm run document:index`. `npm run lint` rejects an outdated index,
+  a bad file name, a number used twice, and bad frontmatter.
+- Write each frontmatter value in double quotes. Titles and descriptions are plain text, without quotation marks,
+  double spaces, links, or Markdown formatting, because the index shows them in a table. The check lists the rest
+  of what it rejects.
 
 ## Report a security problem
 

@@ -20,7 +20,13 @@ def test_a_file_over_300_lines_is_a_problem(content: str) -> None:
 
 @pytest.mark.parametrize(
     "path",
-    ["package-lock.json", "requirements.txt", "docs/adrs/0001-storage.md", "docs/designs/assets/diagram.svg"],
+    [
+        "package-lock.json",
+        "requirements.txt",
+        "docs/README.md",
+        "docs/adrs/0001-storage.md",
+        "docs/designs/assets/diagram.svg",
+    ],
 )
 def test_lockfiles_and_documents_may_be_long(path: str) -> None:
     """Check that lockfiles and documents may be long."""
