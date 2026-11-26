@@ -127,8 +127,10 @@ def test_run_git_ignores_variables_that_point_at_another_repository(
     """Check that run_git ignores variables that point at another repository."""
     seen: dict[str, str] = {}
 
-    def record(*_arguments: object, env: dict[str, str], **_options: object) -> subprocess.CompletedProcess[str]:
-        seen.update(env)
+    def record(*_arguments: object, **options: object) -> subprocess.CompletedProcess[str]:
+        environment = options["env"]
+        assert isinstance(environment, dict)
+        seen.update(environment)
         return subprocess.CompletedProcess([], 0, stdout="")
 
     monkeypatch.setattr("subprocess.run", record)

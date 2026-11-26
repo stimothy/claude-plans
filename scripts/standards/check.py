@@ -5,6 +5,7 @@ from pathlib import Path
 
 from scripts.guard.repository import Git, run_git
 from scripts.standards.layout import layout_problems
+from scripts.standards.names import name_problems
 from scripts.standards.suppressions import suppression_problems
 
 
@@ -24,7 +25,7 @@ def main(root: Path, git: Git) -> int:
         return 1
     names = sorted({name for name in listed.split("\0") if name})
     files = {name: _text(root / name) for name in names if (root / name).is_file()}
-    problems = layout_problems(files)
+    problems = layout_problems(files) + name_problems(files)
     for name, content in files.items():
         problems.extend(suppression_problems(name, content or ""))
     for problem in problems:

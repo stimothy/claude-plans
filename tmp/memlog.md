@@ -186,5 +186,11 @@
 | 2026-11-26 05:30 UTC | [D]000182 | Duplicated code: jscpd, which fails on any copied block above a minimum size, in tests too. |
 | 2026-11-26 05:30 UTC | [D]000183 | `docs/adrs/` and `docs/designs/` are exempt from both the 300-line and 10-file limits, and from directory name rules. |
 | 2026-11-26 05:30 UTC | [A]000184 | A directory named `migrations` is exempt from the 10-file limit, though its subdirectories are not. |
-| 2026-11-26 05:30 UTC | [A]000185 | A catch-all name is one that is, or ends in, util, utils, helper, helpers, or misc, or is exactly common. |
+| 2026-11-26 05:30 UTC | ~~[A]000185~~ | A catch-all name is one that is, or ends in, util, utils, helper, helpers, or misc, or is exactly common. |
 | 2026-11-26 05:38 UTC | [A]000186 | No generated file is committed yet, so the first one adds the list that exempts generated files from the limits. |
+| 2026-11-26 06:03 UTC | [D]000187 | Under D000182, jscpd fails on a copied block of at least 30 tokens and 5 lines in JavaScript, TypeScript, or Python. Other file types are not checked. |
+| 2026-11-26 06:03 UTC | [A]000188 | Under D000181, the Python and file name check uses the lint rule's default list, without application and configuration. |
+| 2026-11-26 06:03 UTC | [A]000189 | Names that outside tools choose are allowed: the docs and tmp directory or file names, and pytest's tmp_path and tmp_path_factory. |
+| 2026-11-26 06:09 UTC | [A]000190 | Replaces A000185: a catch-all name is, or ends in, util, utils, utility, utilities, helper, helpers, or misc, or is exactly common. |
+| 2026-11-26 06:09 UTC | [A]000191 | Adds to A000189: the Python check also allows double-underscore names and visit_ methods named after ast classes. |
+| 2026-11-26 06:09 UTC | [A]000192 | Under D000181, the lint rule skips JavaScript and TypeScript names written only in capitals, which is accepted. |

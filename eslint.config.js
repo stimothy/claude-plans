@@ -4,6 +4,7 @@ import eslint from "@eslint/js";
 import prettier from "eslint-config-prettier";
 import jsdoc from "eslint-plugin-jsdoc";
 import tsdoc from "eslint-plugin-tsdoc";
+import unicorn from "eslint-plugin-unicorn";
 import { defineConfig, includeIgnoreFile } from "eslint/config";
 import tseslint from "typescript-eslint";
 
@@ -46,6 +47,7 @@ export default defineConfig(
   tseslint.configs.strictTypeChecked,
   tseslint.configs.stylisticTypeChecked,
   {
+    plugins: { unicorn },
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -56,6 +58,15 @@ export default defineConfig(
       complexity: ["error", 10],
       "max-depth": ["error", 3],
       "max-params": ["error", 4],
+      "unicorn/name-replacements": [
+        "error",
+        {
+          // The structure check covers file names.
+          checkFilenames: false,
+          // These are full words, which the rule would shorten.
+          replacements: { application: false, applications: false, configuration: false },
+        },
+      ],
       "no-warning-comments": [
         "error",
         {

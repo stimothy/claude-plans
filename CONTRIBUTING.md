@@ -65,6 +65,11 @@ version increases, until someone else adds a commit to them. Tests, builds, and 
   such as `.prettierignore`, and tests that are skipped or run alone. It checks new files too, but not ignored ones.
   It catches common forms, so reviewers still watch for others, such as a rule turned off in a configuration file.
   The check has no list of generated files yet. Add one with the first generated file that is committed.
+- `npm run lint` also rejects common abbreviations in names, and copied code: a block of at least 30 tokens and
+  5 lines in JavaScript, TypeScript, or Python, tests included. Move shared code to one place instead. If the name
+  check rejects a name that an outside tool requires, allow just that name, in `scripts/standards/names.py` for
+  Python and file names or in `eslint.config.js` for JavaScript and TypeScript. The latter skips names written
+  only in capitals, such as `MAXIMUM_LEN`, so reviewers watch for those.
 - Add TSDoc comments to everything a TypeScript file exports.
 - Never commit secrets.
 

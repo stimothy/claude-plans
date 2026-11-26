@@ -1,0 +1,10 @@
+{
+  "minTokens": 30,
+  "minLines": 5,
+  "format": ["javascript", "jsx", "typescript", "tsx", "python"],
+  "crossFormats": [["javascript", "jsx", "typescript", "tsx"]],
+  "reporters": ["console"],
+  "exitCode": 1,
+  "gitignore": true,
+  "noTips": true
+}

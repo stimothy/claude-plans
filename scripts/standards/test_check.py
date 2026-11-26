@@ -31,14 +31,15 @@ def test_a_repository_without_problems_passes(tmp_path: Path, capsys: pytest.Cap
 
 def test_every_problem_is_listed(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Check that every problem is listed."""
-    root = repository(tmp_path, {"source/utils.py": b"value = 1  # noqa\n"})
+    root = repository(tmp_path, {"source/utils.py": b"env = 1  # noqa\n"})
 
     status = main(root, run_git)
 
     assert status == 1
     listed = capsys.readouterr().err
     assert "source/utils.py: 'utils.py' is a catch-all name" in listed
-    assert "source/utils.py:1: " in listed
+    assert "source/utils.py:1: has a comment" in listed
+    assert "source/utils.py:1: 'env' abbreviates" in listed
 
 
 @pytest.mark.parametrize(
