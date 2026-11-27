@@ -18,6 +18,9 @@ Setup keeps the Python that `.venv` already has, so delete `.venv` to change ver
   change `requirements.in`, and do not edit `requirements.txt` by hand.
 - `npm run format` rewrites files to match the formatters.
 - `npm test` runs the tests. It lists slow tests and fails a suite that runs for more than 30 seconds.
+- `npm run claude-plans -- <command>` runs the `claude-plans` command from your copy. `start`, `stop`, and `health`
+  each need `--data-directory` with a full path. Use a directory made for development, and pick another port with
+  `start --port`. `npm run claude-plans -- help` lists the options.
 
 ## Start with an issue
 

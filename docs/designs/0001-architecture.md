@@ -5,11 +5,11 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 
 ## Overview
 
-claude-plans is meant to be a planning studio for plans made with Claude. The application cannot run yet. Its
-packages hold the models that its parts will share, and the first parts of the backend. Around them is the
-repository: the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run
-on pull requests. This document describes what exists. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to
-use it.
+claude-plans is meant to be a planning studio for plans made with Claude. So far it is a server and the command
+that starts, checks, and stops it, run from the repository. Nothing sets up its database yet. Around the
+application is the repository: the scripts that set it up and keep its documents, the safeguards for Claude, and
+the checks that run on pull requests. This document describes what exists.
+[CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
 
 ```mermaid
 flowchart LR
@@ -28,10 +28,11 @@ exists only in clones where it could be installed.
 
 ## Packages
 
-The application's code lives in npm workspaces under `packages/`. So far there are three: `domain`, `backend`, and
-`logging`. `domain` defines the health report, the color settings, and what a client needs to find and stop the
-server, with the path and method of each API. Nothing serves the color settings yet. The definitions of the data
-are Zod schemas, so a program can check what it receives and get its TypeScript type from the same place.
+The application's code lives in npm workspaces under `packages/`. So far there are four: `domain`, `backend`,
+`cli`, and `logging`. `domain` defines the health report, the color settings, and what a client needs to start,
+find, and stop the server, with the path and method of each API. Nothing serves the color settings yet. The
+definitions of the data are Zod schemas, so a program can check what it receives and get its TypeScript type from
+the same place.
 
 The planned web page will run in a browser, so `domain` must not depend on Node.js. One type check covers its
 source without the Node.js types, and another covers its tests, which do use them. The package exports its
@@ -52,8 +53,8 @@ directory can be named. The code is told where the repository is instead of work
 guess its way to the real data. Nothing yet stops a caller from choosing the real data.
 
 The settings file may set `port`, `logLevel`, `theme`, and `colorVision`. Each is optional. For the port and the
-log level, a command option overrides the file, which overrides the default of port 4310 and level `info`. There
-are no commands yet to give those options.
+log level, an option of the `start` command overrides the file, which overrides the default of port 4310 and
+level `info`.
 
 A file that is not valid is an error, including one with an unknown name, so that a misspelled setting is not
 silently ignored. The backend writes only the color settings. It keeps the other settings and the comments, and
@@ -82,9 +83,9 @@ database in use waits up to five seconds. Each migration has its own file in
 
 ## Server
 
-`backend` has the code to run a server for one data directory, using
-[Fastify](../adrs/0003-fastify-for-the-rest-api.md). No program starts it yet. That comes with the planned
-`start` command, which will also choose the port, make the logger, and handle signals.
+`backend` runs a server for one data directory, using [Fastify](../adrs/0003-fastify-for-the-rest-api.md). Its
+server program, in `program/`, reads the settings, makes the logger, and stops the server cleanly when the system
+asks. It tells whoever started it whether the server is ready.
 
 The server reports its health at `/api/health` and says which data directory it uses at `/api/server`, so that a
 client can tell it reached the one it meant. The health report is ok only if the database is at the schema
@@ -112,12 +113,34 @@ could then lead to either one. So before listening, the server tries to connect 
 `localhost` can mean. The server names its data directory as the disk does, with links followed, so that one
 directory has one name however its path was typed. A client has to name its own directory the same way.
 
+## Command line
+
+`cli` is the `claude-plans` command, with `start`, `stop`, and `health`. Nothing installs it yet, so it runs from
+the repository with `npm run claude-plans`. Until the installed command exists, with its protections for the real
+data, every command must be given the full path of a data directory. Code under development then has no default
+that could lead to that data. Nothing yet stops a caller from naming it.
+
+`start` may not import the backend, so it runs the server program as a separate process and waits for its report.
+In the foreground, it then waits for the server to end. A terminal's Ctrl+C reaches both programs, but another
+signal may reach only the command, which passes it on. Windows cannot send a signal that a program handles, so
+there the command passes nothing on. With `--detached`, the server gets its own process group, so that closing the
+terminal does not stop it, and the command returns once the server is ready. Until then, a signal to the command
+ends the server program, which Ctrl+C would otherwise not reach. A server program that is not ready in 30 seconds
+is ended too.
+
+`stop` and `health` read the port from the data directory's `server.json`. A crash can leave a record that names a
+port which another program now holds, so they first ask the server which data directory it uses. Only then does
+`stop` send the token. They do not follow redirects, and a program that does not answer is reported as a problem,
+not as a stopped server. `stop` waits until the server has removed its record, and succeeds when no server is
+running. `health` never starts one. It exits with 0 only if the report is ok, and `--json` prints the report as
+the server gave it.
+
 ## Logging
 
-`logging` writes to `logs/` in the data directory. It is a separate package because the backend and the planned
-command both need it, and `domain` must run in a browser. The server writes to the logger that it is given, but no
-program makes one yet. It logs starting, stopping, and failures. It leaves out its token, and the errors that a
-faulty request causes, which can quote the request's body.
+`logging` writes to `logs/` in the data directory. It is a separate package because the backend and the command
+both need it, and `domain` must run in a browser. The server logs starting, stopping, and failures. It leaves out
+its token, and the errors that a faulty request causes, which can quote the request's body. The command logs only
+the commands that fail, and never creates a data directory just to log in it.
 
 Each entry is one line of JSON with a UTC time, a level, and a message. The levels are `error`, `warn`, `info`,
 and `debug`, and a logger drops entries with more detail than its own level. An entry about an error also has the
