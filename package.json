@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -35,12 +35,14 @@
     "test": "npm run test:node && npm run test:python",
     "test:node": "node scripts/launcher/launch.ts node --time-limit 30 node_modules/vitest/vitest.mjs run --coverage",
     "test:python": "node scripts/launcher/launch.ts python --time-limit 30 -m pytest",
-    "typecheck": "npm run typecheck:node && npm run typecheck:domain && npm run typecheck:logging && npm run typecheck:backend && npm run typecheck:python",
+    "typecheck": "npm run typecheck:node && npm run typecheck:domain && npm run typecheck:logging && npm run typecheck:backend && npm run typecheck:cli && npm run typecheck:python",
     "typecheck:backend": "tsc --project packages/backend/tsconfig.json",
     "typecheck:domain": "tsc --project packages/domain/tsconfig.json && tsc --project packages/domain/tsconfig.platform.json",
     "typecheck:logging": "tsc --project packages/logging/tsconfig.json",
     "typecheck:node": "tsc --project tsconfig.json",
-    "typecheck:python": "node scripts/launcher/launch.ts python -m mypy"
+    "typecheck:python": "node scripts/launcher/launch.ts python -m mypy",
+    "claude-plans": "node packages/cli/source/main.ts",
+    "typecheck:cli": "tsc --project packages/cli/tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

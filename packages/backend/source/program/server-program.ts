@@ -1,0 +1,102 @@
+/**
+ * Runs a server as a program of its own, which the claude-plans command starts as a separate process.
+ *
+ * @packageDocumentation
+ */
+import { isAbsolute } from "node:path";
+import { parseArgs } from "node:util";
+
+import type { ServerStartReport } from "@claude-plans/domain";
+import { createLogger, type Logger, type LogLevel } from "@claude-plans/logging";
+import type { z } from "zod";
+
+import { logLevelSchema, portSchema, type ServerOverrides, serverSettings } from "../server-settings.ts";
+import { type RunningServer, startServer } from "../server/server.ts";
+import { readSettings } from "../settings-file.ts";
+
+/** What the program is given, so that it does not reach for the process that it runs in. */
+export interface ServerProgram {
+  readonly arguments: readonly string[];
+  /** The application's version, which the health report gives. */
+  readonly version: string;
+  /** Tells whoever started the program whether the server is ready. */
+  readonly report: (report: ServerStartReport) => void;
+  /** Calls stop whenever the system asks the program to stop. */
+  readonly onStopRequest: (stop: () => void) => void;
+}
+
+interface Options extends ServerOverrides {
+  readonly dataDirectory: string;
+}
+
+interface Started {
+  readonly server: RunningServer;
+  readonly log: Logger;
+}
+
+// Returns the value of an option that may be left out, or explains which one is wrong.
+function optional<Value>(schema: z.ZodType<Value>, value: unknown, problem: string): Value | undefined {
+  const checked = schema.optional().safeParse(value);
+  if (!checked.success) {
+    throw new Error(problem);
+  }
+  return checked.data;
+}
+
+function readOptions(given: readonly string[]): Options {
+  const { values } = parseArgs({
+    args: [...given],
+    options: { "data-directory": { type: "string" }, port: { type: "string" }, "log-level": { type: "string" } },
+  });
+  const dataDirectory = values["data-directory"] ?? "";
+  // A relative path would be taken from the current directory, which could be the one with the real data.
+  if (!isAbsolute(dataDirectory)) {
+    throw new Error("--data-directory must give a full path.");
+  }
+  const port = values.port === undefined ? undefined : Number(values.port);
+  return {
+    dataDirectory,
+    port: optional(portSchema, port, "--port must be a whole number from 1 to 65535."),
+    logLevel: optional(logLevelSchema, values["log-level"], "--log-level must be error, warn, info, or debug."),
+  };
+}
+
+async function start(options: Options, version: string): Promise<Started> {
+  const { dataDirectory } = options;
+  const logger = (level: LogLevel): Logger => createLogger({ dataDirectory, program: "backend", level });
+  let settings;
+  try {
+    settings = serverSettings(readSettings(dataDirectory), options);
+  } catch (error) {
+    // The server logs its own failures to start, but it never saw this one.
+    logger(options.logLevel ?? "info").error("The server did not start", error);
+    throw error;
+  }
+  const log = logger(settings.logLevel);
+  return { server: await startServer({ dataDirectory, version, port: settings.port, log }), log };
+}
+
+/** Starts a server, reports whether that worked, and returns the program's exit code once the server has stopped. */
+export async function runServerProgram(program: ServerProgram): Promise<number> {
+  let started: Started;
+  try {
+    started = await start(readOptions(program.arguments), program.version);
+  } catch (error) {
+    program.report({ state: "failed", message: error instanceof Error ? error.message : String(error) });
+    return 1;
+  }
+  const { server, log } = started;
+  // A shutdown request logs its own failure, so only a stop that the system asked for is logged here.
+  program.onStopRequest(() => {
+    server.close().catch((error: unknown) => {
+      log.error("The server did not stop cleanly", error);
+    });
+  });
+  program.report({ state: "listening", port: server.port });
+  try {
+    await server.closed;
+    return 0;
+  } catch {
+    return 1;
+  }
+}

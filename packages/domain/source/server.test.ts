@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { serverContract, serverRecordFileName, serverRecordSchema, shutdownContract } from "./index.ts";
+import {
+  serverContract,
+  serverRecordFileName,
+  serverRecordSchema,
+  serverStartReportSchema,
+  shutdownContract,
+} from "./index.ts";
 
 const record = { port: 4310, token: "a".repeat(64) };
 
@@ -30,4 +36,20 @@ describe("the server APIs", () => {
   it("shut the server down with POST", () => {
     expect([shutdownContract.path, shutdownContract.shutDown.method]).toEqual(["/api/shutdown", "POST"]);
   });
+});
+
+describe("a server's start report", () => {
+  it.each([
+    { state: "listening", port: 4311 },
+    { state: "failed", message: "Port 4311 is already in use." },
+  ])("may be %j", (report) => {
+    expect(serverStartReportSchema.parse(report)).toEqual(report);
+  });
+
+  it.each([{ state: "listening" }, { state: "listening", port: 0 }, { state: "failed" }, { port: 4311 }])(
+    "may not be %j",
+    (invalid) => {
+      expect(serverStartReportSchema.safeParse(invalid).success).toBe(false);
+    },
+  );
 });

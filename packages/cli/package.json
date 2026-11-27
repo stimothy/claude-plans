@@ -1,0 +1,11 @@
+{
+  "name": "@claude-plans/cli",
+  "private": true,
+  "description": "The claude-plans command.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@claude-plans/domain": "*",
+    "@claude-plans/logging": "*"
+  }
+}

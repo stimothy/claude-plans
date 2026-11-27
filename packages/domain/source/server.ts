@@ -1,9 +1,23 @@
 /**
- * How a client finds a running server, makes sure that it is the right one, and stops it.
+ * How a client starts a server, finds a running one, makes sure that it is the right one, and stops it.
  *
  * @packageDocumentation
  */
 import { z } from "zod";
+
+const portSchema = z.int().min(1).max(65_535);
+
+/**
+ * Checks what a server program tells whoever started it, once it is listening or has failed to start. It is sent
+ * on the channel that Node.js gives a child process.
+ */
+export const serverStartReportSchema = z.discriminatedUnion("state", [
+  z.object({ state: z.literal("listening"), port: portSchema }),
+  z.object({ state: z.literal("failed"), message: z.string() }),
+]);
+
+/** Whether a server program started. */
+export type ServerStartReport = z.infer<typeof serverStartReportSchema>;
 
 /** The name of the file in the data directory where a running server records how to reach it. */
 export const serverRecordFileName = "server.json";
@@ -11,7 +25,7 @@ export const serverRecordFileName = "server.json";
 /** Checks what a running server records. */
 export const serverRecordSchema = z.object({
   /** The port that the server listens on. */
-  port: z.int().min(1).max(65_535),
+  port: portSchema,
   /** The secret that a request to shut down must give. It changes each time the server starts. */
   token: z.string().min(1),
 });
