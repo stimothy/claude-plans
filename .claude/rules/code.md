@@ -11,11 +11,17 @@ paths:
 - Write only tests that earn their cost. Unit tests mock everything outside the unit and run very fast, and
   integration tests use a real database. Keep many unit tests, fewer integration tests, and the fewest end-to-end
   tests.
+- Name a TypeScript test file `*.integration.test.ts` if it uses a real database, runs a server, or starts
+  another program, and `*.test.ts` otherwise. The name decides its Node.js suite and so its time limits: each unit
+  test gets Vitest's default 5 seconds and each integration test 30 seconds, and a whole run of the unit suite
+  is stopped after 30 seconds and of the integration suite after 2 minutes. Running one suite alone does not
+  check coverage; `npm run test:node` runs both and then checks it.
 - A test that uses data or runs a server creates its own temporary data directory and picks a free port, on
   every branch. It never uses `.claude-plans/` or the default port 4310.
 - Development scripts never use the real data by default.
 - Use full names without abbreviations. Standard terms such as API, CLI, URL, ID, and HTML are allowed, as are
-  names that outside tools require.
+  names that outside tools require. Keep `src` as the name of each package's code directory, which the
+  maintainer chose; the name check allows it only as a directory name, not as a file name or a name in code.
 - Keep files to 300 lines and directories to 10 files, and split by responsibility instead of creating
   catch-all directories such as `utils`, `helpers`, `common`, or `misc`. CONTRIBUTING.md lists the exemptions.
 - `backend`, `cli`, and `frontend` may import `domain` but never one another. Only `backend` and `cli` may

@@ -200,7 +200,7 @@
 | 2026-11-26 06:41 UTC | [A]000196 | docs/README.md is a committed generated file, so it counts toward no file, directory, or PR size limit. |
 | 2026-11-26 18:19 UTC | [A]000197 | logging and any package the boundary rule does not list import no other package, and a relative path may not leave its package. |
 | 2026-11-26 18:19 UTC | [A]000198 | The APIs are GET /api/health and GET and PATCH /api/settings; health holds status, version, and database access and migration version. |
-| 2026-11-26 18:19 UTC | [A]000199 | Package code lives in source/, since src is an abbreviation. Packages export TypeScript source; install (#26) decides any build. |
+| 2026-11-26 18:19 UTC | ~~[A]000199~~ | Package code lives in source/, since src is an abbreviation. Packages export TypeScript source; install (#26) decides any build. |
 | 2026-11-27 03:32 UTC | [A]000200 | The settings file is settings.yaml. Every setting is optional, and port is 1 to 65535. Unknown names and invalid values are errors, and such a file is never overwritten. |
 | 2026-11-27 03:32 UTC | [A]000201 | The backend is told the repository's path to form the default data directory. #24 adds the protections for real data. |
 | 2026-11-27 03:53 UTC | [A]000202 | Resolves O000061: with the UTC date in each file's name nothing is renamed, and each entry is one append, so several commands can share a file. |
@@ -214,7 +214,15 @@
 | 2026-11-27 05:16 UTC | [A]000210 | Health is ok only at the application's schema version. #25 adds the program that runs the server. |
 | 2026-11-27 05:16 UTC | [O]000211 | Which issue serves GET and PATCH /api/settings, which entry 198 plans? No issue names it. |
 | 2026-11-27 05:25 UTC | [A]000212 | A port is also taken if another program answers on it at 127.0.0.1 or ::1. The server names its data directory as realpathSync.native does, and clients must compare the same way. |
-| 2026-11-27 05:44 UTC | [A]000213 | Until #26 protects the real data, each command needs --data-directory with a full path. From the repository, the command runs with npm run claude-plans. |
+| 2026-11-27 05:44 UTC | ~~[A]000213~~ | Until #26 protects the real data, each command needs --data-directory with a full path. From the repository, the command runs with npm run claude-plans. |
 | 2026-11-27 05:44 UTC | [A]000214 | start refuses outdated or newer databases (entry 28) from #26, since nothing can create the database before install exists. |
 | 2026-11-27 05:44 UTC | [A]000215 | stop succeeds when no server runs. health then exits 1 and writes only to the error output; it exits 0 only when the report is ok. |
 | 2026-11-27 05:44 UTC | [A]000216 | The command runs the backend server program as a child process, which reports ready or failed. A server not ready in 30 seconds is ended. |
+| 2026-11-27 08:32 UTC | [D]000217 | Replaces A000199: package code lives in src/, which the naming check allows as a directory name only. Packages still export TypeScript source. |
+| 2026-11-27 08:32 UTC | [A]000218 | Resolves the build part of A000199: nothing is compiled. A build copies the packages without tests into app/builds/ in the data directory and runs npm ci without development dependencies or package scripts. A launcher in app/command/ runs the current build. |
+| 2026-11-27 08:32 UTC | [D]000219 | A plain install puts claude-plans on the path with a global npm install of the launcher's package, claude-plans-command. |
+| 2026-11-27 08:32 UTC | [A]000220 | Replaces A000213: real data is .claude-plans in the main checkout, found with Git. The repository's copy and development installs refuse it and everything inside it, except for npm run install:studio (--studio), the first plain install. An installed copy defaults to its own data directory. |
+| 2026-11-27 08:32 UTC | [A]000221 | A plain install also refuses when claude-plans on the path runs another installation that still exists. |
+| 2026-11-27 08:32 UTC | [A]000222 | Before install stops a server, the new build checks the database. An unreadable one passes, so that migrating can recover it. start refuses a database that is not at its version. |
+| 2026-11-27 08:32 UTC | [D]000223 | #26 is one PR with size:override, and it also holds the src rename and the split of the Node.js tests. |
+| 2026-11-27 08:32 UTC | [A]000224 | Applies D000119: a *.integration.test.ts file uses a real database, runs a server, or starts another program, and each of its tests has 30 seconds. Coverage minimums apply to both Node.js suites together. |
