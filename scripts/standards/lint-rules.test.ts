@@ -3,11 +3,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { beforeAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { lintCode, loadLinter, root } from "../linting/lint-code.ts";
-
-beforeAll(loadLinter, 30_000);
+import { lintCode, root } from "../linting/lint-code.ts";
 
 async function brokenRules(code: string, file: string): Promise<string[]> {
   const messages = await lintCode(code, join("scripts", file));

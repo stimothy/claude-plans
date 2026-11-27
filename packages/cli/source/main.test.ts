@@ -42,18 +42,24 @@ async function finish(child: ReturnType<typeof launch>) {
 const signals: NodeJS.Signals[] =
   process.platform === "win32" ? ["SIGINT", "SIGTERM"] : ["SIGINT", "SIGTERM", "SIGHUP"];
 
+type Result = Awaited<ReturnType<typeof finish>>;
+
+function expectAHealthyServerThatStopped(started: Result, health: Result, stopped: Result): void {
+  expect([started.code, health.code, stopped.code]).toEqual([0, 0, 0]);
+  expect([started.errors, health.output, stopped.output]).toEqual([
+    "",
+    expect.stringContaining("Status: ok"),
+    "The server stopped.\n",
+  ]);
+}
+
 describe("the claude-plans program", () => {
   it("returns from a start in the background, and gives each command's exit code", async () => {
     const started = await run("start", "--detached", `--port=${String(await freePort())}`);
     const health = await run("health");
     const stopped = await run("stop");
 
-    expect([started.code, health.code, stopped.code]).toEqual([0, 0, 0]);
-    expect([started.errors, health.output, stopped.output]).toEqual([
-      "",
-      expect.stringContaining("Status: ok"),
-      "The server stopped.\n",
-    ]);
+    expectAHealthyServerThatStopped(started, health, stopped);
   });
 
   it("installs a copy that runs the server on its own data directory, without being told which", async () => {
@@ -66,11 +72,7 @@ describe("the claude-plans program", () => {
     const stopped = await runInstalled("stop");
 
     expect(installed).toMatchObject({ code: 0, errors: "" });
-    expect([started.errors, health.output, stopped.output]).toEqual([
-      "",
-      expect.stringContaining("Status: ok"),
-      "The server stopped.\n",
-    ]);
+    expectAHealthyServerThatStopped(started, health, stopped);
   }, 20_000);
 
   it.each(signals)("stops its server in the foreground when it is sent %s", async (signal) => {

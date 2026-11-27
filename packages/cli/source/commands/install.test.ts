@@ -84,6 +84,11 @@ describe("installing into another data directory", () => {
   });
 });
 
+// The earlier application is still the current one, and no other build was left behind.
+function expectOnlyBuild(dataDirectory: string, build: string | undefined): void {
+  expect([installed(dataDirectory).build, ...builds(dataDirectory)]).toEqual([build, build]);
+}
+
 describe("installing while a server runs", () => {
   it("stops the server before migrating, and says to start it again", async () => {
     const data = await runningServer();
@@ -104,8 +109,7 @@ describe("installing while a server runs", () => {
     await expect(install(data)).rejects.toThrow("The database is newer.");
 
     expect(existsSync(join(data, "server.json"))).toBe(true);
-    expect(installed(data).build).toBe(before);
-    expect(builds(data)).toEqual([before]);
+    expectOnlyBuild(data, before);
   });
 
   it("fails without migrating when the server cannot be stopped", async () => {
@@ -125,8 +129,7 @@ describe("installing while a server runs", () => {
 
     await expect(install(data)).rejects.toThrow(/^Migration 1 failed\.$/);
 
-    expect(installed(data).build).toBe(before);
-    expect(builds(data)).toEqual([before]);
+    expectOnlyBuild(data, before);
   });
 
   it("says that the server was stopped when a migration fails after that", async () => {
