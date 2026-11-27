@@ -145,10 +145,16 @@ describe("saving the color settings", () => {
     expect(saved()).toBe("theme: dark\n");
   });
 
-  it("does not overwrite a file that it cannot understand", () => {
-    write("theme: sepia\n");
+  // The last three hold an empty string, which the parser gives no source text, as it does an empty document.
+  it.each([
+    ["theme: sepia\n", "theme"],
+    ["''\n", "expected object"],
+    ['""\n', "expected object"],
+    ["--- |\n", "expected object"],
+  ])("does not overwrite %j, which it cannot understand", (text, problem) => {
+    write(text);
 
-    expect(() => saveColorSettings(directory, { theme: "light" })).toThrow("theme");
-    expect(saved()).toBe("theme: sepia\n");
+    expect(() => saveColorSettings(directory, { theme: "light" })).toThrow(problem);
+    expect(saved()).toBe(text);
   });
 });

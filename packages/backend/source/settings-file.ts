@@ -59,7 +59,8 @@ function parse(text: string): Document {
     throw broken;
   }
   // After a "---" line with no value, the parser gives an empty value, which no setting could be added to.
-  if (isScalar(document.contents) && document.contents.source === "") {
+  // An empty string has no source text either, so the value must also be null, not a string.
+  if (isScalar(document.contents) && document.contents.value === null && document.contents.source === "") {
     document.comment = document.contents.comment ?? null;
     document.contents = null;
   }
