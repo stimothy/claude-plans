@@ -28,6 +28,6 @@ describe("the server APIs", () => {
   });
 
   it("shut the server down with POST", () => {
-    expect([shutdownContract.path, shutdownContract.request.method]).toEqual(["/api/shutdown", "POST"]);
+    expect([shutdownContract.path, shutdownContract.shutDown.method]).toEqual(["/api/shutdown", "POST"]);
   });
 });

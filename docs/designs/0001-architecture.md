@@ -104,8 +104,13 @@ record is removed when the server stops, and a record that a crash left is remov
 A data directory has one server at most, whatever its port. A server holds an unfinished transaction on a small
 SQLite database, `server-lock.sqlite`, for as long as it runs. The operating system releases that lock however a
 program ends, so a crash cannot block the next start, which a file that merely names a running server could do. A
-test on every operating system starts several programs at once. A port that another program holds is reported, and
-the server does not choose a different one.
+test on every operating system starts several programs at once.
+
+A port that another program holds is reported, and the server does not choose a different one. Some systems let a
+server listen on `127.0.0.1` while another program has the same port on another local address, and `localhost`
+could then lead to either one. So before listening, the server tries to connect to the port at both addresses that
+`localhost` can mean. The server names its data directory as the disk does, with links followed, so that one
+directory has one name however its path was typed. A client has to name its own directory the same way.
 
 ## Logging
 

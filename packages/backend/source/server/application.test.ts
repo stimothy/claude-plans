@@ -17,14 +17,9 @@ beforeEach(() => {
 });
 
 // Nothing listens here, so the requests are made without a network.
-async function send(method: "GET" | "POST", url: string, payload?: string): Promise<{ status: number; body: string }> {
+async function send(method: "GET", url: string): Promise<{ status: number; body: string }> {
   const application = createApplication(options);
-  const answer = await application.inject({
-    method,
-    url,
-    headers: { "content-type": "application/json" },
-    ...(payload === undefined ? {} : { payload }),
-  });
+  const answer = await application.inject({ method, url });
   await application.close();
   return { status: answer.statusCode, body: answer.body };
 }
@@ -42,11 +37,15 @@ describe("a request that fails", () => {
     expect(log.error.mock.calls).toEqual([["The server could not handle GET /api/health", failure]]);
   });
 
-  it("keeps what a faulty request holds out of the log and the answer", async () => {
-    const answer = await send("POST", "/api/shutdown", '{"secret": oops');
+  // An error about a request may quote it.
+  it("keeps what a faulty request's error says out of every log and the answer", async () => {
+    vi.mocked(isFromThisServer).mockImplementation(() => {
+      throw Object.assign(new Error("quoted from the request"), { statusCode: 400 });
+    });
 
-    expect(answer.status).toBe(400);
-    expect(answer.body).not.toContain("oops");
-    expect(log.error).not.toHaveBeenCalled();
+    const answer = await send("GET", "/api/health");
+
+    expect(answer).toEqual({ status: 400, body: '{"message":"The server could not handle the request."}' });
+    expect(Object.values(log).flatMap((write) => write.mock.calls)).toEqual([]);
   });
 });

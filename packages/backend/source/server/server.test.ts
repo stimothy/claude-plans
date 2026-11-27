@@ -1,69 +1,21 @@
-import { existsSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { request } from "node:http";
+import { existsSync, mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { healthContract, serverContract, serverRecordSchema, shutdownContract } from "@claude-plans/domain";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { healthContract, serverContract, serverRecordSchema } from "@claude-plans/domain";
+import { expect, it } from "vitest";
 
 import { migrate } from "../database/migrate.ts";
-import { type RunningServer, startServer } from "./server.ts";
+import { useTestServers } from "./test-servers.ts";
 
-let temporary = "";
-let directory = "";
-let running: RunningServer[] = [];
-const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
+const { directory, log, start, send, shutDown } = useTestServers();
 
-beforeEach(() => {
-  temporary = mkdtempSync(join(tmpdir(), "claude-plans-server-"));
-  directory = join(temporary, "data");
-  vi.resetAllMocks();
-});
-
-afterEach(async () => {
-  await Promise.all(running.map((server) => server.close()));
-  running = [];
-  rmSync(temporary, { recursive: true, force: true });
-});
-
-// Port 0 asks the system for a free port.
-async function start(port = 0): Promise<RunningServer> {
-  const server = await startServer({ dataDirectory: directory, version: "1.2.3", port, log });
-  running.push(server);
-  return server;
-}
-
-const recordFile = (): string => join(directory, "server.json");
+const recordFile = (): string => join(directory(), "server.json");
 const record = (): { port: number; token: string } =>
   serverRecordSchema.parse(JSON.parse(readFileSync(recordFile(), "utf8")));
 
-interface Answer {
-  readonly status: number | undefined;
-  readonly body: unknown;
-}
-
-// Unlike fetch, this can send any Host header.
-function send(port: number, method: string, path: string, headers: Record<string, string> = {}): Promise<Answer> {
-  return new Promise((resolve, reject) => {
-    // Each request has its own connection, so that none reuses one to a server that has stopped.
-    const sent = request({ host: "127.0.0.1", port, method, path, headers, agent: false }, (response) => {
-      let text = "";
-      response.on("data", (chunk) => (text += String(chunk)));
-      response.on("end", () => {
-        resolve({ status: response.statusCode, body: JSON.parse(text) as unknown });
-      });
-    });
-    sent.on("error", reject);
-    sent.end();
-  });
-}
-
-const shutDown = (port: number, headers: Record<string, string>): Promise<Answer> =>
-  send(port, shutdownContract.request.method, shutdownContract.path, headers);
-
 it("reports its health, the application's version, and the database", async () => {
-  migrate(directory);
+  migrate(directory());
   const { port } = await start();
 
   const answer = await send(port, "GET", healthContract.path);
@@ -78,15 +30,18 @@ it("does not set up a database that is missing", async () => {
   const answer = await send(port, "GET", healthContract.path);
 
   expect(answer.body).toMatchObject({ status: "error", database: { accessible: false } });
-  expect(existsSync(join(directory, "database.sqlite"))).toBe(false);
+  expect(existsSync(join(directory(), "database.sqlite"))).toBe(false);
 });
 
-it("says which data directory it uses", async () => {
-  const { port } = await start();
+// A client checks the name with the same function. On a system that ignores case, both names are one directory.
+it("names its data directory as the disk does, however the path was typed", async () => {
+  mkdirSync(directory(), { recursive: true });
+  const typed = join(directory(), "..", "DATA");
+  const { port } = await start(0, typed);
 
   const answer = await send(port, "GET", serverContract.path);
 
-  expect(answer.body).toEqual({ dataDirectory: realpathSync(directory) });
+  expect(answer.body).toEqual({ dataDirectory: realpathSync.native(typed) });
 });
 
 it.each([

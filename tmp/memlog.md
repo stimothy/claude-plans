@@ -213,3 +213,4 @@
 | 2026-11-27 05:16 UTC | [A]000209 | One server per data directory is kept by a SQLite lock on server-lock.sqlite, which the system releases after a crash. |
 | 2026-11-27 05:16 UTC | [A]000210 | Health is ok only at the application's schema version. #25 adds the program that runs the server. |
 | 2026-11-27 05:16 UTC | [O]000211 | Which issue serves GET and PATCH /api/settings, which entry 198 plans? No issue names it. |
+| 2026-11-27 05:25 UTC | [A]000212 | A port is also taken if another program answers on it at 127.0.0.1 or ::1. The server names its data directory as realpathSync.native does, and clients must compare the same way. |

@@ -7,14 +7,12 @@ import { randomBytes } from "node:crypto";
 import { mkdirSync, realpathSync } from "node:fs";
 
 import type { Logger } from "@claude-plans/logging";
-import type { FastifyInstance } from "fastify";
 
+import { lockDataDirectory } from "../instance-lock/instance-lock.ts";
+import { listenLocally } from "../listening/listen-locally.ts";
 import { createApplication } from "./application.ts";
-import { lockDataDirectory } from "./instance-lock.ts";
 import { removeServerRecord, writeServerRecord } from "./server-record.ts";
 
-// Only programs on this computer can reach this address.
-const localAddress = "127.0.0.1";
 const tokenBytes = 32;
 
 /** What to serve, and where. */
@@ -37,36 +35,16 @@ export interface RunningServer {
   readonly close: () => Promise<void>;
 }
 
-async function listen(application: FastifyInstance, port: number): Promise<{ address: string; port: number }> {
-  try {
-    await application.listen({ host: localAddress, port });
-  } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "EADDRINUSE") {
-      throw new Error(`Port ${String(port)} is already in use.`, { cause: error });
-    }
-    throw error;
-  }
-  const bound = application.server.address();
-  // A string would be the path of a pipe, which the server never listens on.
-  if (bound === null || typeof bound === "string") {
-    throw new Error("The server is not listening.");
-  }
-  return bound;
-}
-
 // Makes the function that stops the server, and the promise that settles when it has.
 function stopping(stop: () => Promise<void>): Pick<RunningServer, "close" | "closed"> {
-  let finish: (result: Promise<void>) => void = () => undefined;
-  const closed = new Promise<void>((resolve) => {
-    finish = resolve;
-  });
+  const { promise: closed, resolve } = Promise.withResolvers<undefined>();
   let started = false;
-  const close = (): Promise<void> => {
+  const close = async (): Promise<void> => {
     if (!started) {
       started = true;
-      finish(stop());
+      resolve(stop().then(() => undefined));
     }
-    return closed;
+    await closed;
   };
   return { close, closed };
 }
@@ -77,16 +55,7 @@ async function serve(options: ServerStartOptions, release: () => void): Promise<
   // A server that crashed may have left its record, which no longer leads to a server.
   removeServerRecord(dataDirectory);
   const token = randomBytes(tokenBytes).toString("hex");
-  let shutDown = (): void => undefined;
-  const application = createApplication({
-    dataDirectory,
-    version,
-    token,
-    log,
-    shutDown: () => {
-      shutDown();
-    },
-  });
+  // The application below exists by the time that anything can ask to stop it.
   const lifecycle = stopping(async () => {
     try {
       await application.close();
@@ -96,16 +65,17 @@ async function serve(options: ServerStartOptions, release: () => void): Promise<
       release();
     }
   });
-  shutDown = () => {
+  const shutDown = (): void => {
     lifecycle.close().catch((error: unknown) => {
       log.error("The server did not stop cleanly", error);
     });
   };
+  const application = createApplication({ dataDirectory, version, token, log, shutDown });
   try {
-    const bound = await listen(application, options.port);
-    writeServerRecord(dataDirectory, { port: bound.port, token });
-    log.info(`The server is listening on port ${String(bound.port)}`);
-    return { ...bound, ...lifecycle };
+    const { address, port } = await listenLocally(application, options.port);
+    writeServerRecord(dataDirectory, { port, token });
+    log.info(`The server is listening on port ${String(port)}`);
+    return { address, port, ...lifecycle };
   } catch (error) {
     await application.close();
     throw error;
@@ -120,8 +90,8 @@ async function serve(options: ServerStartOptions, release: () => void): Promise<
 export async function startServer(options: ServerStartOptions): Promise<RunningServer> {
   try {
     mkdirSync(options.dataDirectory, { recursive: true });
-    // Following links gives a directory one name, however it was reached.
-    const dataDirectory = realpathSync(options.dataDirectory);
+    // The name on disk is the same however the directory was reached, through a link or in another letter case.
+    const dataDirectory = realpathSync.native(options.dataDirectory);
     const release = lockDataDirectory(dataDirectory);
     try {
       return await serve({ ...options, dataDirectory }, release);

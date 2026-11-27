@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -75,6 +75,12 @@ it("is free again after the program that held it is killed", async () => {
   lockDataDirectory(directory)();
 });
 
-it("reports other failures as they are", () => {
+it("reports other failures to open the lock as they are", () => {
   expect(() => lockDataDirectory(join(directory, "missing"))).toThrow("unable to open database file");
+});
+
+it("does not take a damaged lock file for a running server", () => {
+  writeFileSync(join(directory, "server-lock.sqlite"), "not a database".repeat(100));
+
+  expect(() => lockDataDirectory(directory)).toThrow("file is not a database");
 });
