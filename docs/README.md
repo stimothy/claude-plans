@@ -6,7 +6,10 @@ When sources disagree, ADRs outrank code, and code outranks design documents.
 
 ## Architecture decision records
 
-None yet.
+| Document                                                              | Description                                                                        |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [SQLite through node:sqlite](adrs/0001-sqlite-through-node-sqlite.md) | The database is SQLite, used with plain SQL through the module built into Node.js. |
+| [Forward-only migrations](adrs/0002-forward-only-migrations.md)       | The database only moves forward, one transaction for each numbered migration.      |
 
 ## Design documents
 
