@@ -226,3 +226,4 @@
 | 2026-11-27 08:32 UTC | [A]000222 | Before install stops a server, the new build checks the database. An unreadable one passes, so that migrating can recover it. start refuses a database that is not at its version. |
 | 2026-11-27 08:32 UTC | [D]000223 | #26 is one PR with size:override, and it also holds the src rename and the split of the Node.js tests. |
 | 2026-11-27 08:32 UTC | [A]000224 | Applies D000119: a *.integration.test.ts file uses a real database, runs a server, or starts another program, and each of its tests has 30 seconds. Coverage minimums apply to both Node.js suites together. |
+| 2026-11-27 08:54 UTC | [D]000225 | .claude/settings.json makes Claude Code ask before a command that names install:studio or --studio. |

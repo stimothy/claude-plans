@@ -240,6 +240,11 @@ silently allow everything. Blocking after a timeout needs Claude Code 2.1.295 or
 let the command run. Reading command text cannot see through a deliberate disguise, or catch deletion by other
 programs.
 
+The settings also make Claude Code ask before any Bash command whose text names `install:studio` or `--studio`,
+which install into the real data from the repository. It asks even about a command that only mentions them. This
+does not cover a command run with another tool, such as PowerShell, or the same install typed another way or run
+by another program.
+
 The second one is a Git `pre-push` hook that rejects pushes to `master` from a clone, with or without Claude.
 `npm install` and `npm ci` copy it into the clone's own hooks directory. It is copied, and not read from the
 working tree, so that checking out a branch cannot change which hook runs. A clone with its own `pre-push` hook
