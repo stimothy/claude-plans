@@ -62,7 +62,7 @@
 | 2026-11-25 22:24 UTC | ~~[O]000058~~ | How is the log level changed? |
 | 2026-11-25 22:24 UTC | ~~[O]000059~~ | Where does logging code shared by the backend and CLI live, given that only domain may be imported? |
 | 2026-11-25 22:24 UTC | ~~[O]000060~~ | Are web page errors recorded in the log files? |
-| 2026-11-25 22:24 UTC | [O]000061 | What rotates log files reliably on every supported system, including with several CLI commands at once? |
+| 2026-11-25 22:24 UTC | ~~[O]000061~~ | What rotates log files reliably on every supported system, including with several CLI commands at once? |
 | 2026-11-25 22:40 UTC | [D]000062 | Resolves O000038: install puts claude-plans on the user's path; the first run uses a script inside the repository. |
 | 2026-11-25 22:43 UTC | [D]000063 | Development, including branches in the maintainer's own copy, must never lose or alter real data; Claude respects it. |
 | 2026-11-25 22:43 UTC | ~~[O]000064~~ | How is real data kept apart from development, given that A000030 does not cover branches in the same directory? |
@@ -203,3 +203,5 @@
 | 2026-11-26 18:19 UTC | [A]000199 | Package code lives in source/, since src is an abbreviation. Packages export TypeScript source; install (#26) decides any build. |
 | 2026-11-27 03:32 UTC | [A]000200 | The settings file is settings.yaml. Every setting is optional, and port is 1 to 65535. Unknown names and invalid values are errors, and such a file is never overwritten. |
 | 2026-11-27 03:32 UTC | [A]000201 | The backend is told the repository's path to form the default data directory. #24 adds the protections for real data. |
+| 2026-11-27 03:53 UTC | [A]000202 | Resolves O000061: with the UTC date in each file's name nothing is renamed, and each entry is one append, so several commands can share a file. |
+| 2026-11-27 03:53 UTC | [A]000203 | The 14 days include today. Old files are deleted with each day's first entry. A log that cannot be written is reported on stderr and stops nothing. |

@@ -1,0 +1,8 @@
+{
+  "name": "@claude-plans/logging",
+  "private": true,
+  "description": "Logging for the claude-plans server and command.",
+  "license": "MIT",
+  "type": "module",
+  "exports": "./source/index.ts"
+}

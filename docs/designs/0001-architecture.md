@@ -28,8 +28,8 @@ exists only in clones where it could be installed.
 
 ## Packages
 
-The application's code lives in npm workspaces under `packages/`. So far there are two, `domain` and `backend`.
-`domain` defines the health report and the color settings, with the path and method of the API for each. Nothing
+The application's code lives in npm workspaces under `packages/`. So far there are three: `domain`, `backend`, and
+`logging`. `domain` defines the health report and the color settings, with the path and method of the API for each. Nothing
 serves those APIs yet. The definitions are Zod schemas, so a program can check the data it receives and get its
 TypeScript type from the same place.
 
@@ -60,6 +60,25 @@ silently ignored. The backend writes only the color settings. It keeps the other
 it never writes over a file that it cannot understand. It writes a new file and then renames it over the old one,
 so that a failed write cannot leave half of a file. The new file does not keep the old one's permissions, and a
 symbolic link in that place is replaced, not followed.
+
+## Logging
+
+`logging` writes to `logs/` in the data directory. It is a separate package because the backend and the planned
+command both need it, and `domain` must run in a browser. Nothing writes logs yet.
+
+Each entry is one line of JSON with a UTC time, a level, and a message. The levels are `error`, `warn`, `info`,
+and `debug`, and a logger drops entries with more detail than its own level. An entry about an error also has the
+stack traces of the error and of those behind it. It leaves out their other properties, which can hold secrets or
+the body of a request. A message is written as given, so the code that logs must keep both out of it. An error's
+own message is part of its stack trace, so this also applies to errors that quote their input.
+
+Each program writes its own file for each UTC day, such as `backend-2026-03-15.log`. Because the date is in the
+name, no file is ever renamed or reopened under a new name, which is hard to do safely when several commands run
+at once. Each entry is added to the end of the file with a single write. A test on every operating system has
+several programs write to one file at the same time. With its first entry of each day, a program deletes its
+files that are older than 14 days, counting today. One that cannot be deleted does not stop the others. A failure
+to write or delete a log is reported on the error output, and the program carries on, so that logging never hides
+the problem it was meant to record.
 
 ## Scripts and the launcher
 
