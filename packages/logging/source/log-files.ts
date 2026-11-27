@@ -27,14 +27,25 @@ export function appendLine(directory: string, program: string, time: Date, line:
   appendFileSync(join(directory, fileName(program, time)), `${line}\n`);
 }
 
-/** Deletes the program's files that are older than the 14 days up to and including today. */
-export function deleteOldFiles(directory: string, program: string, today: Date): void {
+// Returns nothing, or why a file could not be deleted.
+function deleteFile(path: string): unknown[] {
+  try {
+    // Another program may have deleted the file already, which is not an error.
+    rmSync(path, { force: true });
+    return [];
+  } catch (error) {
+    return [error];
+  }
+}
+
+/**
+ * Deletes the program's files that are older than the 14 days up to and including today. One that cannot be
+ * deleted does not stop the others, and the reasons are returned.
+ */
+export function deleteOldFiles(directory: string, program: string, today: Date): unknown[] {
   const oldest = fileName(program, new Date(today.getTime() - (daysKept - 1) * millisecondsPerDay));
   const dated = new RegExp(String.raw`^${program}-\d{4}-\d{2}-\d{2}\.log$`);
-  for (const name of readdirSync(directory)) {
-    if (dated.test(name) && name < oldest) {
-      // Another program may have deleted the file already, which is not an error.
-      rmSync(join(directory, name), { force: true });
-    }
-  }
+  return readdirSync(directory)
+    .filter((name) => dated.test(name) && name < oldest)
+    .flatMap((name) => deleteFile(join(directory, name)));
 }

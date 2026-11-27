@@ -32,6 +32,11 @@ export type Log = (message: string, thrown?: unknown) => void;
 /** A way to write an entry at each level. */
 export type Logger = Readonly<Record<LogLevel, Log>>;
 
+// The console ignores a failure of the error output itself, which would otherwise end the program.
+function report(problem: string, error: unknown): void {
+  console.error(`${problem}: ${String(error)}`);
+}
+
 /**
  * Makes a logger that writes to logs/ in the data directory. Entries with more detail than the chosen level are
  * dropped. A log that cannot be written is reported on the error output, and the program carries on.
@@ -41,29 +46,31 @@ export function createLogger(options: LoggerOptions): Logger {
   const directory = join(dataDirectory, "logs");
   let checked = "";
 
-  const write = (entryLevel: LogLevel, message: string, thrown: unknown): void => {
-    if (logLevels.indexOf(entryLevel) > logLevels.indexOf(level)) {
-      return;
-    }
-    const time = now();
-    const stack = thrown === undefined ? undefined : stackTrace(thrown);
-    const line = JSON.stringify({ time: time.toISOString(), level: entryLevel, message, stack });
-    try {
-      appendLine(directory, program, time, line);
-      // Old files are looked for with the first entry of each day, so a server that runs for weeks deletes them.
-      if (utcDate(time) !== checked) {
-        checked = utcDate(time);
-        deleteOldFiles(directory, program, time);
+  // Old files are looked for with the first entry of each day, so a server that runs for weeks deletes them.
+  const deleteOldFilesOncePerDay = (time: Date): void => {
+    if (utcDate(time) !== checked) {
+      checked = utcDate(time);
+      for (const error of deleteOldFiles(directory, program, time)) {
+        report("Cannot delete an old log", error);
       }
-    } catch (error) {
-      process.stderr.write(`Cannot write the log: ${String(error)}\n`);
     }
   };
 
   const at =
     (entryLevel: LogLevel): Log =>
     (message, thrown) => {
-      write(entryLevel, message, thrown);
+      if (logLevels.indexOf(entryLevel) > logLevels.indexOf(level)) {
+        return;
+      }
+      try {
+        const time = now();
+        const stack = thrown === undefined ? undefined : stackTrace(thrown);
+        const line = JSON.stringify({ time: time.toISOString(), level: entryLevel, message, stack });
+        appendLine(directory, program, time, line);
+        deleteOldFilesOncePerDay(time);
+      } catch (error) {
+        report("Cannot write the log", error);
+      }
     };
   return { error: at("error"), warn: at("warn"), info: at("info"), debug: at("debug") };
 }

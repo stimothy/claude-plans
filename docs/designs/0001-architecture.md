@@ -76,8 +76,9 @@ Each program writes its own file for each UTC day, such as `backend-2026-03-15.l
 name, no file is ever renamed or reopened under a new name, which is hard to do safely when several commands run
 at once. Each entry is added to the end of the file with a single write. A test on every operating system has
 several programs write to one file at the same time. With its first entry of each day, a program deletes its
-files that are older than 14 days, counting today. A log that cannot be written is reported on the error output,
-and the program carries on, so that logging never hides the problem it was meant to record.
+files that are older than 14 days, counting today. One that cannot be deleted does not stop the others. A failure
+to write or delete a log is reported on the error output, and the program carries on, so that logging never hides
+the problem it was meant to record.
 
 ## Scripts and the launcher
 
