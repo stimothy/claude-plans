@@ -6,9 +6,10 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 ## Overview
 
 claude-plans is meant to be a planning studio for plans made with Claude. The application cannot run yet. Its
-first package holds the models that its parts will share. Around it is the repository: the scripts that set it
-up and keep its documents, the safeguards for Claude, and the checks that run on pull requests. This document
-describes what exists. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
+packages hold the models that its parts will share, and the first parts of the backend. Around them is the
+repository: the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run
+on pull requests. This document describes what exists. [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to
+use it.
 
 ```mermaid
 flowchart LR
@@ -27,10 +28,10 @@ exists only in clones where it could be installed.
 
 ## Packages
 
-The application's code lives in npm workspaces under `packages/`. So far there is one, `domain`. It defines the
-health report and the color settings, with the path and method of the API for each. Nothing serves those APIs
-yet. The definitions are Zod schemas, so a program can check the data it receives and get its TypeScript type
-from the same place.
+The application's code lives in npm workspaces under `packages/`. So far there are two, `domain` and `backend`.
+`domain` defines the health report and the color settings, with the path and method of the API for each. Nothing
+serves those APIs yet. The definitions are Zod schemas, so a program can check the data it receives and get its
+TypeScript type from the same place.
 
 The planned web page will run in a browser, so `domain` must not depend on Node.js. One type check covers its
 source without the Node.js types, and another covers its tests, which do use them. The package exports its
@@ -42,6 +43,22 @@ A lint rule in `scripts/boundaries` keeps imports between packages pointing one 
 know may import none. The rule also rejects a path that leaves its package, which would otherwise get around
 the names. It reads the imports in the code, not what runs, so it catches mistakes rather than deliberate
 disguises.
+
+## Local data and settings
+
+The data directory is meant to hold everything that the studio saves. So far `backend` only chooses it and
+handles its settings file, `settings.yaml`. The default is `.claude-plans/` in the repository, and a different
+directory can be named. The code is told where the repository is instead of working it out, so that it cannot
+guess its way to the real data. Nothing yet stops a caller from choosing the real data.
+
+The settings file may set `port`, `logLevel`, `theme`, and `colorVision`. Each is optional. For the port and the
+log level, a command option overrides the file, which overrides the default of port 4310 and level `info`. There
+are no commands yet to give those options.
+
+A file that is not valid is an error, including one with an unknown name, so that a misspelled setting is not
+silently ignored. The backend writes only the color settings. It keeps the other settings and the comments, and
+it never writes over a file that it cannot understand. It writes a new file and then renames it over the old one,
+so that a failed write cannot leave half of a file.
 
 ## Scripts and the launcher
 
