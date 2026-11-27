@@ -46,8 +46,8 @@ disguises.
 
 ## Local data and settings
 
-The data directory is meant to hold everything that the studio saves. So far `backend` only chooses it and
-handles its settings file, `settings.yaml`. The default is `.claude-plans/` in the repository, and a different
+The data directory is meant to hold everything that the studio saves. `backend` chooses it and handles its
+settings file, `settings.yaml`. The default is `.claude-plans/` in the repository, and a different
 directory can be named. The code is told where the repository is instead of working it out, so that it cannot
 guess its way to the real data. Nothing yet stops a caller from choosing the real data.
 
@@ -60,6 +60,23 @@ silently ignored. The backend writes only the color settings. It keeps the other
 it never writes over a file that it cannot understand. It writes a new file and then renames it over the old one,
 so that a failed write cannot leave half of a file. The new file does not keep the old one's permissions, and a
 symbolic link in that place is replaced, not followed.
+
+## Database
+
+The database is `database.sqlite` in the data directory. `backend` can create it, migrate it, and read its schema
+version, but no program does these yet. [SQLite through node:sqlite](../adrs/0001-sqlite-through-node-sqlite.md)
+and [Forward-only migrations](../adrs/0002-forward-only-migrations.md) record the main choices.
+
+The schema version is the number of the last migration that ran. There are no migrations yet, so a new database
+holds only the table that tracks them, at version 0. Reading the version opens the database read-only and never
+creates one, so that a check of its health cannot set it up. It tells a database that was never set up apart from
+one at version 0.
+
+Before writing, migrating checks that the migrations are numbered in order and that the database is not newer
+than they are. Two branches that add a migration with the same number would otherwise both appear to work. Each
+transaction takes the write lock and reads the version again, in case another program has migrated in the
+meantime. A program that finds the database in use waits up to five seconds. Each migration has its own file in
+`database/migrations/`, a directory that may grow past the usual limit of ten files.
 
 ## Logging
 

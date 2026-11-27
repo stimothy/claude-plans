@@ -36,7 +36,7 @@
 | 2026-11-25 05:37 UTC | [A]000032 | Node.js 24 is the required major version because it is installed locally and node:sqlite worked on 24.18.0. |
 | 2026-11-25 05:37 UTC | [A]000033 | The 400-line limit counts additions plus deletions. |
 | 2026-11-25 05:37 UTC | [A]000034 | Document numbering is separate for ADRs and designs, and an ADR date is its UTC creation date. |
-| 2026-11-25 05:37 UTC | [O]000035 | Confirm the official stability status of node:sqlite before writing its ADR. |
+| 2026-11-25 05:37 UTC | ~~[O]000035~~ | Confirm the official stability status of node:sqlite before writing its ADR. |
 | 2026-11-25 05:37 UTC | ~~[O]000036~~ | Which bootstrap decisions need ADRs? Candidates are SQLite access, migrations, package boundaries, and Fastify. |
 | 2026-11-25 05:37 UTC | ~~[O]000037~~ | What time limit should each test suite have? |
 | 2026-11-25 05:37 UTC | ~~[O]000038~~ | How is the claude-plans command put on the user's path during local setup? |
@@ -205,3 +205,5 @@
 | 2026-11-27 03:32 UTC | [A]000201 | The backend is told the repository's path to form the default data directory. #24 adds the protections for real data. |
 | 2026-11-27 03:53 UTC | [A]000202 | Resolves O000061: with the UTC date in each file's name nothing is renamed, and each entry is one append, so several commands can share a file. |
 | 2026-11-27 03:53 UTC | [A]000203 | The 14 days include today. Old files are deleted with each day's first entry. A log that cannot be written is reported on stderr and stops nothing. |
+| 2026-11-27 04:11 UTC | [A]000204 | Resolves O000035: the Node.js 24 docs call node:sqlite a release candidate, not yet stable, from 24.15.0, the minimum already required. |
+| 2026-11-27 04:11 UTC | [A]000205 | The database is database.sqlite. The migration runner creates the tracking table, so version 0 has no migrations. SQLite access and forward-only migrations each have an ADR. |
