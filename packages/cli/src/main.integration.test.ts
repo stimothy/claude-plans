@@ -73,7 +73,7 @@ describe("the claude-plans program", () => {
 
     expect(installed).toMatchObject({ code: 0, errors: "" });
     expectAHealthyServerThatStopped(started, health, stopped);
-  }, 20_000);
+  });
 
   it.each(signals)("stops its server in the foreground when it is sent %s", async (signal) => {
     const child = launch("start", `--port=${String(await freePort())}`);
