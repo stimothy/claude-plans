@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -93,6 +94,19 @@ describe("the database program's migration", () => {
 
     expect(migrated.code).toBe(1);
     expect(migrated.errors).toMatch(/Migration 1 \(step 1\) failed\.[^]*syntax error/);
+  });
+});
+
+// install shows only what the program prints to its standard output.
+describe("the database program that install runs", () => {
+  it("prints where the backup is", () => {
+    writeFileSync(databaseFile(directory()), "");
+    const program = join(import.meta.dirname, "database-main.ts");
+
+    const ran = spawnSync(process.execPath, [program, ...action("migrate")], { encoding: "utf8" });
+
+    expect(ran.status).toBe(0);
+    expect(ran.stdout).toContain(`Backed up the database to ${directory()}`);
   });
 });
 

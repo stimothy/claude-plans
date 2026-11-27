@@ -129,13 +129,19 @@ describe("installing while a server runs", () => {
     expect(builds(servers.directory())).toEqual([]);
   });
 
-  it("passes on what migrating reports, such as where the backup is", async () => {
+  // A program that is stopped during a migration may have said nothing else about the backup that it reported.
+  it.each([false, true])("passes on what migrating reports, when it fails is %s", async (fails) => {
     const data = fake.elsewhere("development");
     writeInto(data, "report-migrate", "Backed up the database.");
+    if (fails) {
+      writeInto(data, "fail-migrate", "Stopped.");
+    }
+    const terminal = recordingTerminal();
 
-    const result = await install(data);
+    const attempt = installApplication({ dataDirectory: data, repository: fake.repository() }, terminal);
 
-    expect(result.output).toMatch(/^Backed up the database\.\nInstalled version/);
+    await (fails ? expect(attempt).rejects.toThrow("Stopped.") : expect(attempt).resolves.toBe(0));
+    expect(terminal.output[0]).toBe("Backed up the database.");
   });
 
   it("keeps the earlier application when a migration fails", async () => {

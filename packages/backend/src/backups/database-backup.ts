@@ -49,11 +49,22 @@ export function saveBackup(database: DatabaseSync, dataDirectory: string, versio
   return file;
 }
 
+// SQLite's backup interface does not wait for a database that another program is using, so this does first.
+function waitUntilFree(file: string): void {
+  const database = new DatabaseSync(file, { timeout: busyTimeoutMilliseconds });
+  try {
+    database.exec("BEGIN EXCLUSIVE; ROLLBACK");
+  } finally {
+    database.close();
+  }
+}
+
 /**
  * Replaces the contents of the database in a data directory with a backup. SQLite writes them, so that what an
  * interrupted write left behind is not applied to them later, as it could be to a file that was copied.
  */
 export async function restoreBackup(file: string, dataDirectory: string): Promise<void> {
+  waitUntilFree(databaseFile(dataDirectory));
   const saved = new DatabaseSync(file, { readOnly: true, timeout: busyTimeoutMilliseconds });
   try {
     await backup(saved, databaseFile(dataDirectory));

@@ -24,9 +24,23 @@ function outputOf(name: string, ended: SpawnSyncReturns<string>): string {
   return ended.stdout.trim();
 }
 
-/** Runs a program in a directory, and returns what it printed. A failure gives what it said was wrong. */
-export function runProgram(program: string, given: readonly string[], directory: string): string {
-  return outputOf(program, spawnSync(program, given, { cwd: directory, env: environment(), encoding: "utf8" }));
+/**
+ * Runs a program in a directory, and returns what it printed. A failure gives what it said was wrong. A report is
+ * given what the program printed even then, because a program that was stopped may have said nothing else.
+ */
+export function runProgram(
+  program: string,
+  given: readonly string[],
+  directory: string,
+  report?: (printed: string) => void,
+): string {
+  const ended = spawnSync(program, given, { cwd: directory, env: environment(), encoding: "utf8" });
+  // One that could not be started printed nothing.
+  const printed = ended.error === undefined ? ended.stdout.trim() : "";
+  if (printed !== "") {
+    report?.(printed);
+  }
+  return outputOf(program, ended);
 }
 
 /** Runs Git in a directory, and returns what it printed. */

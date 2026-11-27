@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, fsyncSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
@@ -7,8 +7,15 @@ import { describe, expect, it, vi } from "vitest";
 import { migrate } from "../database/migrate.ts";
 import type { Migration } from "../database/migration.ts";
 import { databaseFile, readSchemaVersion } from "../database/schema-version.ts";
-import { queryRows, statements, step, useTestDirectory } from "../database/test-database.ts";
+import { interruptedDatabase, queryRows, statements, step, useTestDirectory } from "../database/test-database.ts";
+import { restoreBackup } from "./database-backup.ts";
 import { migrateWithBackup } from "./migrate-with-backup.ts";
+
+// Writing a copy to the disk works as it always does, except where a test makes it fail.
+vi.mock("node:fs", async (importOriginal) => {
+  const original = await importOriginal<{ fsyncSync: (descriptor: number) => void }>();
+  return { ...original, fsyncSync: vi.fn(original.fsyncSync) };
+});
 
 const directory = useTestDirectory();
 const first = statements(1, "CREATE TABLE plans (title TEXT); INSERT INTO plans VALUES ('kept')");
@@ -106,12 +113,53 @@ describe("a backup that fails", () => {
     expect(readSchemaVersion(directory())).toBe(1);
   });
 
-  it("leaves no part of a backup behind", async () => {
+  it("stops the migration when the copy cannot be written, and leaves no part of it behind", async () => {
+    migrate(directory(), [first]);
+    vi.mocked(fsyncSync).mockImplementationOnce(() => {
+      throw new Error("The disk is full.");
+    });
+
+    const attempt = run([first, second]);
+
+    await expect(attempt).rejects.toMatchObject({ cause: { message: "The disk is full." } });
+    expect(titles()).toEqual(["kept"]);
+    expect(backupNames()).toEqual([]);
+  });
+
+  it("stops the migration of a file that is not a database", async () => {
     writeFileSync(databaseFile(directory()), "not a database".repeat(100));
 
     await expect(run([first])).rejects.toThrow("could not be backed up");
+  });
+});
 
-    expect(backupNames()).toEqual([]);
+describe("a database that was interrupted or is in use", () => {
+  it("recovers one whose last write was interrupted, and backs up what was recovered", async () => {
+    const crashed = interruptedDatabase(directory());
+    const reports: string[] = [];
+    const migrations = [statements(1, "SELECT 1"), statements(2, "SELECT 1")];
+
+    await migrateWithBackup(crashed, migrations, (line) => reports.push(line));
+
+    const [name = ""] = readdirSync(join(crashed, "backups"));
+    const saved = new DatabaseSync(join(crashed, "backups", name), { readOnly: true });
+    expect(saved.prepare("SELECT * FROM notes").all()).toEqual([]);
+    saved.close();
+    expect(readSchemaVersion(crashed)).toBe(2);
+  });
+
+  // Waiting for it takes the whole busy timeout, after which the lock is what gets reported.
+  it("waits for another program to finish reading before it restores", async () => {
+    migrate(directory(), [first]);
+    await run([first, second]);
+    const [name = ""] = backupNames();
+    const reader = new DatabaseSync(databaseFile(directory()));
+    reader.exec("BEGIN");
+    reader.prepare("SELECT * FROM plans").all();
+
+    await expect(restoreBackup(join(backupsDirectory(), name), directory())).rejects.toThrow("database is locked");
+
+    reader.close();
   });
 });
 
@@ -141,6 +189,7 @@ describe("a migration that fails", () => {
     await expect(attempt).rejects.toThrow(/could not be restored[^]*The backup[^]*backups/);
     // Copying the file over the database could damage it.
     await expect(attempt).rejects.toThrow("restore it with SQLite, such as with the .restore command of sqlite3");
+    await expect(attempt).rejects.toThrow("move database.sqlite and any database.sqlite-journal aside together");
     const [name = ""] = backupNames();
     await expect(attempt).rejects.toThrow(join(backupsDirectory(), name));
     expect(titlesIn(join(backupsDirectory(), name))).toEqual(["kept"]);

@@ -43,7 +43,8 @@ async function restoreProblem(file: string, dataDirectory: string): Promise<stri
 
 // A journal that an interrupted write left could later be applied to a file that was copied over the database.
 const byHand =
-  "To restore it, stop the server and restore it with SQLite, such as with the .restore command of sqlite3.";
+  "To restore it, stop the server and restore it with SQLite, such as with the .restore command of sqlite3. " +
+  "If SQLite cannot open the database, first move database.sqlite and any database.sqlite-journal aside together.";
 
 // Always throws, with the failed migration as the cause of what happened to the database.
 async function undo(failure: unknown, file: string, dataDirectory: string): Promise<never> {
