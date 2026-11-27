@@ -5,9 +5,8 @@
  */
 import { runDatabaseProgram } from "./database-program.ts";
 
-process.exitCode = runDatabaseProgram({
+process.exitCode = await runDatabaseProgram({
   arguments: process.argv.slice(2),
-  printError: (line) => {
-    console.error(line);
-  },
+  print: console.log.bind(console),
+  printError: console.error.bind(console),
 });

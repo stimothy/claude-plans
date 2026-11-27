@@ -21,6 +21,28 @@ export function databaseFile(dataDirectory: string): string {
 }
 
 /**
+ * Opens the database in a data directory if there is one, and closes it again after it has been used. Returns
+ * nothing if there is none, so it never creates one.
+ */
+export function useExistingDatabase<Result>(
+  dataDirectory: string,
+  { readOnly }: { readonly readOnly: boolean },
+  use: (database: DatabaseSync) => Result,
+): Result | undefined {
+  const file = databaseFile(dataDirectory);
+  // Unlike a check that the file exists, this fails when the file cannot be looked at.
+  if (statSync(file, { throwIfNoEntry: false }) === undefined) {
+    return undefined;
+  }
+  const database = new DatabaseSync(file, { readOnly, timeout: busyTimeoutMilliseconds });
+  try {
+    return use(database);
+  } finally {
+    database.close();
+  }
+}
+
+/**
  * Returns the number of the last migration that an open database recorded, which is 0 before the first. Returns
  * nothing if the database does not have the table that tracks them.
  */
@@ -41,15 +63,5 @@ export function versionOf(database: DatabaseSync): number | undefined {
  * last write was interrupted, until something opens it for writing, as migrating does.
  */
 export function readSchemaVersion(dataDirectory: string): number | undefined {
-  const file = databaseFile(dataDirectory);
-  // Unlike a check that the file exists, this fails when the file cannot be looked at.
-  if (statSync(file, { throwIfNoEntry: false }) === undefined) {
-    return undefined;
-  }
-  const database = new DatabaseSync(file, { readOnly: true, timeout: busyTimeoutMilliseconds });
-  try {
-    return versionOf(database);
-  } finally {
-    database.close();
-  }
+  return useExistingDatabase(dataDirectory, { readOnly: true }, versionOf);
 }

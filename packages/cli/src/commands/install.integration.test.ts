@@ -129,6 +129,15 @@ describe("installing while a server runs", () => {
     expect(builds(servers.directory())).toEqual([]);
   });
 
+  it("passes on what migrating reports, such as where the backup is", async () => {
+    const data = fake.elsewhere("development");
+    writeInto(data, "report-migrate", "Backed up the database.");
+
+    const result = await install(data);
+
+    expect(result.output).toMatch(/^Backed up the database\.\nInstalled version/);
+  });
+
   it("keeps the earlier application when a migration fails", async () => {
     const data = fake.elsewhere("development");
     await install(data);

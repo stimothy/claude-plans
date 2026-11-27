@@ -11,9 +11,6 @@ applies, ask.
 When asked to use the studio, use the real data. This includes starting the real server, building plans through
 the `claude-plans` command, and later watching for comments.
 
-Until issue #27 is merged, nothing backs up the database before an install migrates it. Before running a plain
-`claude-plans install` on the real data, tell the user this. Once #27 is merged, this no longer applies.
-
 When asked to diagnose a problem in the real studio, only read: its logs in `.claude-plans/logs/`, its data,
 and its output. Open the database read-only, such as with `sqlite3 -readonly`, because a normal connection can
 write to it. Change nothing, including the data, the settings, the installed application, and the running

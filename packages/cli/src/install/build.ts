@@ -61,10 +61,10 @@ export function makeBuild(record: InstallationRecord, dataDirectory: string): Bu
   return { directory, version };
 }
 
-/** Runs the database program of a build, which checks or migrates the data directory's database. */
-export function runDatabaseProgram(directory: string, action: "check" | "migrate", dataDirectory: string): void {
+/** Runs the database program of a build, which checks or migrates a database, and returns what it reported. */
+export function runDatabaseProgram(directory: string, action: "check" | "migrate", dataDirectory: string): string {
   const program = join("packages", "backend", "src", "program", "database-main.ts");
-  runProgram(process.execPath, [program, action, `--data-directory=${dataDirectory}`], directory);
+  return runProgram(process.execPath, [program, action, `--data-directory=${dataDirectory}`], directory);
 }
 
 // It is plain JavaScript, because npm runs it from a path that it chose.
