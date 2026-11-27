@@ -86,7 +86,9 @@ it("changes nothing in a database that is newer than it supports", () => {
   migrate(directory, [createNotes, changeNotes]);
   const before = readFileSync(databaseFile(directory));
 
-  expect(() => migrate(directory, [createNotes])).toThrow("The database is at version 2, and the newest known is 1.");
+  expect(() => migrate(directory, [createNotes])).toThrow(
+    "The database is at version 2, which is newer than version 1",
+  );
   expect(readFileSync(databaseFile(directory))).toEqual(before);
 });
 

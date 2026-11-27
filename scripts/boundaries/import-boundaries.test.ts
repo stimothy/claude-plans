@@ -1,8 +1,10 @@
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
-import { lintCode, root } from "../linting/lint-code.ts";
+import { lintCode, loadLinter, root } from "../linting/lint-code.ts";
+
+beforeAll(loadLinter, 30_000);
 
 // Returns what the boundary rule says about code in a file. A parse error counts, so that none passes unnoticed.
 async function complaints(code: string, file: string): Promise<string[]> {

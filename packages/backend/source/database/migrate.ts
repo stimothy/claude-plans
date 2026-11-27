@@ -8,6 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import type { Migration } from "./migration.ts";
 import { migrations } from "./migrations/index.ts";
+import { requireSupportedDatabase } from "./readiness.ts";
 import { busyTimeoutMilliseconds, databaseFile, versionOf } from "./schema-version.ts";
 
 const trackingTable = `
@@ -21,12 +22,6 @@ const trackingTable = `
 function checkNumbers(list: readonly Migration[]): void {
   if (list.some((migration, position) => migration.version !== position + 1)) {
     throw new Error("Migrations must be numbered 1, 2, 3, and so on, in order.");
-  }
-}
-
-function refuseNewer(version: number, newest: number): void {
-  if (version > newest) {
-    throw new Error(`The database is at version ${String(version)}, and the newest known is ${String(newest)}.`);
   }
 }
 
@@ -48,7 +43,7 @@ function run(database: DatabaseSync, migration: Migration, newest: number): void
   inTransaction(database, () => {
     // Another program may have run migrations since the last look.
     const version = versionOf(database) ?? 0;
-    refuseNewer(version, newest);
+    requireSupportedDatabase(version, newest);
     if (migration.version <= version) {
       return;
     }
@@ -84,7 +79,7 @@ export function migrate(dataDirectory: string, list: readonly Migration[] = migr
   });
   try {
     inTransaction(database, () => {
-      refuseNewer(versionOf(database) ?? 0, newest);
+      requireSupportedDatabase(versionOf(database), newest);
       database.exec(trackingTable);
     });
     for (const migration of list) {

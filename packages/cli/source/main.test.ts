@@ -5,26 +5,33 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { text } from "node:stream/consumers";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { stopServer } from "./commands/stop.ts";
 import { recordingTerminal } from "./recording-terminal.ts";
-import { freePort, useStandInServers } from "./server/stand-in-server.ts";
+import { freePort, readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
 
 const servers = useStandInServers();
+beforeEach(() => {
+  readyDatabase(servers.directory());
+});
 // This runs before the cleanup above removes the directory.
 afterEach(async () => {
   await stopServer(servers.directory(), recordingTerminal());
 });
 
+const repositoryCommand = join(import.meta.dirname, "main.ts");
+
 function launch(...given: string[]) {
-  const command = join(import.meta.dirname, "main.ts");
-  return spawn(process.execPath, [command, ...given, `--data-directory=${servers.directory()}`]);
+  return spawn(process.execPath, [repositoryCommand, ...given, `--data-directory=${servers.directory()}`]);
 }
 
 // Waits for the command to end and for its output to close, which a server holding the output would prevent.
 async function run(...given: string[]) {
-  const child = launch(...given);
+  return finish(launch(...given));
+}
+
+async function finish(child: ReturnType<typeof launch>) {
   const closed = once(child, "close");
   const [output, errors] = await Promise.all([text(child.stdout), text(child.stderr)]);
   const [code] = (await closed) as [number | null];
@@ -41,14 +48,30 @@ describe("the claude-plans program", () => {
     const health = await run("health");
     const stopped = await run("stop");
 
-    // Health fails only because nothing has created the database.
-    expect([started.code, health.code, stopped.code]).toEqual([0, 1, 0]);
+    expect([started.code, health.code, stopped.code]).toEqual([0, 0, 0]);
     expect([started.errors, health.output, stopped.output]).toEqual([
       "",
-      expect.stringContaining("Status: error"),
+      expect.stringContaining("Status: ok"),
       "The server stopped.\n",
     ]);
   });
+
+  it("installs a copy that runs the server on its own data directory, without being told which", async () => {
+    const installed = await run("install");
+    const launcher = join(servers.directory(), "app", "command", "main.js");
+    const runInstalled = (...given: string[]) => finish(spawn(process.execPath, [launcher, ...given]));
+
+    const started = await runInstalled("start", "--detached", `--port=${String(await freePort())}`);
+    const health = await runInstalled("health");
+    const stopped = await runInstalled("stop");
+
+    expect(installed).toMatchObject({ code: 0, errors: "" });
+    expect([started.errors, health.output, stopped.output]).toEqual([
+      "",
+      expect.stringContaining("Status: ok"),
+      "The server stopped.\n",
+    ]);
+  }, 20_000);
 
   it.each(signals)("stops its server in the foreground when it is sent %s", async (signal) => {
     const child = launch("start", `--port=${String(await freePort())}`);

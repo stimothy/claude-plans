@@ -1,23 +1,27 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { runCommandLine } from "./command-line.ts";
 import { recordingTerminal } from "./recording-terminal.ts";
-import { freePort, useStandInServers } from "./server/stand-in-server.ts";
+import { freePort, readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
+import type { Surroundings } from "./surroundings.ts";
 
 const servers = useStandInServers();
+// The copy that these tests run from.
+const copy: Surroundings = { repository: resolve(import.meta.dirname, "..", "..", "..") };
 
 async function run(...given: string[]) {
   const terminal = recordingTerminal();
-  const code = await runCommandLine(given, terminal);
+  const code = await runCommandLine(given, terminal, copy);
   return { code, output: terminal.output.join("\n"), errors: terminal.errors.join("\n") };
 }
 
 describe("the command line", () => {
   it("starts a server, reports its health, and stops it", async () => {
     const directory = `--data-directory=${servers.directory()}`;
+    readyDatabase(servers.directory());
     const port = await freePort();
 
     const started = await run("start", directory, "--detached", "--port", String(port), "--log-level", "debug");
@@ -25,9 +29,8 @@ describe("the command line", () => {
     const stopped = await run("stop", directory);
 
     expect(started).toMatchObject({ code: 0, errors: "" });
-    // Nothing has created the database yet.
-    expect(health.code).toBe(1);
-    expect(JSON.parse(health.output)).toMatchObject({ status: "error", database: { accessible: false } });
+    expect(health.code).toBe(0);
+    expect(JSON.parse(health.output)).toMatchObject({ status: "ok", database: { accessible: true } });
     expect(stopped).toMatchObject({ code: 0, output: "The server stopped." });
   });
 
@@ -35,7 +38,7 @@ describe("the command line", () => {
     const result = await run(...given);
 
     expect(result).toMatchObject({ code: 0, errors: "" });
-    expect(result.output).toContain("claude-plans health --data-directory <path> [--json]");
+    expect(result.output).toContain("claude-plans health [--data-directory <path>] [--json]");
   });
 
   it.each([
@@ -70,6 +73,7 @@ describe("the command line", () => {
   it("gives the server the typed port and log level, and leaves out what was not typed", async () => {
     const directory = `--data-directory=${servers.directory()}`;
     const [typed, saved] = [await freePort(), await freePort()];
+    readyDatabase(servers.directory());
 
     const first = await run("start", directory, "--detached", "--port", String(typed), "--log-level", "error");
     await run("stop", directory);

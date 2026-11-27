@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { recordingTerminal } from "../recording-terminal.ts";
 import { findServer } from "../server/running-server.ts";
-import { freePort, useStandInServers } from "../server/stand-in-server.ts";
+import { freePort, readyDatabase, useStandInServers } from "../server/stand-in-server.ts";
 import { startServer, type StartOptions } from "./start.ts";
 import { stopServer } from "./stop.ts";
 
@@ -16,6 +16,7 @@ let port = "";
 
 beforeEach(async () => {
   dataDirectory = servers.directory();
+  readyDatabase(dataDirectory);
   port = String(await freePort());
 });
 // This runs before the cleanup above removes the directory.
