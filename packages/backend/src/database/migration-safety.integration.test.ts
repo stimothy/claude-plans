@@ -101,5 +101,5 @@ it("stops when another program makes the database newer in the meantime", () => 
 it("refuses a newer database even when it has no migrations to run", () => {
   migrate(directory(), [statements(1, "SELECT 1")]);
 
-  expect(() => migrate(directory(), [])).toThrow("The database is at version 1, and the newest known is 0.");
+  expect(() => migrate(directory(), [])).toThrow("The database is at version 1, which is newer than version 0");
 });

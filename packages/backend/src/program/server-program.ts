@@ -3,16 +3,17 @@
  *
  * @packageDocumentation
  */
-import { isAbsolute } from "node:path";
 import { parseArgs } from "node:util";
 
 import { portSchema, type ServerStartReport } from "@claude-plans/domain";
 import { createLogger, type Logger, type LogLevel } from "@claude-plans/logging";
 import { z } from "zod";
 
+import { requireCurrentDatabase } from "../database/readiness.ts";
 import { logLevelSchema, type ServerOverrides, serverSettings } from "../server-settings.ts";
 import { type RunningServer, startServer } from "../server/server.ts";
 import { readSettings } from "../settings-file.ts";
+import { requireFullPath } from "./full-path.ts";
 
 /** What the program is given, so that it does not reach for the process that it runs in. */
 export interface ServerProgram {
@@ -51,13 +52,8 @@ function readOptions(given: readonly string[]): Options {
     args: [...given],
     options: { "data-directory": { type: "string" }, port: { type: "string" }, "log-level": { type: "string" } },
   });
-  const dataDirectory = values["data-directory"] ?? "";
-  // A relative path would be taken from the current directory, which could be the one with the real data.
-  if (!isAbsolute(dataDirectory)) {
-    throw new Error("--data-directory must give a full path.");
-  }
   return {
-    dataDirectory,
+    dataDirectory: requireFullPath(values["data-directory"]),
     port: optional(typedPortSchema, values.port, "--port must be a whole number from 1 to 65535."),
     logLevel: optional(logLevelSchema, values["log-level"], "--log-level must be error, warn, info, or debug."),
   };
@@ -75,7 +71,8 @@ async function start(options: Options, version: string): Promise<Started> {
     throw error;
   }
   const log = logger(settings.logLevel);
-  return { server: await startServer({ dataDirectory, version, port: settings.port, log }), log };
+  const serving = { dataDirectory, version, port: settings.port, log, checkDataDirectory: requireCurrentDatabase };
+  return { server: await startServer(serving), log };
 }
 
 /** Starts a server, reports whether that worked, and returns the program's exit code once the server has stopped. */

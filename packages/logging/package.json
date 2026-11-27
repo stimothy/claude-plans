@@ -4,5 +4,5 @@
   "description": "Logging for the claude-plans server and command.",
   "license": "MIT",
   "type": "module",
-  "exports": "./source/index.ts"
+  "exports": "./src/index.ts"
 }

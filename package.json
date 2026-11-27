@@ -1,6 +1,6 @@
 {
   "name": "claude-plans",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "private": true,
   "description": "A planning studio for plans made with Claude.",
   "license": "MIT",
@@ -33,7 +33,10 @@
     "scan:secrets": "gitleaks git --redact --no-banner && gitleaks git --pre-commit --redact --no-banner && gitleaks git --pre-commit --staged --redact --no-banner",
     "setup:python": "node scripts/launcher/launch.ts system -m scripts.environment.create",
     "test": "npm run test:node && npm run test:python",
-    "test:node": "node scripts/launcher/launch.ts node --time-limit 30 node_modules/vitest/vitest.mjs run --coverage",
+    "test:node": "npm run test:unit && npm run test:integration && npm run test:coverage",
+    "test:unit": "node scripts/launcher/launch.ts node --time-limit 30 node_modules/vitest/vitest.mjs run --project unit --coverage --reporter=verbose --reporter=blob --outputFile.blob=.vitest/blob/unit.json",
+    "test:integration": "node scripts/launcher/launch.ts node --time-limit 120 node_modules/vitest/vitest.mjs run --project integration --coverage --reporter=verbose --reporter=blob --outputFile.blob=.vitest/blob/integration.json",
+    "test:coverage": "node scripts/launcher/launch.ts node node_modules/vitest/vitest.mjs run --merge-reports=.vitest/blob --coverage --reporter=dot",
     "test:python": "node scripts/launcher/launch.ts python --time-limit 30 -m pytest",
     "typecheck": "npm run typecheck:node && npm run typecheck:domain && npm run typecheck:logging && npm run typecheck:backend && npm run typecheck:cli && npm run typecheck:python",
     "typecheck:backend": "tsc --project packages/backend/tsconfig.json",
@@ -41,7 +44,8 @@
     "typecheck:logging": "tsc --project packages/logging/tsconfig.json",
     "typecheck:node": "tsc --project tsconfig.json",
     "typecheck:python": "node scripts/launcher/launch.ts python -m mypy",
-    "claude-plans": "node packages/cli/source/main.ts",
+    "claude-plans": "node packages/cli/src/main.ts",
+    "install:studio": "node packages/cli/src/main.ts install --studio",
     "typecheck:cli": "tsc --project packages/cli/tsconfig.json"
   },
   "devDependencies": {

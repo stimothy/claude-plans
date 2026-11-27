@@ -4,6 +4,7 @@ import { join } from "node:path";
 import type { ServerStartReport } from "@claude-plans/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { migrate } from "../database/migrate.ts";
 import { freePort, useTestServers } from "../server/test-servers.ts";
 import { runServerProgram } from "./server-program.ts";
 
@@ -12,6 +13,7 @@ let port = 0;
 
 beforeEach(async () => {
   port = await freePort();
+  migrate(servers.directory());
 });
 
 function writeSettings(text: string): void {
@@ -102,6 +104,15 @@ describe("the server program", () => {
     await expectRefusal(second, "already running");
     first.stop();
     await first.exited;
+  });
+
+  it("refuses a data directory whose database is not ready, and lets go of it", async () => {
+    rmSync(join(servers.directory(), "database.sqlite"));
+
+    await expectRefusal(run(["--port", String(port)]), "Run claude-plans install");
+    expect(logged()).toContain("The server did not start");
+    migrate(servers.directory());
+    await expectToListen(run(["--port", String(port)]));
   });
 
   it("ends with a failure, and says why in the log, when it cannot stop cleanly", async () => {

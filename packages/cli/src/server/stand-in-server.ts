@@ -13,6 +13,13 @@ import { join } from "node:path";
 import { serverContract, serverRecordFileName } from "@claude-plans/domain";
 import { afterEach, beforeEach } from "vitest";
 
+import { runDatabaseProgram } from "../install/build.ts";
+
+/** Gets a data directory's database ready for the repository's server, as installing would. */
+export function readyDatabase(dataDirectory: string): void {
+  runDatabaseProgram(join(import.meta.dirname, "..", "..", "..", ".."), "migrate", dataDirectory);
+}
+
 /** Returns a port that was free a moment ago, for a server that must be given one. */
 export async function freePort(): Promise<number> {
   const holder = createServer().listen(0, "127.0.0.1");

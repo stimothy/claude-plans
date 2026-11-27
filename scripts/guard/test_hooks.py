@@ -67,6 +67,14 @@ def test_the_settings_run_the_check_and_block_when_it_fails() -> None:
     assert "Bash(gh pr merge:*)" in settings["permissions"]["deny"]
 
 
+@pytest.mark.parametrize("rule", ["Bash(*install:studio*)", "Bash(*--studio*)"])
+def test_the_settings_ask_before_an_install_into_the_real_data(rule: str) -> None:
+    """Check that the settings ask before a Bash command that names the studio install."""
+    settings = json.loads((ROOT / ".claude" / "settings.json").read_text(encoding="utf-8"))
+
+    assert rule in settings["permissions"]["ask"]
+
+
 def test_npm_install_installs_the_git_hook() -> None:
     """Check that npm install installs the Git hook."""
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))

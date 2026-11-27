@@ -11,6 +11,9 @@ applies, ask.
 When asked to use the studio, use the real data. This includes starting the real server, building plans through
 the `claude-plans` command, and later watching for comments.
 
+Until issue #27 is merged, nothing backs up the database before an install migrates it. Before running a plain
+`claude-plans install` on the real data, tell the user this. Once #27 is merged, this no longer applies.
+
 When asked to diagnose a problem in the real studio, only read: its logs in `.claude-plans/logs/`, its data,
 and its output. Open the database read-only, such as with `sqlite3 -readonly`, because a normal connection can
 write to it. Change nothing, including the data, the settings, the installed application, and the running
@@ -27,11 +30,16 @@ reproducing a bug, and building, installing, or starting changed code.
 - Never point a development command, test, or build at the real data directory.
 - Never run a plain `claude-plans install`, without another data directory, for development. It replaces the
   installed application that runs on the real data.
+- Never run `npm run install:studio`, or pass `--studio`, for development or testing. It is the one way the
+  repository's copy reaches the real data: it performs a plain install, writing to the real data and putting the
+  `claude-plans` command on the user's path.
 - To fix a problem found in the real studio, reproduce it this way, not in the real data.
 
-The command-line interface and its protections for the real data arrive with issue #24. Until then, nothing in
-the code stops a development command from reaching `.claude-plans/`, so give the separate data directory
-explicitly in every command.
+The `claude-plans` command run from the repository, and copies installed into any other data directory, refuse
+the real data directory and everything inside it, except for `install --studio` run from the repository, which
+installs into it as described above. Otherwise only a copy saved by a plain install may use it. This protects
+only the command. Other code, such as the backend server program run directly or a test or script given the
+path, is not stopped, so give the separate data directory explicitly in every development command.
 
 ## Deleting ignored files
 

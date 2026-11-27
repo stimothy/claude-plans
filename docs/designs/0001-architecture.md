@@ -6,9 +6,9 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 ## Overview
 
 claude-plans is meant to be a planning studio for plans made with Claude. So far it is a server and the command
-that starts, checks, and stops it, run from the repository. Nothing sets up its database yet. Around the
-application is the repository: the scripts that set it up and keep its documents, the safeguards for Claude, and
-the checks that run on pull requests. This document describes what exists.
+that installs, starts, checks, and stops it. Around the application is the repository: the scripts that set it up
+and keep its documents, the safeguards for Claude, and the checks that run on pull requests. This document
+describes what exists.
 [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
 
 ```mermaid
@@ -50,7 +50,8 @@ disguises.
 The data directory is meant to hold everything that the studio saves. `backend` chooses it and handles its
 settings file, `settings.yaml`. The default is `.claude-plans/` in the repository, and a different
 directory can be named. The code is told where the repository is instead of working it out, so that it cannot
-guess its way to the real data. Nothing yet stops a caller from choosing the real data.
+guess its way to the real data. The backend does not stop a caller from choosing the real data. The command does,
+as described under [Install](#install).
 
 The settings file may set `port`, `logLevel`, `theme`, and `colorVision`. Each is optional. For the port and the
 log level, an option of the `start` command overrides the file, which overrides the default of port 4310 and
@@ -64,9 +65,11 @@ symbolic link in that place is replaced, not followed.
 
 ## Database
 
-The database is `database.sqlite` in the data directory. `backend` can create it, migrate it, and read its schema
-version, but no program migrates it yet. [SQLite through node:sqlite](../adrs/0001-sqlite-through-node-sqlite.md)
-and [Forward-only migrations](../adrs/0002-forward-only-migrations.md) record the main choices.
+The database is `database.sqlite` in the data directory. `backend` creates it, migrates it, and reads its schema
+version. Only its database program, which `install` runs, migrates it. The program first takes the lock that a
+server holds, so that it never changes a database in use. It can also check, changing nothing, that the database
+is not newer than the application. [SQLite through node:sqlite](../adrs/0001-sqlite-through-node-sqlite.md) and
+[Forward-only migrations](../adrs/0002-forward-only-migrations.md) record the main choices.
 
 The schema version is the number of the last migration that ran. There are no migrations yet, so a new database
 holds only the table that tracks them, at version 0. Reading the version opens the database read-only and never
@@ -85,7 +88,9 @@ database in use waits up to five seconds. Each migration has its own file in
 
 `backend` runs a server for one data directory, using [Fastify](../adrs/0003-fastify-for-the-rest-api.md). Its
 server program, in `program/`, reads the settings, makes the logger, and stops the server cleanly when the system
-asks. It tells whoever started it whether the server is ready.
+asks. It tells whoever started it whether the server is ready. A server does not start unless the database is at
+the schema version that the application has. It checks this after it takes the data directory's lock, and says to
+run `install`.
 
 The server reports its health at `/api/health` and says which data directory it uses at `/api/server`, so that a
 client can tell it reached the one it meant. The health report is ok only if the database is at the schema
@@ -115,10 +120,10 @@ directory has one name however its path was typed. A client has to name its own 
 
 ## Command line
 
-`cli` is the `claude-plans` command, with `start`, `stop`, and `health`. Nothing installs it yet, so it runs from
-the repository with `npm run claude-plans`. Until the installed command exists, with its protections for the real
-data, every command must be given the full path of a data directory. Code under development then has no default
-that could lead to that data. Nothing yet stops a caller from naming it.
+`cli` is the `claude-plans` command, with `install`, `start`, `stop`, and `health`. It runs either from the
+repository, with `npm run claude-plans`, or as a copy that `install` saved. The repository's copy must be given the
+full path of a data directory, so that code under development has no default that could lead to the real data. An
+installed copy uses the data directory that holds it, unless it is given another.
 
 `start` may not import the backend, so it runs the server program as a separate process and waits for its report.
 In the foreground, it then waits for the server to end. A terminal's Ctrl+C reaches both programs, but another
@@ -134,6 +139,44 @@ port which another program now holds, so they first ask the server which data di
 not as a stopped server. `stop` waits until the server has removed its record, and succeeds when no server is
 running. `health` never starts one. It exits with 0 only if the report is ok, and `--json` prints the report as
 the server gave it.
+
+## Install
+
+`install` saves a copy of the application in a data directory, so that the copy in use does not change when the
+repository does. Node.js runs the TypeScript as it is, so nothing is compiled. A build is a copy of the root
+package files and the packages without their tests. `npm ci` then installs what it needs to run, without
+development dependencies or package scripts.
+
+Each build has its own directory in `app/builds/`, and never moves, because npm on Windows links packages by their
+full paths. `app/current.json` names the current build, and is replaced by renaming a new file over it. The
+launcher in `app/command/` stays in one place and runs whichever build is current. In each build,
+`installation.json` records the repository that it came from and whether it may use the real data.
+
+Nothing that is in use changes until the new build has accepted the database. A newer database is refused while
+any running server carries on. An unreadable one passes this check, because migrating opens it for writing, which
+can recover it. Then `install` stops a server that uses the same data directory, migrates, and makes the new build
+current. If the server cannot be stopped, nothing is migrated. A failure before the new build becomes current
+removes it and keeps the earlier one. It does not yet restore the database, and nothing backs it up before
+migrating. After the new build is current, the install is not undone. A plain install that then cannot put the
+command on the path says what is installed, how to run it, and whether a server was stopped. An earlier build that
+cannot be deleted is only reported.
+
+The real data is `.claude-plans/` in the main checkout. The command asks Git where that is, even from a worktree,
+and does nothing if it cannot tell. It compares paths as the disk names them, ignoring letter case, so that a link
+or another spelling does not get past. The repository's copy, and a copy installed in any other directory, refuse
+that directory and everything inside it, because they may hold code that nobody has reviewed. A copy does not ask
+Git about its own data directory, which `install` already checked, so it keeps working after the checkout that it
+came from is removed. A plain install is refused if the path differs from the real one in letter case, because on
+some systems that names another directory.
+
+A plain install is one into the real data directory. It works only from the main checkout, on `master`, with no
+changes or new files that are not committed, and with no commits that the last fetched `origin/master` lacks. It
+then puts `claude-plans` on the user's path with a global npm install of the launcher's package, which works on
+every supported system. It refuses if that command already runs another installation, such as one from a second
+clone. The first plain install is run from the repository with `npm run install:studio`, the only way for the
+repository's copy to reach the real data. Later ones use `claude-plans install`.
+
+These protections stop mistakes. Code that runs under the user's account can still reach the files.
 
 ## Logging
 
@@ -174,6 +217,12 @@ It has three modes:
 The last two modes accept a time limit, which the test scripts use to fail a suite that has become too slow. The
 limit stops the command that the launcher started, which is not necessarily every process that the command starts.
 
+The Node.js tests are two Vitest projects, so that each has a limit that suits it. Unit tests have 30 seconds.
+Integration tests, in files named `*.integration.test.ts`, use a real database, run a server, or start another
+program, and have 2 minutes. Each of their tests also has 30 seconds instead of Vitest's usual 5, because
+starting another program can take seconds on a busy machine. Each suite saves its results, and a last step merges
+them and checks coverage. A suite alone covers only part of the code, so its run does not check coverage.
+
 `npm run setup:python` creates `.venv` and installs `requirements.txt` into it. The file pins every Python
 package with a hash, and it is generated from `requirements.in`, which lists only the direct tools. npm uses
 `package-lock.json` for the same purpose.
@@ -191,6 +240,11 @@ silently allow everything. Blocking after a timeout needs Claude Code 2.1.295 or
 let the command run. Reading command text cannot see through a deliberate disguise, or catch deletion by other
 programs.
 
+The settings also make Claude Code ask before any Bash command whose text names `install:studio` or `--studio`,
+which install into the real data from the repository. It asks even about a command that only mentions them. This
+does not cover a command run with another tool, such as PowerShell, or the same install typed another way or run
+by another program.
+
 The second one is a Git `pre-push` hook that rejects pushes to `master` from a clone, with or without Claude.
 `npm install` and `npm ci` copy it into the clone's own hooks directory. It is copied, and not read from the
 working tree, so that checking out a branch cannot change which hook runs. A clone with its own `pre-push` hook
@@ -206,8 +260,8 @@ The CI workflow, in `.github/workflows/ci.yml`, has four kinds of job:
 
 - **Static checks** run the format check, the linters, and the type checks, and confirm that `requirements.txt`
   matches `requirements.in`.
-- **Tests** run both test suites on Linux, Windows, and macOS, because the project is meant to run on all three.
-  Each suite requires coverage of at least 80%.
+- **Tests** run the test suites on Linux, Windows, and macOS, because the project is meant to run on all three.
+  The two Node.js suites together, and the Python suite, each require coverage of at least 80%.
 - **Secret scan** reads the whole Git history with gitleaks. The repository is public, so a committed secret is
   exposed even if a later commit removes it.
 - **Dependency audit** checks the npm and Python packages for known vulnerabilities. It runs on all three

@@ -16,6 +16,7 @@ from scripts.standards.names import name_problems
         "def read(source, /, *, cfg=None):\n    pass\n",
         "read = lambda ctx: 1\n",
         "env = {}\n",
+        "src = 'folder'\n",
         "MAXIMUM_LEN = 3\n",
         "pathDir = 1\n",
         "error2, msg2 = 1, 2\n",
@@ -101,6 +102,8 @@ def test_only_python_content_is_read() -> None:
         ("lib/index.ts", "lib"),
         ("scripts/.cfg", "scripts/.cfg"),
         ("tmp_files/notes.md", "tmp_files"),
+        ("tools/src.json", "tools/src.json"),
+        ("src_files/notes.md", "src_files"),
     ],
 )
 def test_an_abbreviated_file_or_directory_name_is_rejected(path: str, named: str) -> None:
@@ -123,6 +126,7 @@ def test_an_abbreviated_file_or_directory_name_is_rejected(path: str, named: str
         "tsconfig.base.json",
         "eslint.config.js",
         "source/archive.lib",
+        "packages/cli/src/main.ts",
     ],
 )
 def test_other_file_names_are_allowed(path: str) -> None:

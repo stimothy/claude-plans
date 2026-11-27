@@ -17,10 +17,16 @@ Setup keeps the Python that `.venv` already has, so delete `.venv` to change ver
 - `npm run lock:python` updates `requirements.txt`, which locks every Python package with hashes. Run it after you
   change `requirements.in`, and do not edit `requirements.txt` by hand.
 - `npm run format` rewrites files to match the formatters.
-- `npm test` runs the tests. It lists slow tests and fails a suite that runs for more than 30 seconds.
-- `npm run claude-plans -- <command>` runs the `claude-plans` command from your copy. `start`, `stop`, and `health`
-  each need `--data-directory` with a full path. Use a directory made for development, and pick another port with
-  `start --port`. `npm run claude-plans -- help` lists the options.
+- `npm test` runs the tests and lists slow ones. Each suite has a time limit: 30 seconds for the Node.js unit tests
+  and for the Python tests, and 2 minutes for the Node.js integration tests. `npm run test:unit` and
+  `npm run test:integration` run one Node.js suite. Only `npm run test:node`, which runs both, checks their
+  coverage.
+- `npm run claude-plans -- <command>` runs the `claude-plans` command from your copy. `install`, `start`, `stop`,
+  and `health` each need `--data-directory` with a full path. Use a directory made for development, and pick
+  another port with `start --port`. Run `install` before the first `start`, and again when `start` says that the
+  database is not ready. `npm run claude-plans -- help` lists the options.
+- `npm run install:studio` is only for installing the studio for your own use. It writes to `.claude-plans/` in
+  your main copy and puts the `claude-plans` command on your path, so never run it to try out a change.
 
 ## Start with an issue
 
@@ -65,10 +71,12 @@ version increases, even after someone else adds commits to them. Tests, builds, 
 ## Write the change
 
 - Write tests first (test-driven development). Lay each one out as Arrange, Act, Assert.
+- Name a TypeScript test file `*.integration.test.ts` if it uses a real database, runs a server, or starts another
+  program, and `*.test.ts` otherwise.
 - Keep at least 80% coverage of lines, branches, functions, and statements in each package.
 - Never suppress or skip a lint, type, test, or coverage requirement. Change the code so that it passes.
 - Use clear names without abbreviations. Standard terms such as API and URL are fine, as are names that outside
-  tools require.
+  tools require, and `src` as a directory name.
 - Keep files to 300 lines and directories to 10 files. Do not create catch-all directories such as `utils`,
   `helpers`, `common`, or `misc`. Lockfiles, generated files, `docs/adrs/`, and `docs/designs/` are exempt from
   these limits. The top-level directory and database migrations are exempt from the 10-file limit.
@@ -82,7 +90,7 @@ version increases, even after someone else adds commits to them. Tests, builds, 
   Python and file names or in `eslint.config.js` for JavaScript and TypeScript. The latter skips names written
   only in capitals, such as `MAXIMUM_LEN`, so reviewers watch for those.
 - Add TSDoc comments to everything a TypeScript file exports.
-- Each package lives in `packages/`, with its code in `source/`. `backend`, `cli`, and `frontend` may import
+- Each package lives in `packages/`, with its code in `src/`. `backend`, `cli`, and `frontend` may import
   `domain` but never one another. Only `backend` and `cli` may import `logging`. `domain` and `logging` import no
   other package. Import another package by its name, such as `@claude-plans/domain`, never by a path.
   `npm run lint` enforces this.

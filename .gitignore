@@ -45,6 +45,7 @@ __pycache__/
 .ruff_cache/
 .eslintcache
 .vite/
+.vitest/
 .cache/
 
 # Environment files, which may hold secrets

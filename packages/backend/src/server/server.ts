@@ -23,6 +23,8 @@ export interface ServerStartOptions {
   /** The port to listen on, or 0 for any free port. */
   readonly port: number;
   readonly log: Logger;
+  /** Throws if the server must not serve this data directory. It runs while no other server can use it. */
+  readonly checkDataDirectory?: (dataDirectory: string) => void;
 }
 
 /** A server that is listening. */
@@ -94,6 +96,7 @@ export async function startServer(options: ServerStartOptions): Promise<RunningS
     const dataDirectory = realpathSync.native(options.dataDirectory);
     const release = lockDataDirectory(dataDirectory);
     try {
+      options.checkDataDirectory?.(dataDirectory);
       return await serve({ ...options, dataDirectory }, release);
     } catch (error) {
       release();
