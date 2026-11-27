@@ -3,6 +3,8 @@
  *
  * @packageDocumentation
  */
+import { runCommandLine } from "./command-line.ts";
+import type { Surroundings } from "./surroundings.ts";
 import type { Terminal } from "./terminal.ts";
 
 /** A terminal that records its output, and can send the signals that a real one would. */
@@ -11,6 +13,13 @@ export interface RecordingTerminal extends Terminal {
   readonly errors: string[];
   /** Sends a signal to whoever is listening. */
   readonly signal: (signal: NodeJS.Signals) => void;
+}
+
+/** Runs what was typed as a copy of the command would, and returns its exit code and what it printed. */
+export async function runRecorded(surroundings: Surroundings, given: readonly string[]) {
+  const terminal = recordingTerminal();
+  const code = await runCommandLine(given, terminal, surroundings);
+  return { code, output: terminal.output.join("\n"), errors: terminal.errors.join("\n") };
 }
 
 /** Makes a terminal that records. It passes signals on, as terminals outside Windows need, unless told not to. */

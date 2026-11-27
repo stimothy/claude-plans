@@ -4,38 +4,36 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runCommandLine } from "./command-line.ts";
-import { commitAll, databaseActions, installed, useFakeRepository } from "./install/fake-repository.ts";
+import { commitAll, databaseActions, installed, useFakeRepository, writeInto } from "./install/fake-repository.ts";
 import { recordInstallation } from "./install/layout.ts";
-import { recordingTerminal } from "./recording-terminal.ts";
+import { runRecorded } from "./recording-terminal.ts";
 import { type Surroundings, surroundingsOf } from "./surroundings.ts";
 
 const fake = useFakeRepository();
 const real = (): string => join(fake.repository(), ".claude-plans");
-const copy = (): Surroundings => ({ repository: fake.repository() });
+const copy = (): Surroundings => ({ repository: fake.repository(), version: "1.0.0" });
 const installedCopy = (dataDirectory: string, isReal: boolean): Surroundings => ({
   repository: fake.repository(),
+  version: "1.0.0",
   installation: { dataDirectory, real: isReal },
 });
 
-async function run(surroundings: Surroundings, ...given: string[]) {
-  const terminal = recordingTerminal();
-  const code = await runCommandLine(given, terminal, surroundings);
-  return { code, output: terminal.output.join("\n"), errors: terminal.errors.join("\n") };
-}
+const run = (surroundings: Surroundings, ...given: string[]) => runRecorded(surroundings, given);
 
 describe("the surroundings of a copy", () => {
   it("are the repository that it is in", () => {
-    expect(surroundingsOf(fake.repository())).toEqual({ repository: fake.repository() });
+    expect(surroundingsOf(fake.repository())).toEqual({ repository: fake.repository(), version: "1.0.0" });
   });
 
   it("are what an installed build recorded, and the data directory that holds it", () => {
     const build = fake.elsewhere(join("data", "app", "builds", "one"));
     mkdirSync(build, { recursive: true });
     recordInstallation(build, { repository: fake.repository(), real: false });
+    writeInto(build, "package.json", JSON.stringify({ version: "0.9.0" }));
 
     expect(surroundingsOf(build)).toEqual({
       repository: fake.repository(),
+      version: "0.9.0",
       installation: { dataDirectory: fake.elsewhere("data"), real: false },
     });
   });
@@ -133,6 +131,7 @@ describe("an installed copy", () => {
     const data = fake.elsewhere("development");
     const orphan: Surroundings = {
       repository: fake.elsewhere("removed"),
+      version: "1.0.0",
       installation: { dataDirectory: data, real: false },
     };
 

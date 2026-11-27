@@ -3,20 +3,16 @@ import { join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { runCommandLine } from "./command-line.ts";
-import { recordingTerminal } from "./recording-terminal.ts";
+import { runRecorded } from "./recording-terminal.ts";
 import { freePort, readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
-import type { Surroundings } from "./surroundings.ts";
+import { type Surroundings, surroundingsOf } from "./surroundings.ts";
 
 const servers = useStandInServers();
 // The copy that these tests run from.
-const copy: Surroundings = { repository: resolve(import.meta.dirname, "..", "..", "..") };
+const repository = resolve(import.meta.dirname, "..", "..", "..");
+const copy: Surroundings = { repository, version: surroundingsOf(repository).version };
 
-async function run(...given: string[]) {
-  const terminal = recordingTerminal();
-  const code = await runCommandLine(given, terminal, copy);
-  return { code, output: terminal.output.join("\n"), errors: terminal.errors.join("\n") };
-}
+const run = (...given: string[]) => runRecorded(copy, given);
 
 describe("the command line", () => {
   it("starts a server, reports its health, and stops it", async () => {

@@ -1,6 +1,7 @@
 import type { HealthReport } from "@claude-plans/domain";
 import { describe, expect, it } from "vitest";
 
+import { Refusal } from "../install/refusal.ts";
 import { recordingTerminal } from "../recording-terminal.ts";
 import { answer, useStandInServers } from "../server/stand-in-server.ts";
 import { reportHealth } from "./health.ts";
@@ -22,7 +23,7 @@ async function serveReport(report: unknown): Promise<void> {
 // Runs the command, and gives its exit code and what it printed.
 async function check(json: boolean) {
   const terminal = recordingTerminal();
-  const code = await reportHealth(servers.directory(), json, terminal);
+  const code = await reportHealth({ dataDirectory: servers.directory(), version: "1.2.3", json }, terminal);
   return { code, output: terminal.output, errors: terminal.errors };
 }
 
@@ -52,8 +53,21 @@ describe("the health command", () => {
   });
 
   it("fails on a report that it does not understand", async () => {
-    await serveReport({ status: "fine" });
+    await serveReport({ version: "1.2.3", status: "fine" });
 
-    await expect(reportHealth(servers.directory(), false, recordingTerminal())).rejects.toThrow("status");
+    await expect(check(false)).rejects.toThrow("status");
+  });
+
+  // Its report may not have the shape that this command expects, so the version is compared first.
+  it.each([healthy, { version: "1.2.3" }])("refuses a server of another version, which reports %j", async (report) => {
+    await serveReport({ ...report, version: "1.2.4" });
+
+    const attempt = check(false);
+
+    await expect(attempt).rejects.toThrow(
+      "The running server is version 1.2.4, but this command is version 1.2.3. " +
+        "Stop the server, run install, and start the server again.",
+    );
+    await expect(attempt).rejects.toBeInstanceOf(Refusal);
   });
 });

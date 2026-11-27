@@ -12,6 +12,7 @@ import { reportHealth } from "./commands/health.ts";
 import { installApplication } from "./commands/install.ts";
 import { startServer } from "./commands/start.ts";
 import { stopServer } from "./commands/stop.ts";
+import { requireCurrentBuild } from "./install/outdated-build.ts";
 import { Refusal } from "./install/refusal.ts";
 import { type Surroundings, targetDirectory } from "./surroundings.ts";
 import type { Terminal } from "./terminal.ts";
@@ -32,6 +33,8 @@ type Values = Readonly<Record<string, unknown>>;
 
 interface Command {
   readonly options: ParseArgsOptionsConfig;
+  /** Whether an outdated build refuses it. Installing and stopping always work. */
+  readonly needsCurrentBuild?: true;
   readonly run: (dataDirectory: string, values: Values, terminal: Terminal, from: Surroundings) => Promise<number>;
 }
 
@@ -49,6 +52,7 @@ const commands = new Map<string, Command>([
     "start",
     {
       options: { detached: { type: "boolean" }, port: { type: "string" }, "log-level": { type: "string" } },
+      needsCurrentBuild: true,
       run: (dataDirectory, values, terminal) => {
         const detached = values["detached"] === true;
         const logLevel = text(values["log-level"]);
@@ -61,7 +65,9 @@ const commands = new Map<string, Command>([
     "health",
     {
       options: { json: { type: "boolean" } },
-      run: (dataDirectory, values, terminal) => reportHealth(dataDirectory, values["json"] === true, terminal),
+      needsCurrentBuild: true,
+      run: (dataDirectory, values, terminal, { version }) =>
+        reportHealth({ dataDirectory, version, json: values["json"] === true }, terminal),
     },
   ],
 ]);
@@ -81,6 +87,15 @@ interface Invocation {
   readonly given: readonly string[];
 }
 
+// Only a plain install's copy is meant to keep up with master. Any other copy was made to try particular code.
+function checkBuild({ needsCurrentBuild }: Command, surroundings: Surroundings, terminal: Terminal): void {
+  if (needsCurrentBuild === true && surroundings.installation?.real === true) {
+    requireCurrentBuild(surroundings, (line) => {
+      terminal.printError(line);
+    });
+  }
+}
+
 async function runCommand(invocation: Invocation, terminal: Terminal, surroundings: Surroundings): Promise<number> {
   const { name, command, given } = invocation;
   let read;
@@ -92,6 +107,7 @@ async function runCommand(invocation: Invocation, terminal: Terminal, surroundin
   }
   const { dataDirectory, values } = read;
   try {
+    checkBuild(command, surroundings, terminal);
     return await command.run(dataDirectory, values, terminal, surroundings);
   } catch (error) {
     terminal.printError(message(error));

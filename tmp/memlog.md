@@ -229,3 +229,6 @@
 | 2026-11-27 08:54 UTC | [D]000225 | .claude/settings.json makes Claude Code ask before a command that names install:studio or --studio. |
 | 2026-11-27 16:56 UTC | [A]000226 | Applies D000109: install backs up only a database that exists and that migrating would change, so none is made when nothing is pending. Backups are never deleted. |
 | 2026-11-27 16:56 UTC | [A]000227 | The database program backs up and restores under the server's lock. VACUUM INTO writes a backup, and SQLite's backup interface restores it. |
+| 2026-11-27 19:34 UTC | [A]000228 | Applies D000106: only a copy that a plain install saved is compared with local master's committed package.json, and start and health depend on it. Other installs come from branches with other versions. |
+| 2026-11-27 19:34 UTC | [A]000229 | If master's version cannot be read, such as after the repository moves, the command warns and carries on, since no difference is known. |
+| 2026-11-27 19:34 UTC | [A]000230 | Applies A000081: health compares the running server's version with the command's own. A second start already refuses while a server runs. |

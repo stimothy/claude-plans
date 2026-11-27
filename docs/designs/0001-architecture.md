@@ -196,6 +196,19 @@ repository's copy to reach the real data. Later ones use `claude-plans install`.
 
 These protections stop mistakes. Code that runs under the user's account can still reach the files.
 
+An installed copy stays as it is while `master` moves on, so a copy that a plain install saved compares its version
+with the one in the root `package.json` that local `master` has committed. When they differ, newer or older,
+`start` and `health` refuse and say to install. `install` and `stop` always work, so that the user can get out of
+that state. Comparing with `master` means that work on another branch changes nothing. A copy installed in another
+directory is not compared, because it was made to try particular code, often a branch with another version. The
+check sees only versions, so a change that keeps the version goes unnoticed, which is accepted. If the version on
+`master` cannot be read, such as after the repository has moved, no difference is known, so the command warns and
+carries on.
+
+A server also keeps running the code that it started with. `health` refuses a server whose version is not the
+command's own, and says to stop it, install, and start it again. It reads the version before the rest of the
+report, which another version may shape differently.
+
 ## Logging
 
 `logging` writes to `logs/` in the data directory. It is a separate package because the backend and the command
