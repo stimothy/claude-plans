@@ -41,8 +41,11 @@ export interface StandInServers {
   readonly directory: () => string;
   /** Writes the record of a server on this port. */
   readonly record: (port: number, token?: string) => void;
-  /** Starts a server that answers every request with the handler, and returns its port. */
-  readonly listen: (handler: Handler) => Promise<number>;
+  /**
+   * Starts a server that answers every request with the handler, and returns its port. It takes the first free one
+   * of the ports, where 0 means any.
+   */
+  readonly listen: (handler: Handler, ports?: readonly number[]) => Promise<number>;
   /**
    * Starts a server and records it. It names the test's data directory unless another is given, and answers the
    * other requests with the handler.
@@ -68,11 +71,18 @@ export function useStandInServers(): StandInServers {
   const record = (port: number, token = standInToken): void => {
     writeFileSync(join(directory, serverRecordFileName), JSON.stringify({ port, token }));
   };
-  const listen = async (handler: Handler): Promise<number> => {
-    const server = createServer(handler);
-    servers.push(server);
-    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-    return (server.address() as AddressInfo).port;
+  const listen = async (handler: Handler, ports: readonly number[] = [0]): Promise<number> => {
+    for (const port of ports) {
+      const server = createServer(handler).listen(port, "127.0.0.1");
+      try {
+        await once(server, "listening");
+        servers.push(server);
+        return (server.address() as AddressInfo).port;
+      } catch {
+        // The port is taken, so the next one is tried.
+      }
+    }
+    throw new Error("None of the ports is free.");
   };
   const serve = async (handler?: Handler, named?: string): Promise<number> => {
     const port = await listen((request, response) => {

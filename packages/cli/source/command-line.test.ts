@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -44,15 +44,45 @@ describe("the command line", () => {
     [["toString"], "Usage:"],
     [["stop"], "--data-directory must give a full path"],
     [["stop", "--data-directory", ".claude-plans"], "--data-directory must give a full path"],
-    [["stop", "--port", "4311"], "--port"],
-    [["health", "--detached"], "--detached"],
-    [["health", "extra"], "extra"],
-    [["start", "--data-directory"], "--data-directory"],
   ])("refuses %j with exit code 2", async (given, problem) => {
     const result = await run(...given);
 
     expect(result.code).toBe(2);
     expect(result.errors).toContain(problem);
+  });
+
+  // Each has a data directory, so that only the named problem can refuse it. The usage names every option, so only
+  // the first line is checked.
+  it.each([
+    [["stop", "--port", "4311"], "Unknown option '--port'"],
+    [["health", "--detached"], "Unknown option '--detached'"],
+    [["health", "extra"], "Unexpected argument 'extra'"],
+    [["start", "--port"], "--port <value>' argument missing"],
+  ])("refuses %j even with a data directory", async (given, problem) => {
+    const [name = "", ...rest] = given;
+
+    const result = await run(name, "--data-directory", servers.directory(), ...rest);
+
+    expect(result.code).toBe(2);
+    expect(result.errors.split("\n")[0]).toContain(problem);
+  });
+
+  it("gives the server the typed port and log level, and leaves out what was not typed", async () => {
+    const directory = `--data-directory=${servers.directory()}`;
+    const [typed, saved] = [await freePort(), await freePort()];
+
+    const first = await run("start", directory, "--detached", "--port", String(typed), "--log-level", "error");
+    await run("stop", directory);
+    const logs = join(servers.directory(), "logs");
+    const logged = existsSync(logs);
+    writeFileSync(join(servers.directory(), "settings.yaml"), `port: ${String(saved)}\n`);
+    const second = await run("start", directory, "--detached");
+    await run("stop", directory);
+
+    expect(first.output).toContain(`:${String(typed)}`);
+    // At the error level, a server that starts and stops writes nothing.
+    expect(logged).toBe(false);
+    expect(second.output).toContain(`:${String(saved)}`);
   });
 
   it("reports a command that fails, and logs it without the record's token", async () => {
@@ -71,7 +101,8 @@ describe("the command line", () => {
   it("does not create a data directory only to log in it", async () => {
     const missing = join(servers.directory(), "missing");
 
-    const result = await run("start", "--data-directory", join(missing, "\0"));
+    // No file system takes a name this long, so the command fails. Logging would create the directory above it.
+    const result = await run("health", "--data-directory", join(missing, "a".repeat(300)));
 
     expect(result.code).toBe(1);
     expect(existsSync(missing)).toBe(false);

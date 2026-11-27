@@ -82,24 +82,24 @@ function firstReport(child: ChildProcess, timeout: number, dataDirectory: string
   });
 }
 
-// Waits for a server in the foreground, passing on the signals that only this program may have been sent.
+// Waits for the report, and then for a server in the foreground. A signal in the meantime is passed on where only
+// this program may have been sent it. A server in the background has its own process group, so it gets none from
+// the terminal, and it is ended if the command is interrupted before it is ready.
 async function follow(child: ChildProcess, options: StartOptions, terminal: Terminal, launch: Launch) {
   const { promise: exited, resolve } = Promise.withResolvers<number>();
   child.once("exit", (code) => {
     resolve(code ?? 1);
   });
-  const stopListening = options.detached
-    ? undefined
-    : terminal.onSignal((signal) => {
-        if (terminal.passesSignalsOn) {
-          child.kill(signal);
-        }
-      });
+  const stopListening = terminal.onSignal((signal) => {
+    if (options.detached || terminal.passesSignalsOn) {
+      child.kill(signal);
+    }
+  });
   try {
     const report = await firstReport(child, launch.readyTimeoutMilliseconds, options.dataDirectory);
     return await conclude(report, options.detached, terminal, exited);
   } finally {
-    stopListening?.();
+    stopListening();
     // A server in the background carries on after this command ends.
     child.unref();
   }

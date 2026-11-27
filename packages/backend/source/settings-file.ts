@@ -11,13 +11,14 @@ import {
   type ColorSettingsUpdate,
   colorVisionSchema,
   defaultColorSettings,
+  portSchema,
   settingsContract,
   themeSchema,
 } from "@claude-plans/domain";
 import { type Document, isScalar, parseDocument } from "yaml";
 import { z } from "zod";
 
-import { logLevelSchema, portSchema, type ServerOverrides } from "./server-settings.ts";
+import { logLevelSchema, type ServerOverrides } from "./server-settings.ts";
 
 // A misspelled setting is an error, so that it is not silently ignored.
 const fileSchema = z.strictObject({

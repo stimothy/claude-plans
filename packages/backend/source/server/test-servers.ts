@@ -5,6 +5,7 @@
  */
 import { mkdtempSync, rmSync } from "node:fs";
 import { request } from "node:http";
+import { type AddressInfo, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -12,6 +13,18 @@ import { shutdownContract } from "@claude-plans/domain";
 import { afterEach, beforeEach, type Mock, vi } from "vitest";
 
 import { type RunningServer, startServer } from "./server.ts";
+
+/** Returns a port that was free a moment ago, for a server that must be given one. */
+export async function freePort(): Promise<number> {
+  const holder = createServer();
+  await new Promise<void>((resolve, reject) => {
+    holder.once("error", reject);
+    holder.listen(0, "127.0.0.1", resolve);
+  });
+  const { port } = holder.address() as AddressInfo;
+  await new Promise((resolve) => holder.close(resolve));
+  return port;
+}
 
 /** What a server answered. */
 export interface Answer {

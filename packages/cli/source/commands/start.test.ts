@@ -1,5 +1,5 @@
 // These tests run the real server program, each on its own temporary data directory and a free port.
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -76,46 +76,95 @@ describe("the start command with a server in the foreground", () => {
     // Windows cannot send a signal that a program handles, so there it ends the server at once.
     await expect(exited).resolves.toBe(process.platform === "win32" ? 1 : 0);
   });
-
-  it("does not pass a signal on where the server gets it too", async () => {
-    const { exited, terminal } = await startInForeground(recordingTerminal(false));
-
-    terminal.signal("SIGTERM");
-
-    await expect(findServer(dataDirectory)).resolves.toBeDefined();
-    await stopServer(dataDirectory, recordingTerminal());
-    await expect(exited).resolves.toBe(0);
-  });
 });
 
-describe("a server program that does not report", () => {
-  async function start(source: string, readyTimeoutMilliseconds = 5000): Promise<number> {
+describe("a server program that stands in for the real one", () => {
+  // Long enough for a busy machine to start the program.
+  const startTime = 3000;
+  const identifier = (): string => join(dataDirectory, "identifier");
+  const signalled = (): string => join(dataDirectory, "signalled");
+  const ready = "process.send({ state: 'listening', port: 1 });";
+  const stay = "setInterval(() => {}, 1000);";
+
+  // Starts a program that first records its process, and then does what the body says.
+  async function start(
+    body: string,
+    { readyTimeoutMilliseconds = 5000, detached = true, terminal = recordingTerminal() } = {},
+  ): Promise<number> {
     const program = join(dataDirectory, "program.mjs");
+    const source = `import { writeFileSync } from "node:fs";
+      process.on("SIGTERM", () => { writeFileSync(${JSON.stringify(signalled())}, ""); process.exit(); });
+      writeFileSync(${JSON.stringify(identifier())}, String(process.pid));
+      ${body}`;
     writeFileSync(program, source);
     const launch = { runtime: process.execPath, program, readyTimeoutMilliseconds };
-    return startServer(options(true), recordingTerminal(), launch);
+    return startServer(options(detached), terminal, launch);
+  }
+
+  const running = (): number => Number(readFileSync(identifier(), "utf8"));
+  // Signal 0 only asks whether the process exists.
+  const expectRunning = (): void => {
+    expect(process.kill(running(), 0)).toBe(true);
+  };
+  async function expectEnded(): Promise<void> {
+    await vi.waitFor(() => {
+      expect(() => process.kill(running(), 0)).toThrow("ESRCH");
+    });
   }
 
   it.each([
     ["ends first", "process.exitCode = 1;", "stopped before it was ready"],
-    ["sends something else", "process.send({ state: 'ready' }); setInterval(() => {}, 1000);", "not understood"],
-  ])("fails when it %s, and says where the logs are", async (_, source, problem) => {
-    await expect(start(source)).rejects.toThrow(`${problem}. See the logs in ${join(dataDirectory, "logs")}.`);
+    ["sends something else", `process.send({ state: 'ready' }); ${stay}`, "not understood"],
+  ])("fails when it %s, says where the logs are, and leaves nothing running", async (_, body, problem) => {
+    await expect(start(body)).rejects.toThrow(`${problem}. See the logs in ${join(dataDirectory, "logs")}.`);
+
+    await expectEnded();
   });
 
   it("is ended when it takes too long", async () => {
-    const identifier = join(dataDirectory, "identifier");
-    const source = `import { writeFileSync } from "node:fs";
-      writeFileSync(${JSON.stringify(identifier)}, String(process.pid));
-      setInterval(() => {}, 1000);`;
+    await expect(start(stay, { readyTimeoutMilliseconds: startTime })).rejects.toThrow("was not ready in time");
 
-    await expect(start(source, 1000)).rejects.toThrow("was not ready in time");
+    await expectEnded();
+  });
 
-    const running = Number(readFileSync(identifier, "utf8"));
-    // Signal 0 only asks whether the process exists.
+  it("is left running once it is ready, even after the time that it was given", async () => {
+    await expect(start(`${ready} ${stay}`, { readyTimeoutMilliseconds: startTime })).resolves.toBe(0);
+
+    await new Promise((resolve) => setTimeout(resolve, startTime + 200));
+
+    expectRunning();
+    process.kill(running());
+  });
+
+  // A server in the background has a process group of its own, so Ctrl+C does not reach it.
+  it("is ended when the command is interrupted before it is ready", async () => {
+    const terminal = recordingTerminal(false);
+    const started = expect(start(stay, { terminal })).rejects.toThrow("stopped before it was ready");
     await vi.waitFor(() => {
-      expect(() => process.kill(running, 0)).toThrow("ESRCH");
-    });
+      expect(running()).toBeGreaterThan(0);
+    }, startTime);
+
+    terminal.signal("SIGTERM");
+
+    await started;
+    await expectEnded();
+  });
+
+  it("is not sent a signal that the terminal also gives it", async () => {
+    const terminal = recordingTerminal(false);
+    const exited = start(`${ready} ${stay}`, { detached: false, terminal });
+    await vi.waitFor(() => {
+      expect(terminal.output).toHaveLength(1);
+    }, startTime);
+
+    terminal.signal("SIGTERM");
+    // Long enough for a signal that was wrongly sent to take effect.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expectRunning();
+    expect(existsSync(signalled())).toBe(false);
+    process.kill(running(), "SIGKILL");
+    await exited;
   });
 
   it("fails when it cannot be run at all", async () => {

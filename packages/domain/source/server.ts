@@ -5,7 +5,8 @@
  */
 import { z } from "zod";
 
-const portSchema = z.int().min(1).max(65_535);
+/** Checks a port number that a server can listen on. */
+export const portSchema = z.int().min(1).max(65_535);
 
 /**
  * Checks what a server program tells whoever started it, once it is listening or has failed to start. It is sent

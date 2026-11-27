@@ -124,8 +124,9 @@ that could lead to that data. Nothing yet stops a caller from naming it.
 In the foreground, it then waits for the server to end. A terminal's Ctrl+C reaches both programs, but another
 signal may reach only the command, which passes it on. Windows cannot send a signal that a program handles, so
 there the command passes nothing on. With `--detached`, the server gets its own process group, so that closing the
-terminal does not stop it, and the command returns once the server is ready. A server program that is not ready in
-30 seconds is ended.
+terminal does not stop it, and the command returns once the server is ready. Until then, a signal to the command
+ends the server program, which Ctrl+C would otherwise not reach. A server program that is not ready in 30 seconds
+is ended too.
 
 `stop` and `health` read the port from the data directory's `server.json`. A crash can leave a record that names a
 port which another program now holds, so they first ask the server which data directory it uses. Only then does

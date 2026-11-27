@@ -1,7 +1,8 @@
 import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { inspect } from "node:util";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { findServer } from "./running-server.ts";
 import { answer, type Handler, standInToken, useStandInServers } from "./stand-in-server.ts";
@@ -57,11 +58,46 @@ describe("finding the server for a data directory", () => {
         answer(response, { name: "other" });
       },
     ],
-    ["points elsewhere", (_, response) => response.writeHead(302, { location: "/elsewhere" }).end()],
   ])("does not take a program that %s", async (_, handler) => {
     servers.record(await servers.listen(handler));
 
     await expect(findServer(servers.directory())).resolves.toBeUndefined();
+  });
+
+  it("does not follow a program that points elsewhere, even to the right server", async () => {
+    const asked = vi.fn();
+    const right = await servers.listen((_, response) => {
+      asked();
+      answer(response, { dataDirectory: servers.directory() });
+    });
+    const location = `http://127.0.0.1:${String(right)}/api/server`;
+    servers.record(await servers.listen((_, response) => response.writeHead(302, { location }).end()));
+
+    await expect(findServer(servers.directory())).resolves.toBeUndefined();
+    expect(asked).not.toHaveBeenCalled();
+  });
+
+  it("reaches a server on a port that browsers refuse", async () => {
+    // Node.js's fetch will not connect to these ports, although a server can listen on them.
+    const port = await servers.listen(
+      (_, response) => {
+        answer(response, { dataDirectory: servers.directory() });
+      },
+      [6000, 6666, 6667, 6668, 6669, 10_080],
+    );
+    servers.record(port);
+
+    await expect(findServer(servers.directory())).resolves.toMatchObject({ port });
+  });
+
+  it("keeps a damaged record's token out of the whole error", async () => {
+    // Without its quotes, the token is where the parser fails, and the parser's message quotes the text there.
+    writeFileSync(join(servers.directory(), "server.json"), `{"token": sekret}`);
+
+    const error = await findServer(servers.directory()).catch((thrown: unknown) => thrown);
+
+    expect(inspect(error)).toContain("is not valid");
+    expect(inspect(error)).not.toContain("sekret");
   });
 
   it("says so when the program on the port does not answer in time", async () => {

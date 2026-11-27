@@ -6,11 +6,11 @@
 import { isAbsolute } from "node:path";
 import { parseArgs } from "node:util";
 
-import type { ServerStartReport } from "@claude-plans/domain";
+import { portSchema, type ServerStartReport } from "@claude-plans/domain";
 import { createLogger, type Logger, type LogLevel } from "@claude-plans/logging";
-import type { z } from "zod";
+import { z } from "zod";
 
-import { logLevelSchema, portSchema, type ServerOverrides, serverSettings } from "../server-settings.ts";
+import { logLevelSchema, type ServerOverrides, serverSettings } from "../server-settings.ts";
 import { type RunningServer, startServer } from "../server/server.ts";
 import { readSettings } from "../settings-file.ts";
 
@@ -24,6 +24,9 @@ export interface ServerProgram {
   /** Calls stop whenever the system asks the program to stop. */
   readonly onStopRequest: (stop: () => void) => void;
 }
+
+// Number() would also accept forms such as "4e3" or " 4311", which are more likely mistakes than ports.
+const typedPortSchema = z.string().regex(/^\d+$/).transform(Number).pipe(portSchema);
 
 interface Options extends ServerOverrides {
   readonly dataDirectory: string;
@@ -53,10 +56,9 @@ function readOptions(given: readonly string[]): Options {
   if (!isAbsolute(dataDirectory)) {
     throw new Error("--data-directory must give a full path.");
   }
-  const port = values.port === undefined ? undefined : Number(values.port);
   return {
     dataDirectory,
-    port: optional(portSchema, port, "--port must be a whole number from 1 to 65535."),
+    port: optional(typedPortSchema, values.port, "--port must be a whole number from 1 to 65535."),
     logLevel: optional(logLevelSchema, values["log-level"], "--log-level must be error, warn, info, or debug."),
   };
 }

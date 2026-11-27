@@ -4,8 +4,7 @@ import { join } from "node:path";
 import type { ServerStartReport } from "@claude-plans/domain";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useTestServers } from "../server/test-servers.ts";
-import { freePort } from "./free-port.ts";
+import { freePort, useTestServers } from "../server/test-servers.ts";
 import { runServerProgram } from "./server-program.ts";
 
 const servers = useTestServers();
@@ -120,6 +119,9 @@ describe("the server program", () => {
   it.each([
     [["--port", "0"], "--port"],
     [["--port", "nine"], "--port"],
+    [["--port", "4e3"], "--port"],
+    [["--port", "0x10e7"], "--port"],
+    [["--port", " 4311"], "--port"],
     [["--log-level", "loud"], "--log-level"],
     [["--prot", "4311"], "--prot"],
   ])("refuses the options %j", async (options, named) => {

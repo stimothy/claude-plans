@@ -28,8 +28,8 @@ export async function reportHealth(dataDirectory: string, json: boolean, termina
     terminal.printError(`No server is running on ${dataDirectory}.`);
     return 1;
   }
-  const response = await askServer(server.port, healthContract.path);
-  const report = healthContract.read.response.parse(await response.json());
+  const { body } = await askServer(server.port, healthContract.path);
+  const report = healthContract.read.response.parse(body);
   for (const line of json ? [JSON.stringify(report)] : readable(report)) {
     terminal.print(line);
   }
