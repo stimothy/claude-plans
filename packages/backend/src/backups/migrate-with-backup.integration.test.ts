@@ -1,0 +1,241 @@
+import { randomBytes } from "node:crypto";
+import { existsSync, fsyncSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+
+import { describe, expect, it, vi } from "vitest";
+
+import { migrate } from "../database/migrate.ts";
+import type { Migration } from "../database/migration.ts";
+import { databaseFile, readSchemaVersion } from "../database/schema-version.ts";
+import { interruptedDatabase, queryRows, statements, step, useTestDirectory } from "../database/test-database.ts";
+import { restoreBackup } from "./database-backup.ts";
+import { migrateWithBackup } from "./migrate-with-backup.ts";
+
+// Random bytes are random, except where a test says what they are.
+vi.mock("node:crypto", async (importOriginal) => {
+  const original = await importOriginal<{ randomBytes: (size: number) => Buffer }>();
+  return { ...original, randomBytes: vi.fn(original.randomBytes) };
+});
+
+// Writing a copy to the disk works as it always does, except where a test makes it fail.
+vi.mock("node:fs", async (importOriginal) => {
+  const original = await importOriginal<{ fsyncSync: (descriptor: number) => void }>();
+  return { ...original, fsyncSync: vi.fn(original.fsyncSync) };
+});
+
+const directory = useTestDirectory();
+const first = statements(1, "CREATE TABLE plans (title TEXT); INSERT INTO plans VALUES ('kept')");
+const second = statements(2, "DELETE FROM plans");
+const failing = statements(3, "not SQL");
+
+const backupsDirectory = (): string => join(directory(), "backups");
+const backupNames = (): string[] => (existsSync(backupsDirectory()) ? readdirSync(backupsDirectory()) : []);
+// Each backup is read as a data directory's database is, from a directory of its own.
+function titlesIn(file: string): unknown[] {
+  const database = new DatabaseSync(file, { readOnly: true });
+  const rows = database
+    .prepare("SELECT title FROM plans")
+    .all()
+    .map((row) => row["title"]);
+  database.close();
+  return rows;
+}
+const titles = (): unknown[] => titlesIn(databaseFile(directory()));
+
+async function run(migrations: readonly Migration[]) {
+  const reports: string[] = [];
+  await migrateWithBackup(directory(), migrations, (line) => reports.push(line));
+  return reports.join("\n");
+}
+
+// Migrates a database from version 1 to 2, and returns the path of the backup that this makes.
+async function backUpOnce(): Promise<string> {
+  migrate(directory(), [first]);
+  await run([first, second]);
+  const [name = ""] = backupNames();
+  return join(backupsDirectory(), name);
+}
+
+describe("backing up before a migration", () => {
+  it("saves the database as it was, and says where", async () => {
+    migrate(directory(), [first]);
+
+    const report = await run([first, second]);
+
+    const [name = ""] = backupNames();
+    expect(name).toMatch(/^\d{8}T\d{6}Z-version-1-[\da-f]{8}\.sqlite$/);
+    expect(report).toContain(join(backupsDirectory(), name));
+    expect(titlesIn(join(backupsDirectory(), name))).toEqual(["kept"]);
+    expect(titles()).toEqual([]);
+  });
+
+  it("never overwrites an earlier backup, even within the same second", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    migrate(directory(), [first]);
+    // A failure puts the database back, so both backups are of the same version.
+    const unchanged = [first, statements(2, "not SQL")];
+
+    await expect(run(unchanged)).rejects.toThrow("restored");
+    await expect(run(unchanged)).rejects.toThrow("restored");
+
+    vi.useRealTimers();
+    expect(backupNames()).toHaveLength(2);
+  });
+
+  // The random part makes this very unlikely, so the test takes the randomness away.
+  it("stops rather than replace a backup that has the same name", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-01-02T03:04:05Z") });
+    vi.mocked<(size: number) => Buffer>(randomBytes).mockReturnValueOnce(Buffer.alloc(4));
+    migrate(directory(), [first]);
+    const earlier = join(backupsDirectory(), "20260102T030405Z-version-1-00000000.sqlite");
+    mkdirSync(backupsDirectory());
+    writeFileSync(earlier, "an earlier backup");
+
+    await expect(run([first, second])).rejects.toThrow("could not be backed up");
+
+    vi.useRealTimers();
+    expect(readFileSync(earlier, "utf8")).toBe("an earlier backup");
+    expect(backupNames()).toEqual([basename(earlier)]);
+    expect(titles()).toEqual(["kept"]);
+  });
+
+  // Windows has no such permissions, and reports that anyone may read and write.
+  it("lets only the owner read the backup", async () => {
+    const file = await backUpOnce();
+
+    const mode = statSync(file).mode & 0o777;
+    expect(mode).toBe(process.platform === "win32" ? 0o666 : 0o600);
+  });
+
+  it("backs up a database that does not yet track migrations", async () => {
+    const database = new DatabaseSync(databaseFile(directory()));
+    database.exec("CREATE TABLE other (id INTEGER)");
+    database.close();
+
+    await run([]);
+
+    expect(backupNames()).toEqual([expect.stringContaining("-version-0-")]);
+  });
+
+  it.each([
+    ["there is no database yet", [] as Migration[]],
+    ["there is nothing to migrate", [first]],
+  ])("makes no backup when %s", async (_, earlier) => {
+    if (earlier.length > 0) {
+      migrate(directory(), earlier);
+    }
+
+    await expect(run([first])).resolves.toBe("");
+
+    expect(backupNames()).toEqual([]);
+    expect(readSchemaVersion(directory())).toBe(1);
+  });
+
+  it("makes none for a newer database, which it refuses", async () => {
+    migrate(directory(), [first]);
+
+    await expect(run([])).rejects.toThrow("newer than version 0");
+
+    expect(backupNames()).toEqual([]);
+  });
+});
+
+describe("a backup that fails", () => {
+  it("stops the migration", async () => {
+    migrate(directory(), [first]);
+    // A file where the directory belongs.
+    writeFileSync(backupsDirectory(), "");
+
+    await expect(run([first, second])).rejects.toThrow("could not be backed up, so nothing was migrated");
+
+    expect(titles()).toEqual(["kept"]);
+    expect(readSchemaVersion(directory())).toBe(1);
+  });
+
+  it("stops the migration when the copy cannot be written, and leaves no part of it behind", async () => {
+    migrate(directory(), [first]);
+    vi.mocked(fsyncSync).mockImplementationOnce(() => {
+      throw new Error("The disk is full.");
+    });
+
+    const attempt = run([first, second]);
+
+    await expect(attempt).rejects.toMatchObject({ cause: { message: "The disk is full." } });
+    expect(titles()).toEqual(["kept"]);
+    expect(backupNames()).toEqual([]);
+  });
+
+  it("stops the migration of a file that is not a database", async () => {
+    writeFileSync(databaseFile(directory()), "not a database".repeat(100));
+
+    await expect(run([first])).rejects.toThrow("could not be backed up");
+  });
+});
+
+describe("a database that was interrupted or is in use", () => {
+  it("recovers one whose last write was interrupted, and backs up what was recovered", async () => {
+    const crashed = interruptedDatabase(directory());
+    const reports: string[] = [];
+    const migrations = [statements(1, "SELECT 1"), statements(2, "SELECT 1")];
+
+    await migrateWithBackup(crashed, migrations, (line) => reports.push(line));
+
+    const [name = ""] = readdirSync(join(crashed, "backups"));
+    const saved = new DatabaseSync(join(crashed, "backups", name), { readOnly: true });
+    expect(saved.prepare("SELECT * FROM notes").all()).toEqual([]);
+    saved.close();
+    expect(readSchemaVersion(crashed)).toBe(2);
+  });
+
+  // Waiting for it takes the whole busy timeout, after which the lock is what gets reported.
+  it("waits for another program to finish reading before it restores", async () => {
+    const file = await backUpOnce();
+    const reader = new DatabaseSync(databaseFile(directory()));
+    reader.exec("BEGIN");
+    reader.prepare("SELECT * FROM plans").all();
+
+    await expect(restoreBackup(file, directory())).rejects.toThrow("database is locked");
+
+    reader.close();
+  });
+});
+
+describe("a migration that fails", () => {
+  it("restores the database to how it was before every migration, and keeps the backup", async () => {
+    migrate(directory(), [first]);
+
+    const attempt = run([first, second, failing]);
+
+    await expect(attempt).rejects.toThrow(/the database was restored from the backup[^]*backups/);
+    await expect(attempt).rejects.toMatchObject({ cause: { message: "Migration 3 (step 3) failed." } });
+    expect(titles()).toEqual(["kept"]);
+    expect(queryRows(directory(), "SELECT version FROM schema_migrations")).toEqual([{ version: 1 }]);
+    expect(backupNames()).toHaveLength(1);
+  });
+
+  it("says where the backup is when the database cannot be restored", async () => {
+    migrate(directory(), [first]);
+    // It makes the restore fail, by leaving something that is not a database in the database's place.
+    const wrecking = step(2, () => {
+      writeFileSync(databaseFile(directory()), "not a database".repeat(100));
+      throw new Error("The disk failed.");
+    });
+
+    const attempt = run([first, wrecking]);
+
+    await expect(attempt).rejects.toThrow(/could not be restored[^]*The backup[^]*backups/);
+    // Copying the file over the database could damage it.
+    await expect(attempt).rejects.toThrow("restore it with SQLite, such as with the .restore command of sqlite3");
+    await expect(attempt).rejects.toThrow("move database.sqlite and any database.sqlite-journal aside together");
+    const [name = ""] = backupNames();
+    await expect(attempt).rejects.toThrow(join(backupsDirectory(), name));
+    expect(titlesIn(join(backupsDirectory(), name))).toEqual(["kept"]);
+  });
+
+  it("gives only the failure when there was no database to back up", async () => {
+    await expect(run([statements(1, "not SQL")])).rejects.toThrow(/^Migration 1 \(step 1\) failed\.$/);
+
+    expect(backupNames()).toEqual([]);
+  });
+});

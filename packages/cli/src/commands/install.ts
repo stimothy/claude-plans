@@ -53,7 +53,9 @@ async function replace(build: Build, dataDirectory: string, terminal: Terminal):
     await stopServer(dataDirectory, terminal);
   }
   try {
-    runDatabaseProgram(build.directory, "migrate", dataDirectory);
+    runDatabaseProgram(build.directory, "migrate", dataDirectory, (report) => {
+      terminal.print(report);
+    });
     return { stoppedServer, previous: activateBuild(dataDirectory, build) };
   } catch (error) {
     if (!stoppedServer) {

@@ -7,7 +7,7 @@
 import { mkdirSync, realpathSync } from "node:fs";
 import { parseArgs } from "node:util";
 
-import { migrate } from "../database/migrate.ts";
+import { migrateWithBackup } from "../backups/migrate-with-backup.ts";
 import type { Migration } from "../database/migration.ts";
 import { migrations as applicationMigrations } from "../database/migrations/index.ts";
 import { requireSupportedDatabase } from "../database/readiness.ts";
@@ -18,13 +18,15 @@ import { requireFullPath } from "./full-path.ts";
 /** What the program is given, so that it does not reach for the process that it runs in. */
 export interface DatabaseProgram {
   readonly arguments: readonly string[];
+  /** Tells whoever started the program what it did. */
+  readonly print: (line: string) => void;
   /** Says what is wrong, to whoever started the program. */
   readonly printError: (line: string) => void;
   /** The application's migrations, unless a test gives others. */
   readonly migrations?: readonly Migration[];
 }
 
-type Action = (dataDirectory: string, migrations: readonly Migration[]) => void;
+type Action = (dataDirectory: string, migrations: readonly Migration[], print: DatabaseProgram["print"]) => unknown;
 
 // Refuses a newer database before anything is changed, so it must change nothing itself. A database that cannot
 // be read passes, because only migrating opens it for writing, which recovers from an interrupted write.
@@ -39,11 +41,11 @@ const check: Action = (dataDirectory, migrations) => {
 };
 
 // The lock keeps a server from starting, or still running, while the database changes.
-const migrateLocked: Action = (dataDirectory, migrations) => {
+const migrateLocked: Action = async (dataDirectory, migrations, print) => {
   mkdirSync(dataDirectory, { recursive: true });
   const release = lockDataDirectory(realpathSync.native(dataDirectory));
   try {
-    migrate(dataDirectory, migrations);
+    await migrateWithBackup(dataDirectory, migrations, print);
   } finally {
     release();
   }
@@ -63,7 +65,7 @@ function explain(error: unknown): string {
 }
 
 /** Runs "check" or "migrate" on a data directory, and returns the program's exit code. */
-export function runDatabaseProgram(program: DatabaseProgram): number {
+export async function runDatabaseProgram(program: DatabaseProgram): Promise<number> {
   try {
     const { values, positionals } = parseArgs({
       args: [...program.arguments],
@@ -74,7 +76,8 @@ export function runDatabaseProgram(program: DatabaseProgram): number {
     if (action === undefined) {
       throw new Error("Give one action: check or migrate.");
     }
-    action(requireFullPath(values["data-directory"]), program.migrations ?? applicationMigrations);
+    const migrations = program.migrations ?? applicationMigrations;
+    await action(requireFullPath(values["data-directory"]), migrations, program.print);
     return 0;
   } catch (error) {
     program.printError(explain(error));

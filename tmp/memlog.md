@@ -227,3 +227,5 @@
 | 2026-11-27 08:32 UTC | [D]000223 | #26 is one PR with size:override, and it also holds the src rename and the split of the Node.js tests. |
 | 2026-11-27 08:32 UTC | [A]000224 | Applies D000119: a *.integration.test.ts file uses a real database, runs a server, or starts another program, and each of its tests has 30 seconds. Coverage minimums apply to both Node.js suites together. |
 | 2026-11-27 08:54 UTC | [D]000225 | .claude/settings.json makes Claude Code ask before a command that names install:studio or --studio. |
+| 2026-11-27 16:56 UTC | [A]000226 | Applies D000109: install backs up only a database that exists and that migrating would change, so none is made when nothing is pending. Backups are never deleted. |
+| 2026-11-27 16:56 UTC | [A]000227 | The database program backs up and restores under the server's lock. VACUUM INTO writes a backup, and SQLite's backup interface restores it. |

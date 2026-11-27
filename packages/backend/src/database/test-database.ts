@@ -3,13 +3,14 @@
  *
  * @packageDocumentation
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, beforeEach } from "vitest";
 
+import { migrate } from "./migrate.ts";
 import type { Migration } from "./migration.ts";
 import { databaseFile } from "./schema-version.ts";
 
@@ -35,6 +36,27 @@ export function statements(version: number, sql: string): Migration {
   return step(version, (database) => {
     database.exec(sql);
   });
+}
+
+/**
+ * Makes a database at version 1, and copies it in the middle of a write, which leaves what a program that was
+ * killed would leave. Returns the data directory of the copy.
+ */
+export function interruptedDatabase(dataDirectory: string): string {
+  const crashed = join(dataDirectory, "crashed");
+  mkdirSync(crashed);
+  migrate(dataDirectory, [statements(1, "CREATE TABLE notes (text TEXT)")]);
+  const writer = new DatabaseSync(databaseFile(dataDirectory));
+  // A small cache makes SQLite write to the database before the transaction ends.
+  writer.exec("PRAGMA cache_size = 1; BEGIN IMMEDIATE");
+  const insert = writer.prepare("INSERT INTO notes VALUES (?)");
+  for (let row = 0; row < 100; row += 1) {
+    insert.run("lost".repeat(500));
+  }
+  copyFileSync(databaseFile(dataDirectory), databaseFile(crashed));
+  copyFileSync(`${databaseFile(dataDirectory)}-journal`, `${databaseFile(crashed)}-journal`);
+  writer.close();
+  return crashed;
 }
 
 /** Returns the rows that a query finds in the database in a data directory. */

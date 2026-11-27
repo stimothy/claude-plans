@@ -84,6 +84,23 @@ connection can use to restore the database, so until then, reading the version f
 database in use waits up to five seconds. Each migration has its own file in
 `database/migrations/`, a directory that may grow past the usual limit of ten files.
 
+Before the database program migrates a database that exists and would be changed, it saves a copy in `backups/`
+in the data directory. Nothing is migrated if that fails. If a migration then fails, the program restores the
+copy, which also undoes the migrations that ran before the failed one. If it cannot, it says where the copy is.
+Either way, the copy stays. Each has its own name, made from the UTC time, the schema version, and random
+characters, and no backup writes over another or is deleted later. No backup is made for a new database or one
+with nothing to migrate. Deleting the data directory deletes the backups too.
+
+SQLite both writes and restores a copy. It writes one with `VACUUM INTO`, which fails if any part of the
+database cannot be read, and the copy gets its name only once it is complete. Only the file's owner may read it,
+except on Windows, where the data directory's permissions apply. It restores through its backup
+interface, because a file copied over the database could later have the journal of an interrupted write applied
+to it. That interface does not wait for a database in use, so the program first waits for the database to be
+free. For the same reason, restore a backup by hand with SQLite, such as with the `.restore` command of
+`sqlite3`, and stop the server first. If SQLite cannot open the damaged database, first move `database.sqlite`
+and any `database.sqlite-journal` aside together. A program that is stopped during a migration cannot restore.
+The backup is then still there, and installing again carries on from the migrations that were saved.
+
 ## Server
 
 `backend` runs a server for one data directory, using [Fastify](../adrs/0003-fastify-for-the-rest-api.md). Its
@@ -156,10 +173,11 @@ Nothing that is in use changes until the new build has accepted the database. A 
 any running server carries on. An unreadable one passes this check, because migrating opens it for writing, which
 can recover it. Then `install` stops a server that uses the same data directory, migrates, and makes the new build
 current. If the server cannot be stopped, nothing is migrated. A failure before the new build becomes current
-removes it and keeps the earlier one. It does not yet restore the database, and nothing backs it up before
-migrating. After the new build is current, the install is not undone. A plain install that then cannot put the
-command on the path says what is installed, how to run it, and whether a server was stopped. An earlier build that
-cannot be deleted is only reported.
+removes it and keeps the earlier one. Only a failed migration restores the database. If every migration succeeds
+and the new build then cannot be made current, the database stays migrated, which the earlier build may refuse
+until another install succeeds. After the new build is current, the install is not undone. A plain install that
+then cannot put the command on the path says what is installed, how to run it, and whether a server was stopped.
+An earlier build that cannot be deleted is only reported.
 
 The real data is `.claude-plans/` in the main checkout. The command asks Git where that is, even from a worktree,
 and does nothing if it cannot tell. It compares paths as the disk names them, ignoring letter case, so that a link

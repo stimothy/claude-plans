@@ -18,7 +18,7 @@ has a step back. The database records which ones have run. Only installing the a
 ## Consequences
 
 - A failed migration leaves no changes of its own. Those that ran before it stay, so undoing a whole upgrade
-  needs a backup. Making one before migrating, and restoring it after a failure, is planned.
+  needs a backup. One is made before an existing database is migrated, and restored after a failure.
 - An older application cannot use a newer database. Migrating refuses one and leaves it as it was.
 - A migration that has reached real data cannot be edited to fix it, because it does not run again. The fix is a
   new migration.
@@ -31,3 +31,4 @@ has a step back. The database records which ones have run. Only installing the a
 ## Changelog
 
 - 2026-11-27 04:11 UTC - Created
+- 2026-11-27 16:56 UTC - A backup is now made before migrating, and restored after a failure

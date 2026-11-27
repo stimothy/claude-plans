@@ -14,7 +14,8 @@ import { afterEach, beforeEach, vi } from "vitest";
 import { commandDirectory, currentBuild } from "./layout.ts";
 import { runGit } from "./run-program.ts";
 
-// The stand-in notes what it was asked to do, and fails when the data directory holds a file that says to.
+// The stand-in notes what it was asked to do. A file in the data directory can give it something to report, or
+// tell it to fail.
 const databaseProgram = `
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -24,6 +25,10 @@ const dataDirectory = option.slice("--data-directory=".length);
 mkdirSync(dataDirectory, { recursive: true });
 const running = existsSync(join(dataDirectory, "server.json")) ? "running" : "stopped";
 appendFileSync(join(dataDirectory, "database-actions"), action + " " + running + "\\n");
+const report = join(dataDirectory, "report-" + action);
+if (existsSync(report)) {
+  console.log(readFileSync(report, "utf8"));
+}
 const failure = join(dataDirectory, "fail-" + action);
 if (existsSync(failure)) {
   console.error(readFileSync(failure, "utf8"));
