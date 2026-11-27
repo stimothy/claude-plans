@@ -208,3 +208,9 @@
 | 2026-11-27 04:11 UTC | [A]000204 | Resolves O000035: the Node.js 24 docs call node:sqlite a release candidate, not yet stable, from 24.15.0, the minimum already required. |
 | 2026-11-27 04:11 UTC | [A]000205 | The database is database.sqlite. The migration runner creates the tracking table, so version 0 has no migrations. SQLite access and forward-only migrations each have an ADR. |
 | 2026-11-27 04:19 UTC | [A]000206 | Foreign keys are not enforced during migrations, so that rebuilding a table cannot delete the rows that refer to it; a migration that leaves a broken reference fails. |
+| 2026-11-27 05:16 UTC | [A]000207 | The server listens on 127.0.0.1. Host must be 127.0.0.1 or localhost with its port, and an Origin, if sent, must be the same. |
+| 2026-11-27 05:16 UTC | [A]000208 | server.json, readable by its owner, holds the port and a new token. POST /api/shutdown needs the token, and GET /api/server names the data directory. |
+| 2026-11-27 05:16 UTC | [A]000209 | One server per data directory is kept by a SQLite lock on server-lock.sqlite, which the system releases after a crash. |
+| 2026-11-27 05:16 UTC | [A]000210 | Health is ok only at the application's schema version. #25 adds the program that runs the server. |
+| 2026-11-27 05:16 UTC | [O]000211 | Which issue serves GET and PATCH /api/settings, which entry 198 plans? No issue names it. |
+| 2026-11-27 05:25 UTC | [A]000212 | A port is also taken if another program answers on it at 127.0.0.1 or ::1. The server names its data directory as realpathSync.native does, and clients must compare the same way. |

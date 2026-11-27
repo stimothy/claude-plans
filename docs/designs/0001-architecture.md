@@ -29,9 +29,9 @@ exists only in clones where it could be installed.
 ## Packages
 
 The application's code lives in npm workspaces under `packages/`. So far there are three: `domain`, `backend`, and
-`logging`. `domain` defines the health report and the color settings, with the path and method of the API for each. Nothing
-serves those APIs yet. The definitions are Zod schemas, so a program can check the data it receives and get its
-TypeScript type from the same place.
+`logging`. `domain` defines the health report, the color settings, and what a client needs to find and stop the
+server, with the path and method of each API. Nothing serves the color settings yet. The definitions of the data
+are Zod schemas, so a program can check what it receives and get its TypeScript type from the same place.
 
 The planned web page will run in a browser, so `domain` must not depend on Node.js. One type check covers its
 source without the Node.js types, and another covers its tests, which do use them. The package exports its
@@ -64,7 +64,7 @@ symbolic link in that place is replaced, not followed.
 ## Database
 
 The database is `database.sqlite` in the data directory. `backend` can create it, migrate it, and read its schema
-version, but no program does these yet. [SQLite through node:sqlite](../adrs/0001-sqlite-through-node-sqlite.md)
+version, but no program migrates it yet. [SQLite through node:sqlite](../adrs/0001-sqlite-through-node-sqlite.md)
 and [Forward-only migrations](../adrs/0002-forward-only-migrations.md) record the main choices.
 
 The schema version is the number of the last migration that ran. There are no migrations yet, so a new database
@@ -80,10 +80,44 @@ connection can use to restore the database, so until then, reading the version f
 database in use waits up to five seconds. Each migration has its own file in
 `database/migrations/`, a directory that may grow past the usual limit of ten files.
 
+## Server
+
+`backend` has the code to run a server for one data directory, using
+[Fastify](../adrs/0003-fastify-for-the-rest-api.md). No program starts it yet. That comes with the planned
+`start` command, which will also choose the port, make the logger, and handle signals.
+
+The server reports its health at `/api/health` and says which data directory it uses at `/api/server`, so that a
+client can tell it reached the one it meant. The health report is ok only if the database is at the schema
+version that the application has. A database that was never set up counts as one that cannot be read. After a
+write is interrupted, the report says the same until something opens the database for writing.
+
+There is no login, and any page in a browser can send requests to the local computer. The server therefore listens
+only on `127.0.0.1`, and checks every request. Its `Host` header must be `127.0.0.1` or `localhost` with the
+server's port, which stops a website whose name was made to point at this computer. An `Origin` header, which
+browsers add to say which website is asking, must be the server's own. A development server on another port will
+have to allow for this. These checks do not stop other programs on the computer.
+
+While it runs, the server records its port and a random token in `server.json`, which only the file's owner can
+read. On Windows, the data directory's permissions apply instead. A request to shut down must give the token. The
+record is removed when the server stops, and a record that a crash left is removed by the next server.
+
+A data directory has one server at most, whatever its port. A server holds an unfinished transaction on a small
+SQLite database, `server-lock.sqlite`, for as long as it runs. The operating system releases that lock however a
+program ends, so a crash cannot block the next start, which a file that merely names a running server could do. A
+test on every operating system starts several programs at once.
+
+A port that another program holds is reported, and the server does not choose a different one. Some systems let a
+server listen on `127.0.0.1` while another program has the same port on another local address, and `localhost`
+could then lead to either one. So before listening, the server tries to connect to the port at both addresses that
+`localhost` can mean. The server names its data directory as the disk does, with links followed, so that one
+directory has one name however its path was typed. A client has to name its own directory the same way.
+
 ## Logging
 
 `logging` writes to `logs/` in the data directory. It is a separate package because the backend and the planned
-command both need it, and `domain` must run in a browser. Nothing writes logs yet.
+command both need it, and `domain` must run in a browser. The server writes to the logger that it is given, but no
+program makes one yet. It logs starting, stopping, and failures. It leaves out its token, and the errors that a
+faulty request causes, which can quote the request's body.
 
 Each entry is one line of JSON with a UTC time, a level, and a message. The levels are `error`, `warn`, `info`,
 and `debug`, and a logger drops entries with more detail than its own level. An entry about an error also has the
