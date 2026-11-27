@@ -42,12 +42,14 @@ describe("the surroundings of a copy", () => {
 });
 
 describe("the repository's own copy", () => {
-  it.each(["start", "stop", "health", "install"])("refuses to %s on the real data, changing nothing", async (name) => {
-    const result = await run(copy(), name, "--data-directory", real());
+  describe.each(["", "inside"])("given the real data and %j", (below) => {
+    it.each(["start", "stop", "health", "install"])("refuses to %s, changing nothing", async (name) => {
+      const result = await run(copy(), name, "--data-directory", join(real(), below));
 
-    expect(result.code).toBe(2);
-    expect(result.errors).toContain("never uses the real data");
-    expect(existsSync(real())).toBe(false);
+      expect(result.code).toBe(2);
+      expect(result.errors).toContain("never uses the real data");
+      expect(existsSync(real())).toBe(false);
+    });
   });
 
   it("installs into another data directory", async () => {
@@ -57,6 +59,10 @@ describe("the repository's own copy", () => {
 
     expect(result.code).toBe(0);
     expect(databaseActions(data)).toEqual(["check stopped", "migrate stopped"]);
+    // A copy of code that nobody has reviewed must not be able to reach the real data.
+    expect(surroundingsOf(join(data, "app", "builds", installed(data).build ?? ""))).toMatchObject({
+      installation: { real: false },
+    });
   });
 
   it("makes the first plain install only when asked for it by name", async () => {
@@ -120,6 +126,21 @@ describe("an installed copy", () => {
 
     expect(result.code).toBe(2);
     expect(result.errors).toContain("never uses the real data");
+  });
+
+  // A worktree is often removed while a copy that was installed from it is still in use.
+  it("still uses its own data directory after the checkout that it came from is gone", async () => {
+    const data = fake.elsewhere("development");
+    const orphan: Surroundings = {
+      repository: fake.elsewhere("removed"),
+      installation: { dataDirectory: data, real: false },
+    };
+
+    const own = await run(orphan, "stop");
+    const named = await run(orphan, "stop", "--data-directory", fake.elsewhere("other"));
+
+    expect(own).toMatchObject({ code: 0, output: `No server is running on ${data}.` });
+    expect(named.errors).toContain("Cannot tell where the real data is");
   });
 
   it("does not take --studio", async () => {

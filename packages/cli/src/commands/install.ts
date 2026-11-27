@@ -4,13 +4,15 @@
  * @packageDocumentation
  */
 import { activateBuild, type Build, makeBuild, removeBuild, runDatabaseProgram } from "../install/build.ts";
-import { isInRealData, isRealDataDirectory, requirePlainInstall } from "../install/checkout.ts";
+import { isInRealData, isRealDataDirectory, requirePlainInstall, requireRealSpelling } from "../install/checkout.ts";
 import { commandDirectory } from "../install/layout.ts";
 import { linkCommand, requireCommandIsFree } from "../install/path-command.ts";
 import { Refusal } from "../install/refusal.ts";
 import { findServer } from "../server/running-server.ts";
 import type { Terminal } from "../terminal.ts";
 import { stopServer } from "./stop.ts";
+
+const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /** What the install command was asked for. */
 export interface InstallOptions {
@@ -24,6 +26,7 @@ export interface InstallOptions {
 function checkProtections({ dataDirectory, repository }: InstallOptions): boolean {
   if (isRealDataDirectory(dataDirectory, repository)) {
     requirePlainInstall(repository);
+    requireRealSpelling(dataDirectory, repository);
     requireCommandIsFree(commandDirectory(dataDirectory), repository);
     return true;
   }
@@ -54,8 +57,9 @@ async function replace(build: Build, dataDirectory: string, terminal: Terminal):
     if (!stoppedServer) {
       throw error;
     }
-    const problem = error instanceof Error ? error.message : String(error);
-    throw new Error(`${problem}\nThe server was stopped. Start it again once this is solved.`, { cause: error });
+    throw new Error(`${message(error)}\nThe server was stopped. Start it again once this is solved.`, {
+      cause: error,
+    });
   }
 }
 
@@ -65,13 +69,42 @@ interface Outcome extends Replaced {
   readonly plain: boolean;
 }
 
+// How to run an installed copy that is not on the path.
+const launcherCommand = (dataDirectory: string): string => `node "${commandDirectory(dataDirectory)}/main.js"`;
+
 function conclude({ version, plain, stoppedServer }: Outcome, dataDirectory: string, terminal: Terminal): void {
-  const launcher = `node "${commandDirectory(dataDirectory)}/main.js"`;
-  const command = plain ? "claude-plans" : launcher;
+  const command = plain ? "claude-plans" : launcherCommand(dataDirectory);
   const where = plain ? "The claude-plans command now runs this copy." : `It is in ${dataDirectory}.`;
   terminal.print(`Installed version ${version}. ${where}`);
   const next = stoppedServer ? "The server was stopped. Start it again" : "Start the server";
   terminal.print(`${next} with: ${command} start`);
+}
+
+// The new build is current by now, so a build that cannot be deleted only takes up space.
+function removeEarlier(previous: string | undefined, terminal: Terminal): void {
+  if (previous === undefined) {
+    return;
+  }
+  try {
+    removeBuild(previous);
+  } catch (error) {
+    terminal.printError(`Could not delete the earlier build in ${previous}. ${message(error)}`);
+  }
+}
+
+// A failure here no longer undoes the install, so it has to say what state the user is left in.
+function putOnPath(dataDirectory: string, { version, stoppedServer }: Outcome): void {
+  try {
+    linkCommand(commandDirectory(dataDirectory));
+  } catch (error) {
+    const launcher = launcherCommand(dataDirectory);
+    const next = stoppedServer ? `\nThe server was stopped. Start it again with: ${launcher} start` : "";
+    throw new Error(
+      `${message(error)}\nVersion ${version} is installed, but npm could not put the claude-plans command on your ` +
+        `path. Once this is solved, install again. Until then, run it with: ${launcher}${next}`,
+      { cause: error },
+    );
+  }
 }
 
 /**
@@ -88,12 +121,11 @@ export async function installApplication(options: InstallOptions, terminal: Term
     removeBuild(build.directory);
     throw error;
   }
+  removeEarlier(replaced.previous, terminal);
+  const outcome = { ...replaced, version: build.version, plain };
   if (plain) {
-    linkCommand(commandDirectory(options.dataDirectory));
+    putOnPath(options.dataDirectory, outcome);
   }
-  if (replaced.previous !== undefined) {
-    removeBuild(replaced.previous);
-  }
-  conclude({ ...replaced, version: build.version, plain }, options.dataDirectory, terminal);
+  conclude(outcome, options.dataDirectory, terminal);
   return 0;
 }

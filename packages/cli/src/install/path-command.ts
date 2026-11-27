@@ -37,5 +37,6 @@ export function requireCommandIsFree(directory: string, from: string): void {
 
 /** Installs the command in a directory on the user's path. The directory must stay where it is. */
 export function linkCommand(directory: string): void {
-  runNpm("npm install --global --ignore-scripts --no-audit --no-fund .", directory);
+  // The user may have set npm to copy local packages, but the command has to stay where it can find the builds.
+  runNpm("npm install --global --install-links=false --ignore-scripts --no-audit --no-fund .", directory);
 }

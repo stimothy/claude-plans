@@ -1,15 +1,23 @@
-import { existsSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+import { removeBuild } from "../install/build.ts";
 import { builds, commitAll, databaseActions, installed, useFakeRepository } from "../install/fake-repository.ts";
 import { writeInto } from "../install/fake-repository.ts";
 import { commandDirectory } from "../install/layout.ts";
+import { Refusal } from "../install/refusal.ts";
 import { runNpm, runProgram } from "../install/run-program.ts";
 import { recordingTerminal } from "../recording-terminal.ts";
 import { answer, useStandInServers } from "../server/stand-in-server.ts";
 import { installApplication } from "./install.ts";
+
+// Removing a build works as it always does, except where a test makes it fail.
+vi.mock("../install/build.ts", async (importOriginal) => {
+  const original = await importOriginal<{ removeBuild: (directory: string) => void }>();
+  return { ...original, removeBuild: vi.fn(original.removeBuild) };
+});
 
 const fake = useFakeRepository();
 const servers = useStandInServers();
@@ -18,7 +26,7 @@ const real = (): string => join(fake.repository(), ".claude-plans");
 async function install(dataDirectory: string, repository = fake.repository()) {
   const terminal = recordingTerminal();
   const code = await installApplication({ dataDirectory, repository }, terminal);
-  return { code, output: terminal.output.join("\n") };
+  return { code, output: terminal.output.join("\n"), errors: terminal.errors.join("\n") };
 }
 
 // What the command in a build prints, run as the launcher runs it.
@@ -175,19 +183,100 @@ describe("a plain install", () => {
     await expect(install(join(fake.repository(), "packages", "..", ".Claude-Plans"))).rejects.toThrow("A plain");
   });
 
+  // A refusal is not logged, which would write into the real data.
+  async function expectRefusal(attempt: Promise<unknown>, problem: string): Promise<void> {
+    await expect(attempt).rejects.toThrow(problem);
+    await expect(attempt).rejects.toBeInstanceOf(Refusal);
+  }
+
   it("refuses a directory inside the real data", async () => {
-    await expect(install(join(real(), "development"))).rejects.toThrow("inside the real data directory");
+    await expectRefusal(install(join(real(), "development")), "inside the real data directory");
 
     expect(existsSync(real())).toBe(false);
   });
 
-  it("changes nothing when the command on the path runs another installation", async () => {
+  // Where letter case matters, this is another directory, which must not become the real application's.
+  it("refuses the real directory written in other letters before it exists", async () => {
+    await expect(install(join(fake.repository(), ".Claude-Plans"))).rejects.toThrow("letter case");
+
+    expect(existsSync(linkedCommand())).toBe(false);
+  });
+
+  // Puts the command of an installation elsewhere on the path, and returns that installation's directory.
+  function linkAnotherInstallation(): string {
     const other = fake.elsewhere("other");
     writeInto(other, "package.json", JSON.stringify({ name: "claude-plans-command", version: "1.0.0" }));
     runNpm("npm install --global --ignore-scripts --offline .", other);
+    return other;
+  }
 
-    await expect(install(real())).rejects.toThrow("runs the installation in");
+  it("changes nothing when the command on the path runs another installation", async () => {
+    linkAnotherInstallation();
+
+    await expectRefusal(install(real()), "runs the installation in");
 
     expect(existsSync(real())).toBe(false);
+  });
+
+  it("replaces a command whose installation no longer exists", async () => {
+    rmSync(linkAnotherInstallation(), { recursive: true });
+
+    await expect(install(real())).resolves.toMatchObject({ code: 0 });
+  });
+
+  // A linked command runs the current build. A copy would look for one beside itself.
+  it("links the command even when npm is set to copy local packages", async () => {
+    vi.stubEnv("npm_config_install_links", "true");
+
+    await install(real());
+
+    expect(realpathSync(linkedCommand())).toBe(realpathSync(commandDirectory(real())));
+  });
+
+  it("works from an npm script that names a workspace", async () => {
+    vi.stubEnv("npm_config_workspace", "missing");
+
+    await expect(install(real())).resolves.toMatchObject({ code: 0 });
+  });
+});
+
+describe("a step that fails", () => {
+  it("leaves no part of a build behind when npm cannot make it", async () => {
+    const data = fake.elsewhere("development");
+    await install(data);
+    const before = installed(data).build;
+    const manifest = { name: "fake", version: "1.0.0", dependencies: { "not-in-the-lockfile": "1.0.0" } };
+    writeInto(fake.repository(), "package.json", JSON.stringify(manifest));
+
+    await expect(install(data)).rejects.toThrow("npm");
+
+    expectOnlyBuild(data, before);
+  });
+
+  // The new build is current by then, so the user has to be told what state they are in.
+  it("says what is installed when the command cannot be put on the path", async () => {
+    await install(real());
+    await runningServer(real());
+    writeInto(fake.elsewhere("."), "file", "");
+    vi.stubEnv("npm_config_prefix", fake.elsewhere(join("file", "global")));
+
+    const attempt = install(real());
+
+    await expect(attempt).rejects.toThrow("Version 1.0.0 is installed, but");
+    await expect(attempt).rejects.toThrow(`The server was stopped. Start it again with: node "`);
+    expect(builds(real())).toEqual([installed(real()).build]);
+  });
+
+  it("still finishes when the earlier build cannot be deleted", async () => {
+    const data = fake.elsewhere("development");
+    await install(data);
+    vi.mocked(removeBuild).mockImplementationOnce(() => {
+      throw new Error("The file is in use.");
+    });
+
+    const result = await install(data);
+
+    expect(result.code).toBe(0);
+    expect(result.errors).toContain("The file is in use.");
   });
 });

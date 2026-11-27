@@ -155,13 +155,19 @@ launcher in `app/command/` stays in one place and runs whichever build is curren
 Nothing that is in use changes until the new build has accepted the database. A newer database is refused while
 any running server carries on. An unreadable one passes this check, because migrating opens it for writing, which
 can recover it. Then `install` stops a server that uses the same data directory, migrates, and makes the new build
-current. If the server cannot be stopped, nothing is migrated. A later failure removes the new build and keeps the
-earlier one. It does not yet restore the database, and nothing backs it up before migrating.
+current. If the server cannot be stopped, nothing is migrated. A failure before the new build becomes current
+removes it and keeps the earlier one. It does not yet restore the database, and nothing backs it up before
+migrating. After the new build is current, the install is not undone. A plain install that then cannot put the
+command on the path says what is installed, how to run it, and whether a server was stopped. An earlier build that
+cannot be deleted is only reported.
 
 The real data is `.claude-plans/` in the main checkout. The command asks Git where that is, even from a worktree,
 and does nothing if it cannot tell. It compares paths as the disk names them, ignoring letter case, so that a link
 or another spelling does not get past. The repository's copy, and a copy installed in any other directory, refuse
-that directory and everything inside it, because they may hold code that nobody has reviewed.
+that directory and everything inside it, because they may hold code that nobody has reviewed. A copy does not ask
+Git about its own data directory, which `install` already checked, so it keeps working after the checkout that it
+came from is removed. A plain install is refused if the path differs from the real one in letter case, because on
+some systems that names another directory.
 
 A plain install is one into the real data directory. It works only from the main checkout, on `master`, with no
 changes or new files that are not committed, and with no commits that the last fetched `origin/master` lacks. It

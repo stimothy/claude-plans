@@ -19,8 +19,9 @@ function onDisk(path: string): string {
   }
 }
 
-// Some file systems ignore letter case. Ignoring it everywhere can only protect more.
-const comparable = (path: string): string => onDisk(resolve(path)).toLowerCase();
+const trueName = (path: string): string => onDisk(resolve(path));
+// Some file systems ignore letter case. Ignoring it everywhere can only protect more where access is refused.
+const comparable = (path: string): string => trueName(path).toLowerCase();
 
 interface Checkout {
   readonly gitDirectory: string;
@@ -34,7 +35,7 @@ function readCheckout(repository: string): Checkout {
   if (comparable(top) !== comparable(repository)) {
     throw new Error(`${repository} is not the top of a checkout.`);
   }
-  return { gitDirectory: comparable(gitDirectory), commonDirectory: onDisk(resolve(commonDirectory)) };
+  return { gitDirectory: trueName(gitDirectory), commonDirectory: trueName(commonDirectory) };
 }
 
 /** Returns the real data directory, which is .claude-plans in the main checkout, even when asked from a worktree. */
@@ -68,6 +69,17 @@ function refuse(problem: string): never {
   );
 }
 
+/**
+ * Refuses a real data directory that is written in other letters than its own. Where letter case matters, that
+ * names another directory, which must not become the real application's.
+ */
+export function requireRealSpelling(directory: string, repository: string): void {
+  const real = realDataDirectory(repository);
+  if (trueName(directory) !== trueName(real)) {
+    throw new Refusal(`${directory} differs from ${real} only in letter case. Nothing was changed.`);
+  }
+}
+
 function commitsAhead(repository: string): number {
   try {
     return Number(runGit(repository, ["rev-list", "--count", "refs/remotes/origin/master..HEAD"]));
@@ -82,7 +94,7 @@ function commitsAhead(repository: string): number {
  */
 export function requirePlainInstall(repository: string): void {
   const { gitDirectory, commonDirectory } = readCheckout(repository);
-  if (gitDirectory !== comparable(commonDirectory)) {
+  if (comparable(gitDirectory) !== comparable(commonDirectory)) {
     refuse("works only from the main checkout, and this is a worktree");
   }
   if (runGit(repository, ["branch", "--show-current"]) !== "master") {

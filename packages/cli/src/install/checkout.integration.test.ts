@@ -55,6 +55,23 @@ describe("the real data directory", () => {
     expect(isRealDataDirectory(linked, fake.repository())).toBe(true);
   });
 
+  it("holds a directory that is reached through a link before it exists", () => {
+    symlinkSync(fake.repository(), fake.elsewhere("link"), "junction");
+    const linked = join(fake.elsewhere("link"), ".claude-plans");
+
+    expect(isRealDataDirectory(linked, fake.repository())).toBe(true);
+    expect(isInRealData(join(linked, "new", "deeper"), fake.repository())).toBe(true);
+  });
+
+  // The main checkout is then not the directory above the one that Git keeps its data in.
+  it("cannot be told when Git keeps its data under another name", () => {
+    const separate = fake.elsewhere("separate");
+    const given = ["init", `--separate-git-dir=${fake.elsewhere("kept-apart")}`, separate];
+    runGit(fake.elsewhere(".."), given);
+
+    expect(() => realDataDirectory(separate)).toThrow("Cannot tell where the real data is");
+  });
+
   it.each([".claude-plans-development", "packages", "."])("does not hold %s", (path) => {
     expect(isInRealData(join(fake.repository(), path), fake.repository())).toBe(false);
   });
