@@ -4,6 +4,7 @@
  *
  * @packageDocumentation
  */
+import { logLevels } from "@claude-plans/logging";
 import { z } from "zod";
 
 const highestPort = 65_535;
@@ -13,7 +14,7 @@ const defaultPort = 4310;
 export const portSchema = z.int().min(1).max(highestPort);
 
 /** Checks how much detail the logs hold. */
-export const logLevelSchema = z.enum(["error", "warn", "info", "debug"]);
+export const logLevelSchema = z.enum(logLevels);
 
 const serverSettingsSchema = z.object({ port: portSchema, logLevel: logLevelSchema });
 
