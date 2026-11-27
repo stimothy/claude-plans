@@ -14,7 +14,7 @@ import {
   settingsContract,
   themeSchema,
 } from "@claude-plans/domain";
-import { type Document, parseDocument } from "yaml";
+import { type Document, isScalar, parseDocument } from "yaml";
 import { z } from "zod";
 
 import { logLevelSchema, portSchema, type ServerOverrides } from "./server-settings.ts";
@@ -23,8 +23,8 @@ import { logLevelSchema, portSchema, type ServerOverrides } from "./server-setti
 const fileSchema = z.strictObject({
   port: portSchema.optional(),
   logLevel: logLevelSchema.optional(),
-  theme: themeSchema.optional(),
-  colorVision: colorVisionSchema.optional(),
+  theme: themeSchema.default(defaultColorSettings.theme),
+  colorVision: colorVisionSchema.default(defaultColorSettings.colorVision),
 });
 
 /** What the settings file says, with the default for each color setting that it leaves out. */
@@ -52,20 +52,26 @@ function readText(path: string): string {
   }
 }
 
-// Turns the text of a settings file into the settings, or explains what is wrong with it.
-function understand(text: string): SettingsDocument {
-  const document = parseDocument(text);
+function parse(text: string): Document {
+  const document: Document = parseDocument(text);
   const [broken] = document.errors;
   if (broken !== undefined) {
     throw broken;
   }
+  // After a "---" line with no value, the parser gives an empty value, which no setting could be added to.
+  if (isScalar(document.contents) && document.contents.source === "") {
+    document.comment = document.contents.comment ?? null;
+    document.contents = null;
+  }
+  return document;
+}
+
+// Turns the text of a settings file into the settings, or explains what is wrong with it.
+function understand(text: string): SettingsDocument {
+  const document = parse(text);
   const content: unknown = document.contents === null ? {} : document.toJS();
   const { theme, colorVision, ...overrides } = fileSchema.parse(content);
-  const colors = {
-    theme: theme ?? defaultColorSettings.theme,
-    colorVision: colorVision ?? defaultColorSettings.colorVision,
-  };
-  return { document, settings: { ...overrides, colors } };
+  return { document, settings: { ...overrides, colors: { theme, colorVision } } };
 }
 
 function load(path: string): SettingsDocument {

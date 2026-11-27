@@ -21,6 +21,10 @@ describe("the data directory", () => {
     expect(dataDirectory(repository, "scratch/data")).toBe(resolve("scratch/data"));
   });
 
+  it.each(["", ".", "a-repository"])("is not found from the repository path %j, which is not a full one", (path) => {
+    expect(() => dataDirectory(path)).toThrow("The repository's path must be a full one.");
+  });
+
   it.each(["", "  "])("may not be named %j, which would silently mean another place", (option) => {
     expect(() => dataDirectory(repository, option)).toThrow("The data directory's path is empty.");
   });

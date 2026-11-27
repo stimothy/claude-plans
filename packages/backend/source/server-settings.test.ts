@@ -28,6 +28,10 @@ describe("the server settings", () => {
     });
   });
 
+  it.each([1, 65_535])("allow port %d, at an end of the range", (port) => {
+    expect(serverSettings({}, { port }).port).toBe(port);
+  });
+
   it.each([{ port: 0 }, { port: 65_536 }, { port: Number.NaN }])("reject the option %j", (options) => {
     expect(() => serverSettings({}, options)).toThrow("port");
   });

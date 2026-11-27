@@ -58,7 +58,8 @@ are no commands yet to give those options.
 A file that is not valid is an error, including one with an unknown name, so that a misspelled setting is not
 silently ignored. The backend writes only the color settings. It keeps the other settings and the comments, and
 it never writes over a file that it cannot understand. It writes a new file and then renames it over the old one,
-so that a failed write cannot leave half of a file.
+so that a failed write cannot leave half of a file. The new file does not keep the old one's permissions, and a
+symbolic link in that place is replaced, not followed.
 
 ## Scripts and the launcher
 

@@ -28,11 +28,17 @@ function saved(): string {
 const defaults = { colors: { theme: "system", colorVision: "default" } };
 
 describe("reading the settings", () => {
-  it.each(["", "# Nothing is set yet.\n"])("gives the defaults for a file holding %j", (text) => {
-    write(text);
+  it.each(["", "# Nothing is set yet.\n", "---\n", "---\n# Nothing is set yet.\n"])(
+    "gives the defaults for a file holding %j, which can then be saved to",
+    (text) => {
+      write(text);
 
-    expect(readSettings(directory)).toEqual(defaults);
-  });
+      expect(readSettings(directory)).toEqual(defaults);
+      saveColorSettings(directory, { theme: "light" });
+      expect(readSettings(directory).colors.theme).toBe("light");
+      expect(saved().includes("# Nothing")).toBe(text.includes("# Nothing"));
+    },
+  );
 
   it("gives the defaults, and creates nothing, when there is no file", () => {
     expect(readSettings(join(directory, "absent"))).toEqual(defaults);
@@ -93,13 +99,26 @@ describe("saving the color settings", () => {
     expect(readdirSync(nested)).toEqual(["settings.yaml"]);
   });
 
-  it("answers with all of the color settings", () => {
+  it.each<[ColorSettingsUpdate, object]>([
+    [{ colorVision: "deutan" }, { theme: "dark", colorVision: "deutan" }],
+    [
+      { theme: "light", colorVision: "protan" },
+      { theme: "light", colorVision: "protan" },
+    ],
+  ])("saves %j and answers with all of the color settings", (update, colors) => {
     write("theme: dark\n");
 
-    expect(saveColorSettings(directory, { colorVision: "deutan" })).toEqual({
-      theme: "dark",
-      colorVision: "deutan",
-    });
+    expect(saveColorSettings(directory, update)).toEqual(colors);
+    expect(readSettings(directory).colors).toEqual(colors);
+  });
+
+  it("leaves the file whole when the new one cannot be written", () => {
+    write("theme: dark\n");
+    // A directory where the new file belongs cannot be written to as a file on any system.
+    mkdirSync(join(directory, "settings.yaml.new"));
+
+    expect(() => saveColorSettings(directory, { theme: "light" })).toThrow(/EISDIR/);
+    expect(saved()).toBe("theme: dark\n");
   });
 
   it("keeps the overrides and comments that are in the file", () => {
