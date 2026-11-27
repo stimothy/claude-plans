@@ -69,13 +69,18 @@ describe("an installed copy whose version is not the one on master", () => {
     await expect(run(installedCopy(), "stop")).resolves.toMatchObject({ code: 0, errors: "" });
   });
 
+  // Installing is how the user gets out of this state, so it is the real copy that has to be able to.
   it("still installs", async () => {
+    const real = join(fake.repository(), ".claude-plans");
     commitVersion("1.0.1");
+    // Stands in for what was last fetched, which a plain install needs master to be level with.
+    runGit(fake.repository(), ["update-ref", "refs/remotes/origin/master", "HEAD"]);
+    const outdated = { ...installedCopy(), installation: { dataDirectory: real, real: true } };
 
-    const result = await run(installedCopy(false), "install");
+    const result = await run(outdated, "install");
 
-    expect(result.code).toBe(0);
-    expect(databaseActions(data())).toEqual(["check stopped", "migrate stopped"]);
+    expect(result).toMatchObject({ code: 0, errors: "" });
+    expect(databaseActions(real)).toEqual(["check stopped", "migrate stopped"]);
   });
 });
 
@@ -127,7 +132,10 @@ describe("when the version on master cannot be read", () => {
 
     const result = await run(installedCopy(), "health");
 
-    expect(result.errors).toContain("Could not check whether this copy of claude-plans is outdated");
+    // Git may not say which repository it was, such as when the directory is gone.
+    expect(result.errors).toContain(
+      `Could not check whether this copy of claude-plans is outdated, using master in ${fake.repository()}.`,
+    );
     expect(result.errors).toContain(`No server is running on ${data()}.`);
   });
 });

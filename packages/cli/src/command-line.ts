@@ -12,6 +12,7 @@ import { reportHealth } from "./commands/health.ts";
 import { installApplication } from "./commands/install.ts";
 import { startServer } from "./commands/start.ts";
 import { stopServer } from "./commands/stop.ts";
+import { errorMessage } from "./error-message.ts";
 import { requireCurrentBuild } from "./install/outdated-build.ts";
 import { Refusal } from "./install/refusal.ts";
 import { type Surroundings, targetDirectory } from "./surroundings.ts";
@@ -72,8 +73,6 @@ const commands = new Map<string, Command>([
   ],
 ]);
 
-const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
-
 function readValues(command: Command, given: readonly string[], surroundings: Surroundings) {
   const options: ParseArgsOptionsConfig = { ...command.options, "data-directory": { type: "string" } };
   const values: Values = parseArgs({ args: [...given], options }).values;
@@ -102,7 +101,7 @@ async function runCommand(invocation: Invocation, terminal: Terminal, surroundin
   try {
     read = readValues(command, given, surroundings);
   } catch (error) {
-    terminal.printError(`${message(error)}\n\n${usage}`);
+    terminal.printError(`${errorMessage(error)}\n\n${usage}`);
     return usageMistake;
   }
   const { dataDirectory, values } = read;
@@ -110,7 +109,7 @@ async function runCommand(invocation: Invocation, terminal: Terminal, surroundin
     checkBuild(command, surroundings, terminal);
     return await command.run(dataDirectory, values, terminal, surroundings);
   } catch (error) {
-    terminal.printError(message(error));
+    terminal.printError(errorMessage(error));
     // A directory that does not exist is not created only to hold this entry.
     if (!(error instanceof Refusal) && existsSync(dataDirectory)) {
       createLogger({ dataDirectory, program: "cli", level: "info" }).error(`The ${name} command failed`, error);

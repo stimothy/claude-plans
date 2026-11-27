@@ -4,6 +4,7 @@
  *
  * @packageDocumentation
  */
+import { errorMessage } from "../error-message.ts";
 import { manifestVersion } from "./layout.ts";
 import { Refusal } from "./refusal.ts";
 import { runGit } from "./run-program.ts";
@@ -28,8 +29,8 @@ export function requireCurrentBuild({ repository, version }: InstalledCopy, warn
   try {
     latest = versionOnMaster(repository);
   } catch (error) {
-    const problem = error instanceof Error ? error.message : String(error);
-    warn(`Could not check whether this copy of claude-plans is outdated. ${problem}`);
+    const failed = `Could not check whether this copy of claude-plans is outdated, using master in ${repository}.`;
+    warn(`${failed} ${errorMessage(error)}`);
     return;
   }
   if (latest !== version) {
