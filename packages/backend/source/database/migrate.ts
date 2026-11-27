@@ -8,7 +8,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import type { Migration } from "./migration.ts";
 import { migrations } from "./migrations/index.ts";
-import { databaseFile, readSchemaVersion, versionOf } from "./schema-version.ts";
+import { busyTimeoutMilliseconds, databaseFile, versionOf } from "./schema-version.ts";
 
 const trackingTable = `
   CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -17,9 +17,6 @@ const trackingTable = `
     applied_at TEXT NOT NULL
   ) STRICT
 `;
-
-// How long to wait while another program is writing.
-const busyTimeoutMilliseconds = 5000;
 
 function checkNumbers(list: readonly Migration[]): void {
   if (list.some((migration, position) => migration.version !== position + 1)) {
@@ -60,6 +57,10 @@ function run(database: DatabaseSync, migration: Migration, newest: number): void
     if (!database.isTransaction) {
       throw new Error("The migration ended its own transaction.");
     }
+    // Enforcement is off, so this is what stops a migration from leaving broken references.
+    if (database.prepare("PRAGMA foreign_key_check").all().length > 0) {
+      throw new Error("The migration left rows that refer to rows that do not exist.");
+    }
     database
       .prepare("INSERT INTO schema_migrations (version, name, applied_at) VALUES (?, ?, ?)")
       .run(migration.version, migration.name, new Date().toISOString());
@@ -74,12 +75,16 @@ function run(database: DatabaseSync, migration: Migration, newest: number): void
 export function migrate(dataDirectory: string, list: readonly Migration[] = migrations): number {
   checkNumbers(list);
   const newest = list.length;
-  // This look cannot change the database, unlike opening it to write.
-  refuseNewer(readSchemaVersion(dataDirectory) ?? 0, newest);
   mkdirSync(dataDirectory, { recursive: true });
-  const database = new DatabaseSync(databaseFile(dataDirectory), { timeout: busyTimeoutMilliseconds });
+  // It opens for writing before any look, because only that can recover from an interrupted write. Foreign keys
+  // must be off before a transaction starts, or rebuilding a table would delete the rows that refer to it.
+  const database = new DatabaseSync(databaseFile(dataDirectory), {
+    timeout: busyTimeoutMilliseconds,
+    enableForeignKeyConstraints: false,
+  });
   try {
     inTransaction(database, () => {
+      refuseNewer(versionOf(database) ?? 0, newest);
       database.exec(trackingTable);
     });
     for (const migration of list) {

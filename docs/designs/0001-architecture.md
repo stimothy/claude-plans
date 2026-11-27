@@ -72,10 +72,12 @@ holds only the table that tracks them, at version 0. Reading the version opens t
 creates one, so that a check of its health cannot set it up. It tells a database that was never set up apart from
 one at version 0.
 
-Before writing, migrating checks that the migrations are numbered in order and that the database is not newer
-than they are. Two branches that add a migration with the same number would otherwise both appear to work. Each
-transaction takes the write lock and reads the version again, in case another program has migrated in the
-meantime. A program that finds the database in use waits up to five seconds. Each migration has its own file in
+Migrating first checks that the migrations are numbered in order. Two branches that add a migration with the same
+number would otherwise both appear to work. Each of its transactions takes the write lock, reads the version, and
+refuses a database that is newer than the migrations, so another program cannot slip in between. It opens the
+database for writing from the start. After a write is interrupted, SQLite leaves a journal that only such a
+connection can use to restore the database, so until then, reading the version fails. A program that finds the
+database in use waits up to five seconds. Each migration has its own file in
 `database/migrations/`, a directory that may grow past the usual limit of ten files.
 
 ## Logging

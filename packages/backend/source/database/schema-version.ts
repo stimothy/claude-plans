@@ -12,6 +12,9 @@ import { z } from "zod";
 const countSchema = z.object({ count: z.int() });
 const versionSchema = z.object({ version: z.int().nonnegative() });
 
+/** How long to wait while another program is using the database. */
+export const busyTimeoutMilliseconds = 5000;
+
 /** Returns the path of the database in a data directory. */
 export function databaseFile(dataDirectory: string): string {
   return join(dataDirectory, "database.sqlite");
@@ -34,7 +37,8 @@ export function versionOf(database: DatabaseSync): number | undefined {
 
 /**
  * Returns the schema version of the database in a data directory, or nothing if no database has been set up
- * there. It never creates or changes one. A database that cannot be read is an error.
+ * there. It never creates or changes one. A database that cannot be read is an error. That includes one whose
+ * last write was interrupted, until something opens it for writing, as migrating does.
  */
 export function readSchemaVersion(dataDirectory: string): number | undefined {
   const file = databaseFile(dataDirectory);
@@ -42,7 +46,7 @@ export function readSchemaVersion(dataDirectory: string): number | undefined {
   if (statSync(file, { throwIfNoEntry: false }) === undefined) {
     return undefined;
   }
-  const database = new DatabaseSync(file, { readOnly: true, timeout: 5000 });
+  const database = new DatabaseSync(file, { readOnly: true, timeout: busyTimeoutMilliseconds });
   try {
     return versionOf(database);
   } finally {

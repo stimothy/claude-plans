@@ -207,3 +207,4 @@
 | 2026-11-27 03:53 UTC | [A]000203 | The 14 days include today. Old files are deleted with each day's first entry. A log that cannot be written is reported on stderr and stops nothing. |
 | 2026-11-27 04:11 UTC | [A]000204 | Resolves O000035: the Node.js 24 docs call node:sqlite a release candidate, not yet stable, from 24.15.0, the minimum already required. |
 | 2026-11-27 04:11 UTC | [A]000205 | The database is database.sqlite. The migration runner creates the tracking table, so version 0 has no migrations. SQLite access and forward-only migrations each have an ADR. |
+| 2026-11-27 04:19 UTC | [A]000206 | Foreign keys are not enforced during migrations, so that rebuilding a table cannot delete the rows that refer to it; a migration that leaves a broken reference fails. |

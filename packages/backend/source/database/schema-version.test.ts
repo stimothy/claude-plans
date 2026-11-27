@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
 
 import { databaseFile, readSchemaVersion } from "./schema-version.ts";
-import { useTestDirectory } from "./test-directory.ts";
+import { useTestDirectory } from "./test-database.ts";
 
 const directory = useTestDirectory();
 
@@ -48,6 +48,11 @@ describe("readSchemaVersion", () => {
     createDatabase(`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY); ${rows}`);
 
     expect(readSchemaVersion(directory())).toBe(expected);
+  });
+
+  it("fails when it cannot look for the database, rather than finding none", () => {
+    // No system accepts a path with this character, and a check that a file exists would only answer no.
+    expect(() => readSchemaVersion(join(directory(), "\0"))).toThrow("null bytes");
   });
 
   it("fails for a file that is not a database", () => {

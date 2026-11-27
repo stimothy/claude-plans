@@ -24,6 +24,9 @@ has a step back. The database records which ones have run. Only installing the a
   new migration.
 - A migration must not begin or end a transaction. Ending one saves whatever came before, and the runner can only
   notice afterward if no new transaction was begun.
+- Foreign keys are not enforced while migrations run. SQLite needs this to rebuild a table without deleting the
+  rows that refer to it. A migration must make for itself any change that a cascade would have made. The whole
+  database is checked before each one is saved, and a reference to a missing row fails it.
 
 ## Changelog
 

@@ -13,7 +13,8 @@ export interface Migration {
   readonly name: string;
   /**
    * Changes the schema, the data, or both. It runs inside a transaction, so it must not begin or end one, and it
-   * must finish before it returns.
+   * must finish before it returns. Foreign keys are not enforced while it runs, so nothing cascades, and it fails
+   * if it leaves a reference to a missing row.
    */
   readonly apply: (database: DatabaseSync) => void;
 }

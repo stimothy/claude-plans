@@ -1,13 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { migrate } from "./migrate.ts";
-import type { Migration } from "./migration.ts";
 import { databaseFile, readSchemaVersion } from "./schema-version.ts";
-import { useTestDirectory } from "./test-directory.ts";
+import { queryRows, statements, useTestDirectory } from "./test-database.ts";
 
 const testDirectory = useTestDirectory();
 // The data directory does not exist until something creates it.
@@ -21,28 +19,12 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function query(sql: string): unknown[] {
-  const database = new DatabaseSync(databaseFile(directory), { readOnly: true });
-  // Rows have no prototype, which would make comparisons hard to read.
-  const rows = database
-    .prepare(sql)
-    .all()
-    .map((row) => ({ ...row }));
-  database.close();
-  return rows;
-}
+const query = (sql: string): unknown[] => queryRows(directory, sql);
 
 const tables = (): unknown[] => query("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name");
 
-function migration(version: number, sql: string): Migration {
-  const apply: Migration["apply"] = (database) => {
-    database.exec(sql);
-  };
-  return { version, name: `step ${String(version)}`, apply };
-}
-
-const createNotes = migration(1, "CREATE TABLE notes (text TEXT); INSERT INTO notes VALUES ('first')");
-const changeNotes = migration(2, "UPDATE notes SET text = 'second'");
+const createNotes = statements(1, "CREATE TABLE notes (text TEXT); INSERT INTO notes VALUES ('first')");
+const changeNotes = statements(2, "UPDATE notes SET text = 'second'");
 
 it("makes a new database that has only the tracking table", () => {
   const version = migrate(directory);
@@ -74,7 +56,7 @@ it("runs only the migrations that a database does not have", () => {
 });
 
 it("undoes all of a failed migration, and keeps the ones before it", () => {
-  const broken = migration(2, "CREATE TABLE extra (id INTEGER); DELETE FROM notes; INSERT INTO absent VALUES (1)");
+  const broken = statements(2, "CREATE TABLE extra (id INTEGER); DELETE FROM notes; INSERT INTO absent VALUES (1)");
 
   const run = (): number => migrate(directory, [createNotes, broken]);
 
@@ -90,9 +72,13 @@ it("undoes all of a failed migration, and keeps the ones before it", () => {
 });
 
 it("does not record a migration that ends its own transaction", () => {
-  const commits = migration(1, "COMMIT");
+  const commits = statements(1, "COMMIT");
 
-  expect(() => migrate(directory, [commits])).toThrow("Migration 1 (step 1) failed.");
+  expect(() => migrate(directory, [commits])).toThrow(
+    expect.objectContaining({
+      cause: expect.objectContaining({ message: "The migration ended its own transaction." }) as unknown,
+    }) as Error,
+  );
   expect(readSchemaVersion(directory)).toBe(0);
 });
 
@@ -110,7 +96,7 @@ it.each([
   { problem: "repeats a number", versions: [1, 1] },
   { problem: "is out of order", versions: [2, 1] },
 ])("creates nothing when the list of migrations $problem", ({ versions }) => {
-  const list = versions.map((version) => migration(version, "SELECT 1"));
+  const list = versions.map((version) => statements(version, "SELECT 1"));
 
   expect(() => migrate(directory, list)).toThrow("Migrations must be numbered 1, 2, 3, and so on, in order.");
   expect(existsSync(directory)).toBe(false);
