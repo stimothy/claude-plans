@@ -92,7 +92,8 @@ characters, and no backup writes over another or is deleted later. No backup is 
 with nothing to migrate. Deleting the data directory deletes the backups too.
 
 SQLite both writes and restores a copy. It writes one with `VACUUM INTO`, which fails if any part of the
-database cannot be read, and the copy gets its name only once it is complete. It restores through its backup
+database cannot be read, and the copy gets its name only once it is complete. Only the file's owner may read it,
+except on Windows, where the data directory's permissions apply. It restores through its backup
 interface, because a file copied over the database could later have the journal of an interrupted write applied
 to it. That interface does not wait for a database in use, so the program first waits for the database to be
 free. For the same reason, restore a backup by hand with SQLite, such as with the `.restore` command of

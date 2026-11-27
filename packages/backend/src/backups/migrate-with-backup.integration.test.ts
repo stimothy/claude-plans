@@ -1,5 +1,6 @@
-import { existsSync, fsyncSync, readdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { randomBytes } from "node:crypto";
+import { existsSync, fsyncSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
 import { describe, expect, it, vi } from "vitest";
@@ -10,6 +11,12 @@ import { databaseFile, readSchemaVersion } from "../database/schema-version.ts";
 import { interruptedDatabase, queryRows, statements, step, useTestDirectory } from "../database/test-database.ts";
 import { restoreBackup } from "./database-backup.ts";
 import { migrateWithBackup } from "./migrate-with-backup.ts";
+
+// Random bytes are random, except where a test says what they are.
+vi.mock("node:crypto", async (importOriginal) => {
+  const original = await importOriginal<{ randomBytes: (size: number) => Buffer }>();
+  return { ...original, randomBytes: vi.fn(original.randomBytes) };
+});
 
 // Writing a copy to the disk works as it always does, except where a test makes it fail.
 vi.mock("node:fs", async (importOriginal) => {
@@ -42,6 +49,14 @@ async function run(migrations: readonly Migration[]) {
   return reports.join("\n");
 }
 
+// Migrates a database from version 1 to 2, and returns the path of the backup that this makes.
+async function backUpOnce(): Promise<string> {
+  migrate(directory(), [first]);
+  await run([first, second]);
+  const [name = ""] = backupNames();
+  return join(backupsDirectory(), name);
+}
+
 describe("backing up before a migration", () => {
   it("saves the database as it was, and says where", async () => {
     migrate(directory(), [first]);
@@ -66,6 +81,31 @@ describe("backing up before a migration", () => {
 
     vi.useRealTimers();
     expect(backupNames()).toHaveLength(2);
+  });
+
+  // The random part makes this very unlikely, so the test takes the randomness away.
+  it("stops rather than replace a backup that has the same name", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-01-02T03:04:05Z") });
+    vi.mocked<(size: number) => Buffer>(randomBytes).mockReturnValueOnce(Buffer.alloc(4));
+    migrate(directory(), [first]);
+    const earlier = join(backupsDirectory(), "20260102T030405Z-version-1-00000000.sqlite");
+    mkdirSync(backupsDirectory());
+    writeFileSync(earlier, "an earlier backup");
+
+    await expect(run([first, second])).rejects.toThrow("could not be backed up");
+
+    vi.useRealTimers();
+    expect(readFileSync(earlier, "utf8")).toBe("an earlier backup");
+    expect(backupNames()).toEqual([basename(earlier)]);
+    expect(titles()).toEqual(["kept"]);
+  });
+
+  // Windows has no such permissions, and reports that anyone may read and write.
+  it("lets only the owner read the backup", async () => {
+    const file = await backUpOnce();
+
+    const mode = statSync(file).mode & 0o777;
+    expect(mode).toBe(process.platform === "win32" ? 0o666 : 0o600);
   });
 
   it("backs up a database that does not yet track migrations", async () => {
@@ -150,14 +190,12 @@ describe("a database that was interrupted or is in use", () => {
 
   // Waiting for it takes the whole busy timeout, after which the lock is what gets reported.
   it("waits for another program to finish reading before it restores", async () => {
-    migrate(directory(), [first]);
-    await run([first, second]);
-    const [name = ""] = backupNames();
+    const file = await backUpOnce();
     const reader = new DatabaseSync(databaseFile(directory()));
     reader.exec("BEGIN");
     reader.prepare("SELECT * FROM plans").all();
 
-    await expect(restoreBackup(join(backupsDirectory(), name), directory())).rejects.toThrow("database is locked");
+    await expect(restoreBackup(file, directory())).rejects.toThrow("database is locked");
 
     reader.close();
   });

@@ -4,7 +4,7 @@
  * @packageDocumentation
  */
 import { randomBytes } from "node:crypto";
-import { closeSync, fsyncSync, mkdirSync, openSync, renameSync, rmSync } from "node:fs";
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { backup, DatabaseSync } from "node:sqlite";
 
@@ -28,20 +28,31 @@ function flush(file: string): void {
   }
 }
 
+// Renaming replaces a file that has the new name. The server's lock keeps another backup from taking it meanwhile.
+function publish(partial: string, file: string): void {
+  if (existsSync(file)) {
+    throw new Error(`A backup with the name ${file} already exists.`);
+  }
+  renameSync(partial, file);
+}
+
 /**
- * Saves a copy of an open database of the given version, and returns the copy's path. It never writes over a file
- * that exists. The copy gets its name only once it is complete.
+ * Saves a copy of an open database of the given version, which only the file's owner may read, and returns the
+ * copy's path. It never writes over a file that exists. The copy gets its name only once it is complete.
  */
 export function saveBackup(database: DatabaseSync, dataDirectory: string, version: number): string {
   const directory = join(dataDirectory, "backups");
   mkdirSync(directory, { recursive: true });
   const file = join(directory, newName(version));
   const partial = `${file}.partial`;
+  // SQLite would make a file that others may read, but it keeps the permissions of an empty one. This is outside
+  // what removes a failed copy, so that a file which was there before is never removed.
+  closeSync(openSync(partial, "wx", 0o600));
   try {
-    // This fails if the file exists, and if any part of the database cannot be read.
+    // This fails if any part of the database cannot be read.
     database.prepare("VACUUM INTO ?").run(partial);
     flush(partial);
-    renameSync(partial, file);
+    publish(partial, file);
   } catch (error) {
     rmSync(partial, { force: true });
     throw error;
