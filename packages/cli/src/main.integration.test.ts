@@ -73,7 +73,8 @@ describe("the claude-plans program", () => {
 
     expect(installed).toMatchObject({ code: 0, errors: "" });
     expectAHealthyServerThatStopped(started, health, stopped);
-  });
+    // It installs the real repository, so npm unpacks every package that runs, which Windows does slowly.
+  }, 90_000);
 
   it.each(signals)("stops its server in the foreground when it is sent %s", async (signal) => {
     const child = launch("start", `--port=${String(await freePort())}`);

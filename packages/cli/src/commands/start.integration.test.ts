@@ -110,7 +110,7 @@ describe("a server program that stands in for the real one", () => {
   async function expectEnded(): Promise<void> {
     await vi.waitFor(() => {
       expect(() => process.kill(running(), 0)).toThrow("ESRCH");
-    });
+    }, startTime);
   }
 
   it.each([
@@ -135,6 +135,8 @@ describe("a server program that stands in for the real one", () => {
 
     expectRunning();
     process.kill(running());
+    // The program writes into the data directory as it ends, so it must end before that is removed.
+    await expectEnded();
   });
 
   // A server in the background has a process group of its own, so Ctrl+C does not reach it.

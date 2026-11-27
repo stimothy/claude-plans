@@ -3,6 +3,8 @@
  *
  * @packageDocumentation
  */
+import { join } from "node:path";
+
 import { activateBuild, type Build, makeBuild, removeBuild, runDatabaseProgram } from "../install/build.ts";
 import { isInRealData, isRealDataDirectory, requirePlainInstall, requireRealSpelling } from "../install/checkout.ts";
 import { commandDirectory } from "../install/layout.ts";
@@ -70,7 +72,7 @@ interface Outcome extends Replaced {
 }
 
 // How to run an installed copy that is not on the path.
-const launcherCommand = (dataDirectory: string): string => `node "${commandDirectory(dataDirectory)}/main.js"`;
+const launcherCommand = (dataDirectory: string): string => `node "${join(commandDirectory(dataDirectory), "main.js")}"`;
 
 function conclude({ version, plain, stoppedServer }: Outcome, dataDirectory: string, terminal: Terminal): void {
   const command = plain ? "claude-plans" : launcherCommand(dataDirectory);
