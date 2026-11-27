@@ -68,7 +68,7 @@ version increases, even after someone else adds commits to them. Tests, builds, 
 - Keep at least 80% coverage of lines, branches, functions, and statements in each package.
 - Never suppress or skip a lint, type, test, or coverage requirement. Change the code so that it passes.
 - Use clear names without abbreviations. Standard terms such as API and URL are fine, as are names that outside
-  tools require.
+  tools require, and `src` as a directory name.
 - Keep files to 300 lines and directories to 10 files. Do not create catch-all directories such as `utils`,
   `helpers`, `common`, or `misc`. Lockfiles, generated files, `docs/adrs/`, and `docs/designs/` are exempt from
   these limits. The top-level directory and database migrations are exempt from the 10-file limit.
@@ -82,7 +82,7 @@ version increases, even after someone else adds commits to them. Tests, builds, 
   Python and file names or in `eslint.config.js` for JavaScript and TypeScript. The latter skips names written
   only in capitals, such as `MAXIMUM_LEN`, so reviewers watch for those.
 - Add TSDoc comments to everything a TypeScript file exports.
-- Each package lives in `packages/`, with its code in `source/`. `backend`, `cli`, and `frontend` may import
+- Each package lives in `packages/`, with its code in `src/`. `backend`, `cli`, and `frontend` may import
   `domain` but never one another. Only `backend` and `cli` may import `logging`. `domain` and `logging` import no
   other package. Import another package by its name, such as `@claude-plans/domain`, never by a path.
   `npm run lint` enforces this.

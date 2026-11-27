@@ -59,21 +59,21 @@ describe("installing into another data directory", () => {
 
   it("builds from the code as it is, committed or not, without its tests", async () => {
     const data = fake.elsewhere("development");
-    writeInto(fake.repository(), "packages/cli/source/main.ts", 'console.log("changed");\n');
+    writeInto(fake.repository(), "packages/cli/src/main.ts", 'console.log("changed");\n');
 
     await install(data);
 
     expect(launch(data)).toBe("changed");
     const build = join(data, "app", "builds", installed(data).build ?? "");
-    expect(existsSync(join(build, "packages/backend/source/program/database-main.ts"))).toBe(true);
-    expect(existsSync(join(build, "packages/backend/source/program/database-main.test.ts"))).toBe(false);
+    expect(existsSync(join(build, "packages/backend/src/program/database-main.ts"))).toBe(true);
+    expect(existsSync(join(build, "packages/backend/src/program/database-main.test.ts"))).toBe(false);
   });
 
   it("keeps what was installed while the repository changes, until installed again", async () => {
     const data = fake.elsewhere("development");
     await install(data);
     const first = installed(data).build;
-    writeInto(fake.repository(), "packages/cli/source/main.ts", 'console.log("changed");\n');
+    writeInto(fake.repository(), "packages/cli/src/main.ts", 'console.log("changed");\n');
 
     const before = launch(data);
     await install(data);

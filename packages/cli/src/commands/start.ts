@@ -32,7 +32,7 @@ export interface Launch {
 // The command may not import the backend, so it only names the file that it runs.
 const serverProgram: Launch = {
   runtime: process.execPath,
-  program: join(import.meta.dirname, "..", "..", "..", "backend", "source", "program", "main.ts"),
+  program: join(import.meta.dirname, "..", "..", "..", "backend", "src", "program", "main.ts"),
   readyTimeoutMilliseconds: 30_000,
 };
 

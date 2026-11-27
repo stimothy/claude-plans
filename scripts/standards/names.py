@@ -28,6 +28,8 @@ WORDS = """
 ABBREVIATIONS = dict(pair.split("=") for pair in WORDS.split())
 # Outside tools choose these. "tmp" holds the planning files until issue #38 removes it.
 PATH_NAMES = {"docs", "tmp"}
+# The maintainer chose this name for the folder that holds a package's code. A file may not have it.
+DIRECTORY_NAMES = {"src"}
 PYTHON_NAMES = {"tmp_path", "tmp_path_factory"}
 
 
@@ -52,7 +54,8 @@ def _path_problems(files: Mapping[str, str | None]) -> list[str]:
         for part in (path, *path.parents):
             # An extension names a file type, which other tools choose.
             text = part.stem if part == path else part.name
-            word = None if text in PATH_NAMES else _abbreviation(text)
+            allowed = PATH_NAMES if part == path else PATH_NAMES | DIRECTORY_NAMES
+            word = None if text in allowed else _abbreviation(text)
             if word:
                 problems[part] = _problem(str(part), part.name, word)
     return list(problems.values())

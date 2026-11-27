@@ -25,7 +25,7 @@ describe("the import boundaries", () => {
     ["frontend", "domain"],
     ["domain", "domain"],
   ])("let %s import %s", async (from, to) => {
-    await expect(complaints(importing(`@claude-plans/${to}`), `packages/${from}/source/a.ts`)).resolves.toEqual([]);
+    await expect(complaints(importing(`@claude-plans/${to}`), `packages/${from}/src/a.ts`)).resolves.toEqual([]);
   });
 
   it.each([
@@ -48,7 +48,7 @@ describe("the import boundaries", () => {
     ["other", "domain"],
     ["backend", "other"],
   ])("do not let %s import %s", async (from, to) => {
-    await expect(complaints(importing(`@claude-plans/${to}/part`), `packages/${from}/source/a.ts`)).resolves.toEqual([
+    await expect(complaints(importing(`@claude-plans/${to}/part`), `packages/${from}/src/a.ts`)).resolves.toEqual([
       `The ${from} package may not import the ${to} package.`,
     ]);
   });
@@ -63,7 +63,7 @@ describe("the import boundaries", () => {
     'import cli = require("@claude-plans/cli");',
     'require("@claude-plans/cli");',
   ])("cover %s", async (code) => {
-    await expect(complaints(`${code}\n`, "packages/backend/source/a.ts")).resolves.toEqual([
+    await expect(complaints(`${code}\n`, "packages/backend/src/a.ts")).resolves.toEqual([
       "The backend package may not import the cli package.",
     ]);
   });
@@ -71,21 +71,21 @@ describe("the import boundaries", () => {
   it.each(["await import(name);", "require(`@claude-plans/${name}`);"])(
     "reject %s, which cannot be checked",
     async (code) => {
-      await expect(complaints(`${code}\n`, "packages/backend/source/a.ts")).resolves.toEqual([
+      await expect(complaints(`${code}\n`, "packages/backend/src/a.ts")).resolves.toEqual([
         "Write the module's name as plain text, so that package boundaries can be checked.",
       ]);
     },
   );
 
   it.each([
-    "../../cli/source/start.ts",
-    "./../../cli/source/start.ts",
-    "../../domain/source/index.ts",
+    "../../cli/src/start.ts",
+    "./../../cli/src/start.ts",
+    "../../domain/src/index.ts",
     "../../../scripts/report.ts",
     "../node_modules/@claude-plans/cli",
     "..",
-    join(root, "packages/cli/source/start.ts"),
-    `file://${root}/packages/cli/source/start.ts`,
+    join(root, "packages/cli/src/start.ts"),
+    `file://${root}/packages/cli/src/start.ts`,
   ])("do not let a path reach %s", async (path) => {
     const found = await complaints(importing(path.replaceAll("\\", "/")), "packages/backend/a.ts");
 
@@ -95,7 +95,7 @@ describe("the import boundaries", () => {
   it.each(["./start.ts", "../package.json", "zod", "node:fs", "@types/node", "@claude-plans-other/cli"])(
     "leave %s alone",
     async (name) => {
-      await expect(complaints(importing(name), "packages/backend/source/a.ts")).resolves.toEqual([]);
+      await expect(complaints(importing(name), "packages/backend/src/a.ts")).resolves.toEqual([]);
     },
   );
 
@@ -106,6 +106,6 @@ describe("the import boundaries", () => {
   });
 
   it("do not apply outside the packages", async () => {
-    await expect(complaints(importing("../packages/cli/source/a.ts"), "scripts/a.ts")).resolves.toEqual([]);
+    await expect(complaints(importing("../packages/cli/src/a.ts"), "scripts/a.ts")).resolves.toEqual([]);
   });
 });

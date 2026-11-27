@@ -41,8 +41,8 @@
     "typecheck:logging": "tsc --project packages/logging/tsconfig.json",
     "typecheck:node": "tsc --project tsconfig.json",
     "typecheck:python": "node scripts/launcher/launch.ts python -m mypy",
-    "claude-plans": "node packages/cli/source/main.ts",
-    "install:studio": "node packages/cli/source/main.ts install --studio",
+    "claude-plans": "node packages/cli/src/main.ts",
+    "install:studio": "node packages/cli/src/main.ts install --studio",
     "typecheck:cli": "tsc --project packages/cli/tsconfig.json"
   },
   "devDependencies": {

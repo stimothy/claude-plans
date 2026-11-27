@@ -4,7 +4,7 @@
   "description": "Models and API contracts that the claude-plans packages share.",
   "license": "MIT",
   "type": "module",
-  "exports": "./source/index.ts",
+  "exports": "./src/index.ts",
   "dependencies": {
     "zod": "^4.6.7"
   }

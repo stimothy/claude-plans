@@ -63,7 +63,7 @@ export function makeBuild(record: InstallationRecord, dataDirectory: string): Bu
 
 /** Runs the database program of a build, which checks or migrates the data directory's database. */
 export function runDatabaseProgram(directory: string, action: "check" | "migrate", dataDirectory: string): void {
-  const program = join("packages", "backend", "source", "program", "database-main.ts");
+  const program = join("packages", "backend", "src", "program", "database-main.ts");
   runProgram(process.execPath, [program, action, `--data-directory=${dataDirectory}`], directory);
 }
 
@@ -74,7 +74,7 @@ import { readFileSync } from "node:fs";
 
 const application = new URL("../", import.meta.url);
 const { build } = JSON.parse(readFileSync(new URL("current.json", application), "utf8"));
-await import(new URL("builds/" + build + "/packages/cli/source/main.ts", application));
+await import(new URL("builds/" + build + "/packages/cli/src/main.ts", application));
 `;
 
 function writeLauncher(dataDirectory: string, version: string): void {

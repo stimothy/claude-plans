@@ -53,10 +53,10 @@ const files = {
   ".gitignore": ".claude-plans/\nnode_modules/\n",
   "package.json": JSON.stringify({ name: "fake", version: "1.0.0", private: true, workspaces: ["packages/*"] }),
   "packages/backend/package.json": JSON.stringify({ name: "fake-backend", version: "1.0.0", type: "module" }),
-  "packages/backend/source/program/database-main.ts": databaseProgram,
-  "packages/backend/source/program/database-main.test.ts": "// A build leaves tests out.\n",
+  "packages/backend/src/program/database-main.ts": databaseProgram,
+  "packages/backend/src/program/database-main.test.ts": "// A build leaves tests out.\n",
   "packages/cli/package.json": JSON.stringify({ name: "fake-cli", version: "1.0.0", type: "module" }),
-  "packages/cli/source/main.ts": 'console.log("the fake command", ...process.argv.slice(2));\n',
+  "packages/cli/src/main.ts": 'console.log("the fake command", ...process.argv.slice(2));\n',
 };
 
 /** Writes a file in a directory, creating the directories above it. */

@@ -13,13 +13,13 @@ const packageMinimums = Object.fromEntries(
 /** Test settings for the Node.js scripts and the packages. */
 export default defineConfig({
   test: {
-    include: ["scripts/**/*.test.ts", "packages/*/source/**/*.test.ts"],
+    include: ["scripts/**/*.test.ts", "packages/*/src/**/*.test.ts"],
     // Lists every test with its duration, and highlights the slow ones.
     reporters: ["verbose"],
     slowTestThreshold: 300,
     allowOnly: false,
     coverage: {
-      include: ["scripts/**/*.ts", "packages/*/source/**/*.ts"],
+      include: ["scripts/**/*.ts", "packages/*/src/**/*.ts"],
       // The first entries apply to everything together.
       thresholds: { ...minimumCoverage, ...packageMinimums },
     },
