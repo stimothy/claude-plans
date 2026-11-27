@@ -1,0 +1,12 @@
+{
+  "name": "@claude-plans/backend",
+  "private": true,
+  "description": "The claude-plans server and its local data.",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@claude-plans/domain": "*",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  }
+}

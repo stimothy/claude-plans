@@ -201,3 +201,5 @@
 | 2026-11-26 18:19 UTC | [A]000197 | logging and any package the boundary rule does not list import no other package, and a relative path may not leave its package. |
 | 2026-11-26 18:19 UTC | [A]000198 | The APIs are GET /api/health and GET and PATCH /api/settings; health holds status, version, and database access and migration version. |
 | 2026-11-26 18:19 UTC | [A]000199 | Package code lives in source/, since src is an abbreviation. Packages export TypeScript source; install (#26) decides any build. |
+| 2026-11-27 03:32 UTC | [A]000200 | The settings file is settings.yaml. Every setting is optional, and port is 1 to 65535. Unknown names and invalid values are errors, and such a file is never overwritten. |
+| 2026-11-27 03:32 UTC | [A]000201 | The backend is told the repository's path to form the default data directory. #24 adds the protections for real data. |
