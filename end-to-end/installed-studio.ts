@@ -17,11 +17,12 @@ import { freePort } from "../packages/cli/src/server/free-port.ts";
 const repository = join(import.meta.dirname, "..");
 // Playwright skips a fixture's cleanup when setting it up uses all of the fixture's time. Each command therefore
 // has a shorter limit of its own, so that one that hangs fails while there is still time to clean up. Setting up
-// runs an install and a start, and cleaning up a stop. Installing runs npm and builds the page. Starting and
-// stopping give up by themselves sooner than their limit.
+// runs an install and a start. Cleaning up may wait for the stop and start of an unfinished restart, and then
+// stops. Installing runs npm and builds the page. Starting and stopping give up by themselves sooner than their
+// limit.
 const installTimeLimit = 90_000;
 const commandTimeLimit = 40_000;
-const studioTimeLimit = installTimeLimit + 2 * commandTimeLimit + 10_000;
+const studioTimeLimit = installTimeLimit + 4 * commandTimeLimit + 10_000;
 const run = promisify(execFile);
 
 /** A studio that is installed and running. */
@@ -50,14 +51,22 @@ async function withStudio(dataDirectory: string, use: (studio: Studio) => Promis
   const start = async (): Promise<void> => {
     await command("start", "--detached", `--port=${port}`);
   };
-  const restart = async (): Promise<void> => {
+  const stopThenStart = async (): Promise<void> => {
     await command("stop");
     await start();
+  };
+  let restarting = Promise.resolve();
+  const restart = (): Promise<void> => {
+    restarting = stopThenStart();
+    return restarting;
   };
   try {
     await start();
     await use({ url: `http://127.0.0.1:${port}`, command, restart });
   } finally {
+    // A test that runs out of time goes on running. A restart that it began would otherwise start a server after
+    // this stop, and leave it running. The test reports a restart that fails.
+    await Promise.allSettled([restarting]);
     await command("stop");
   }
 }
