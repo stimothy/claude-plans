@@ -10,12 +10,13 @@ You need Node.js 24, at version 24.15 or newer, Python 3.12 or newer, and
 [gitleaks](https://github.com/gitleaks/gitleaks) 8.19 or newer. Install the Node.js dependencies with
 `npm ci`, then run `npm run setup:python`. That creates `.venv` and installs the Python tools. If setup does not
 find your Python, set the `PYTHON` environment variable to its path. Run setup again when `requirements.txt` changes.
-Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions. The web page's component
-tests need a browser, which `npx playwright install chromium` downloads. Run it again after Playwright is updated.
+Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions. The component and
+end-to-end tests need a browser, which `npx playwright install chromium` downloads. Run it again after Playwright
+is updated.
 
-- `npm run check` runs the format check, both linters, the type checks, the tests, the component tests, a secret
-  scan, and a dependency audit. Run it before you open a pull request. GitHub runs the same checks, with tests on
-  Linux, Windows, and macOS, and component tests on Linux.
+- `npm run check` runs the format check, both linters, the type checks, the tests, the component and end-to-end
+  tests, a secret scan, and a dependency audit. Run it before you open a pull request. GitHub runs the same checks,
+  with tests on Linux, Windows, and macOS, and component and end-to-end tests on Linux.
 - `npm run dev` runs the server, with the web page in front of it, which shows your changes to the page as you save
   them. It prints the page's address. It keeps its data in `.claude-plans-development/` in your copy and takes free
   ports. Start it again after changing the server's code.
@@ -23,6 +24,9 @@ tests need a browser, which `npx playwright install chromium` downloads. Run it 
   the theme and color vision, to check a component in all eight palettes.
 - `npm run test:components` runs the stories and the page's other tests in Chromium, and requires at least 80%
   coverage of the page's code. The whole run is stopped after 2 minutes.
+- `npm run test:end-to-end` installs your copy into a temporary data directory, runs the installed studio on a
+  free port, and uses its page in Chromium. It lists each test's time, names the test files that took more than
+  5 seconds, and stops after 5 minutes.
 - `npm run build:page` builds the web page, which the server serves. `install` builds its own, so you need this
   only before starting your copy's server with `npm run claude-plans`.
 - `npm run lock:python` updates `requirements.txt`, which locks every Python package with hashes. Run it after you
@@ -83,7 +87,8 @@ version increases, even after someone else adds commits to them. Tests, builds, 
 
 - Write tests first (test-driven development). Lay each one out as Arrange, Act, Assert.
 - Name a TypeScript test file `*.integration.test.ts` if it uses a real database, runs a server, or starts another
-  program, and `*.test.ts` otherwise.
+  program, and `*.test.ts` otherwise. End-to-end tests are the `*.spec.ts` files in `end-to-end/`. Add one only
+  for what no other test can show.
 - Keep at least 80% coverage of lines, branches, functions, and statements in each package.
 - Never suppress or skip a lint, type, test, or coverage requirement. Change the code so that it passes.
 - Use clear names without abbreviations. Standard terms such as API and URL are fine, as are names that outside

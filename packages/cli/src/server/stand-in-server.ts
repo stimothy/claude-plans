@@ -20,16 +20,6 @@ export function readyDatabase(dataDirectory: string): void {
   runDatabaseProgram(join(import.meta.dirname, "..", "..", "..", ".."), "migrate", dataDirectory);
 }
 
-/** Returns a port that was free a moment ago, for a server that must be given one. */
-export async function freePort(): Promise<number> {
-  const holder = createServer().listen(0, "127.0.0.1");
-  await once(holder, "listening");
-  const { port } = holder.address() as AddressInfo;
-  holder.close();
-  await once(holder, "close");
-  return port;
-}
-
 /** The token that a stand-in server's record holds. */
 export const standInToken = "stand-in-token";
 

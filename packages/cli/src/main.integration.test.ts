@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { stopServer } from "./commands/stop.ts";
 import { recordingTerminal } from "./recording-terminal.ts";
-import { freePort, readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
+import { freePort } from "./server/free-port.ts";
+import { readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
 
 const servers = useStandInServers();
 beforeEach(() => {

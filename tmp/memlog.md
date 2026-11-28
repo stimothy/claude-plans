@@ -164,7 +164,7 @@
 | 2026-11-26 00:43 UTC | [A]000160 | A small TypeScript launcher in scripts/ finds Python and runs the scripts, since no one Python command name works on every system; the scripts themselves are Python. |
 | 2026-11-26 00:43 UTC | [A]000161 | Vitest arrives with #42 to test the launcher. |
 | 2026-11-26 00:43 UTC | [A]000162 | The 30-second unit limit applies to each language's suite separately. |
-| 2026-11-26 00:47 UTC | [O]000163 | A time limit stops only the command itself; should it stop the whole process tree once a suite starts other processes, as in #32? |
+| 2026-11-26 00:47 UTC | ~~[O]000163~~ | A time limit stops only the command itself; should it stop the whole process tree once a suite starts other processes, as in #32? |
 | 2026-11-26 00:52 UTC | [A]000164 | Use mypy in strict mode, pytest, and pytest-cov; requirements.txt pins the direct Python tools. |
 | 2026-11-26 00:52 UTC | [A]000165 | Coverage.py reports no function percentage, so Python coverage checks lines and branches combined. |
 | 2026-11-26 01:02 UTC | ~~[O]000166~~ | requirements.txt pins only the direct Python tools; should their dependencies also be locked with hashes, as package-lock.json does for npm, for #8? |
@@ -245,3 +245,6 @@
 | 2026-11-28 05:43 UTC | [A]000241 | Applies D000018: each color is one CSS light-dark() value, only accent and danger change with color vision, and the page's build targets browsers that have light-dark(). Tests hold all eight palettes to WCAG AA. |
 | 2026-11-28 05:43 UTC | [A]000242 | A choice shows at once, and saves are sent one at a time. One that cannot be saved is undone, and the page says so. |
 | 2026-11-28 05:43 UTC | [A]000243 | Extends A000236: those servers also give out a source file elsewhere that the page imports, such as one of domain's. |
+| 2026-11-28 06:14 UTC | [A]000244 | Resolves O000163 for #32: the end-to-end limit is Playwright's own (D000119), which lets the tests stop their server, and the CI job's 10-minute limit is the backstop. The launcher is unchanged. |
+| 2026-11-28 06:14 UTC | [A]000245 | End-to-end tests are end-to-end/*.spec.ts files. They install this copy into a temporary data directory and use the installed command. Playwright names test files that take over 5 seconds. |
+| 2026-11-28 06:14 UTC | [D]000246 | The maintainer wants End-to-end tests required on master. Extends D000237. The ruleset changes once the job passes on its pull request. |
