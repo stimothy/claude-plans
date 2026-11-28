@@ -30,12 +30,13 @@ exists only in clones where it could be installed.
 
 The application's code lives in npm workspaces under `packages/`. So far there are five: `domain`, `backend`,
 `cli`, `logging`, and `frontend`. `domain` defines the health report, the color settings, and what a client needs
-to start, find, and stop the server, with the path and method of each API. Nothing serves the color settings yet.
-The definitions of the data are Zod schemas, so a program can check what it receives and get its TypeScript type
-from the same place.
+to start, find, and stop the server, with the path and method of each API. It also defines how the web page's HTML
+names the colors to show. The definitions of the data are Zod schemas, so a program can check what it receives and
+get its TypeScript type from the same place.
 
-`frontend` is the web page, written in React and built with Vite. So far it only says hello. Styles are CSS
-Modules. It runs in a browser, so `domain` must not depend on Node.js. One type check covers the source of
+`frontend` is the web page, written in React and built with Vite. So far it says hello and lets the user choose
+its colors. Styles are CSS Modules, with the colors in shared CSS variables. It runs in a browser, so `domain`
+must not depend on Node.js. One type check covers the source of
 `domain` without the Node.js types, and another covers its tests, which do use them. `domain` exports its
 TypeScript source and has no build step.
 
@@ -124,7 +125,8 @@ the computer.
 The server also serves the built web page, from `packages/frontend/dist/` beside its own code, with the same checks.
 The backend may not import `frontend`, so it only reads those files. A copy of the repository may not have built
 the page, and the top address then says how to. `@fastify/static` serves the files, and gives nothing from outside
-that directory.
+that directory. The page's HTML is the exception: the server adds the saved colors to it, as described under
+[Colors](#colors). `GET /api/settings` gives the saved colors, and `PATCH` changes one or both of them.
 
 While it runs, the server records its port and a random token in `server.json`, which only the file's owner can
 read. On Windows, the data directory's permissions apply instead. A request to shut down must give the token. The
@@ -218,13 +220,40 @@ A server also keeps running the code that it started with. `health` refuses a se
 command's own, and says to stop it, install, and start it again. It reads the version before the rest of the
 report, which another version may shape differently.
 
+## Colors
+
+The user chooses a theme (system, light, or dark) and a color vision (default, protan, deutan, or tritan). The
+choices are saved in the settings file, so they stay after a restart and are the same in every browser.
+
+The page must not show other colors first. Code in the page cannot promise that, because the browser may draw
+before the code runs or the saved choices arrive. So the server writes the choices into the HTML itself, as the
+`data-theme` and `data-color-vision` attributes of the `html` element, and the stylesheet selects on them. It
+reads the settings each time it sends the HTML, and tells the browser not to keep it, because a kept copy could
+hold earlier choices. If the settings file cannot be read, the page still shows, in the default colors, and the
+log says why.
+
+Each color is a CSS variable whose value is `light-dark()`, which holds the light and the dark color together.
+The theme only sets which of the two the browser uses, and with the system theme the operating system decides.
+That leaves one set of colors for each color vision, with no theme repeated. Only the accent and danger colors
+change with the color vision. The build is told to leave `light-dark()` as it is, so that what ships is what the
+tests check. They check that all eight palettes differ and meet WCAG AA contrast, for text and for the borders of
+controls. They cannot check how a palette looks to someone with a given color vision, so color never carries a
+meaning on its own.
+
+The attributes are the page's only record of what shows. The controls read them, and so follow a change made by
+anything else, such as Storybook's toolbar, which switches both choices for any story. A new choice shows at once
+and is then saved. Saves go one at a time, so that an earlier one cannot arrive last and win. A choice that cannot
+be saved is undone, and the page says so.
+
 ## Development
 
 `npm run dev`, in `scripts/development`, migrates a database in `.claude-plans-development/` in the repository,
 which Git ignores, then runs the server and Vite. It takes no option for the data directory, so it cannot be aimed
 at the real data. Both run in one program, so that neither can be left running without the other. The server takes
 any free port, and Vite takes the next one if its usual port is in use. Vite serves the page's source and updates
-the open page as it changes. A change to the server's code needs a restart.
+the open page as it changes. A change to the server's code needs a restart. Each time Vite sends the page's HTML,
+a plugin asks the server for the saved colors and adds them, as the server does with the built page. If the server
+does not give them, the page shows the default colors.
 
 Vite passes requests under `/api` to the server. The page there has Vite's origin, which the server would refuse,
 so the proxy gives the server's own origin to a request whose `Origin` matches its `Host`, which is a request from
@@ -234,9 +263,10 @@ whose name was made to point here.
 
 Vite also gives files to whoever can reach it, by default any file in the repository, which in the maintainer's own
 copy would include the real data. The page's settings limit it to the page's directory and the installed packages.
-A new directory that the page imports from has to be added there. Storybook and the component tests' server each
-allow more of their own accord, so they set the same list again after their other settings. On `SIGTERM`, Vite
-would end the program without waiting for the server, so the script replaces Vite's listener with its own.
+Vite also gives out a source file elsewhere that the page imports, such as one of `domain`'s. Storybook and the
+component tests' server each allow more of their own accord, so they set the same list again after their other
+settings. On `SIGTERM`, Vite would end the program without waiting for the server, so the script replaces Vite's
+listener with its own.
 
 Storybook shows the page's components apart from the page. Each story's play function is also its test, which
 Vitest runs in Chromium, with the few tests of the page that are not stories. Storybook's usage reports are off.

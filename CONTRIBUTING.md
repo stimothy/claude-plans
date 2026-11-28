@@ -19,7 +19,8 @@ tests need a browser, which `npx playwright install chromium` downloads. Run it 
 - `npm run dev` runs the server, with the web page in front of it, which shows your changes to the page as you save
   them. It prints the page's address. It keeps its data in `.claude-plans-development/` in your copy and takes free
   ports. Start it again after changing the server's code.
-- `npm run storybook` shows the page's components one at a time, at `http://localhost:6006`.
+- `npm run storybook` shows the page's components one at a time, at `http://localhost:6006`. Its toolbar switches
+  the theme and color vision, to check a component in all eight palettes.
 - `npm run test:components` runs the stories and the page's other tests in Chromium, and requires at least 80%
   coverage of the page's code. The whole run is stopped after 2 minutes.
 - `npm run build:page` builds the web page, which the server serves. `install` builds its own, so you need this

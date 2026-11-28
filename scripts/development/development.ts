@@ -16,6 +16,7 @@ import { type RunningServer, startServer } from "../../packages/backend/src/serv
 import { readSettings } from "../../packages/backend/src/settings-file.ts";
 import { createLogger } from "../../packages/logging/src/index.ts";
 import { apiProxy } from "./api-proxy.ts";
+import { savedColors } from "./saved-colors.ts";
 
 const host = "127.0.0.1";
 
@@ -66,10 +67,12 @@ function startBackend({ repository, dataDirectory }: DevelopmentOptions): Promis
 }
 
 async function startPage(repository: string, serverPort: number) {
+  const serverUrl = `http://${host}:${String(serverPort)}`;
   const page = await createServer({
     configFile: join(repository, "packages", "frontend", "vite.config.ts"),
+    plugins: [savedColors(serverUrl)],
     // Vite takes the next port if its usual one is in use.
-    server: { host, proxy: { "/api": apiProxy(`http://${host}:${String(serverPort)}`) } },
+    server: { host, proxy: { "/api": apiProxy(serverUrl) } },
   });
   try {
     await page.listen();

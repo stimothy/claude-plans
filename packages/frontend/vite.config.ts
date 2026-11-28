@@ -14,6 +14,7 @@ import { defineConfig } from "vite";
  */
 export const servedFiles: readonly string[] = [
   import.meta.dirname,
+  // The one other package that the page imports, which Vite reads at its own path rather than in node_modules.
   join(import.meta.dirname, "..", "..", "node_modules"),
 ];
 
@@ -21,5 +22,8 @@ export const servedFiles: readonly string[] = [
 export default defineConfig({
   root: import.meta.dirname,
   plugins: [react()],
+  // The first versions with CSS light-dark(). For older ones, the build would replace it with other CSS, which the
+  // tests of the palettes never see.
+  build: { cssTarget: ["chrome123", "edge123", "firefox120", "safari17.5"] },
   server: { fs: { allow: [...servedFiles] } },
 });

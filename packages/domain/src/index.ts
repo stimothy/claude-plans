@@ -4,5 +4,6 @@
  * @packageDocumentation
  */
 export * from "./health.ts";
+export * from "./page-colors.ts";
 export * from "./server.ts";
 export * from "./settings.ts";

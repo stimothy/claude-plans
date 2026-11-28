@@ -212,7 +212,7 @@
 | 2026-11-27 05:16 UTC | [A]000208 | server.json, readable by its owner, holds the port and a new token. POST /api/shutdown needs the token, and GET /api/server names the data directory. |
 | 2026-11-27 05:16 UTC | [A]000209 | One server per data directory is kept by a SQLite lock on server-lock.sqlite, which the system releases after a crash. |
 | 2026-11-27 05:16 UTC | [A]000210 | Health is ok only at the application's schema version. #25 adds the program that runs the server. |
-| 2026-11-27 05:16 UTC | [O]000211 | Which issue serves GET and PATCH /api/settings, which entry 198 plans? No issue names it. |
+| 2026-11-27 05:16 UTC | ~~[O]000211~~ | Which issue serves GET and PATCH /api/settings, which entry 198 plans? No issue names it. |
 | 2026-11-27 05:25 UTC | [A]000212 | A port is also taken if another program answers on it at 127.0.0.1 or ::1. The server names its data directory as realpathSync.native does, and clients must compare the same way. |
 | 2026-11-27 05:44 UTC | ~~[A]000213~~ | Until #26 protects the real data, each command needs --data-directory with a full path. From the repository, the command runs with npm run claude-plans. |
 | 2026-11-27 05:44 UTC | [A]000214 | start refuses outdated or newer databases (entry 28) from #26, since nothing can create the database before install exists. |
@@ -239,3 +239,9 @@
 | 2026-11-28 04:50 UTC | ~~[A]000235~~ | Applies D000022: component tests are a CI job on Linux, not yet required to merge. They hold frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |
 | 2026-11-28 05:02 UTC | [A]000236 | Vite, Storybook, and the component tests' server give out only the page's files and the installed packages, never the rest of the repository, which can hold the real data. |
 | 2026-11-28 05:30 UTC | [D]000237 | Replaces A000235: the master ruleset requires Component tests, and also Pull request rules. Component tests are still a Linux CI job that holds frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |
+| 2026-11-28 05:43 UTC | [D]000238 | #31 is one pull request with size:override, and it also carries issue #64, which records the required checks. |
+| 2026-11-28 05:43 UTC | [A]000239 | Resolves O000211: #31 serves GET and PATCH /api/settings, because the page saves its choices through them. |
+| 2026-11-28 05:43 UTC | [A]000240 | Applies D000017: the server, and Vite in development, name the saved colors in data-theme and data-color-vision on the html element of each page they send, which the browser may not keep. If they cannot be read, the page shows the defaults. |
+| 2026-11-28 05:43 UTC | [A]000241 | Applies D000018: each color is one CSS light-dark() value, only accent and danger change with color vision, and the page's build targets browsers that have light-dark(). Tests hold all eight palettes to WCAG AA. |
+| 2026-11-28 05:43 UTC | [A]000242 | A choice shows at once, and saves are sent one at a time. One that cannot be saved is undone, and the page says so. |
+| 2026-11-28 05:43 UTC | [A]000243 | Extends A000236: those servers also give out a source file elsewhere that the page imports, such as one of domain's. |
