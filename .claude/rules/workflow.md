@@ -19,10 +19,10 @@ merging, and force pushing, and the Quality section, still apply.
   description sections, and the limit of 400 changed lines. Add `size:override` only when the maintainer
   approves it.
 - Give the PR the issue's area label and milestone.
-- Every PR except Dependabot's raises the version in the root `package.json`, with the matching versions in
-  `package-lock.json`. Stay below 0.1.0 until issue #38 releases v0.1.0. The version must be higher than the one
-  on `master` when the PR merges. Until issue #34 adds a check for this, compare by hand, and raise the version
-  again if `master` has caught up.
+- Every PR except Dependabot's raises the version with `npm run set:version -- <version>`, not by hand. Stay below
+  0.1.0 until issue #38 releases v0.1.0, which the CI check does not enforce. The check compares with `master` only
+  as it was when it ran, so if `master` reaches the version before the PR merges, raise it again even though the
+  check passed.
 - The maintainer merges, with a squash merge. Never merge a PR, never force push, and never push to `master`.
 - Bring a branch up to date by merging `master` into it. A rebase needs a force push, so rebase only when the
   maintainer asks, and leave the force push to them.

@@ -377,9 +377,14 @@ turn checks off and tests that are skipped. ESLint applies the matching rules to
 jscpd finds copied code. These rules recognize common forms, so review is still needed.
 
 The Pull request workflow runs `scripts/pull_request`, which checks the branch name, title, description, linked
-issue, and size of a pull request. It is separate from CI so that editing a title or changing a label can run it
-again without repeating the other jobs. It needs only Python's standard library, so it installs nothing.
-Dependabot's pull requests are exempt, because Dependabot cannot follow these rules.
+issue, size, and version of a pull request. It is separate from CI so that editing a title or changing a label
+can run it again without repeating the other jobs. It needs only Python's standard library, so it installs
+nothing. Dependabot's pull requests are exempt, because Dependabot cannot follow these rules.
+
+The root `package.json`, every package, and the lockfile must share one version, written as three numbers, as
+release tags are. It must be higher than the version at the tip of the base branch, which is read when the check
+runs. A pass says nothing about later merges, but a branch must be up to date before it merges, and updating it
+runs the check again.
 
 Both workflows get read-only access, and they name outside actions by commit, so that a moved tag cannot change
 what runs. They run on pull requests only. A branch must be up to date before it merges, so checking `master`

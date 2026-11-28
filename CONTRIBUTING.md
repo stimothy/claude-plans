@@ -72,13 +72,15 @@ catch mistakes and are not a security barrier.
   `size:override` label.
 - Update the documentation in the same pull request as the code it describes.
 
-Every pull request also raises the version in the root `package.json`, and your branch must be up to date with
-`master` before it is merged.
+Every pull request also raises the version, and your branch must be up to date with `master` before it is merged.
+The version is three numbers, such as `1.2.3`, which the root `package.json`, every package, and the lockfile
+share. `npm run set:version -- <version>` sets it in all of them. If `master` reaches your version before your
+pull request merges, raise it again.
 
-`npm run check:pull-request` checks your branch's name, and the size of its committed changes against your copy of
-`origin/master`. GitHub also checks the title, the description, and the linked issue. To run all of these on an open
-pull request, use `npm run check:pull-request -- <number>`, which needs the [GitHub CLI](https://cli.github.com).
-Neither checks the version yet.
+`npm run check:pull-request` checks your branch's name, and the size and version of its committed changes against
+your copy of `origin/master`, so run `git fetch` first. GitHub also checks the title, the description, and the
+linked issue. To run all of these on an open pull request, use `npm run check:pull-request -- <number>`, which
+needs the [GitHub CLI](https://cli.github.com).
 
 Dependabot's pull requests are exempt from the rules about issues, branch names, titles, descriptions, size, and
 version increases, even after someone else adds commits to them. Tests, builds, and other quality checks still apply.

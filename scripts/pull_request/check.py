@@ -6,9 +6,11 @@ import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from scripts.guard.repository import Git, run_git
 from scripts.pull_request import rules
+from scripts.pull_request.versions import Read, version_problems
 from scripts.report import report
 
 # Asks GitHub's command-line program, and returns its output, or nothing if it fails.
@@ -46,6 +48,32 @@ def _list(gh: Gh, path: str, query: str) -> list[dict[str, Any]]:
     if output is None:
         raise NoAnswerError(f"GitHub did not answer about {path}")
     return [json.loads(line) for line in output.splitlines()]
+
+
+def _file_on_github(gh: Gh, revision: str) -> Read:
+    """Return how to read a file as it is at a branch or commit on GitHub."""
+
+    def read(path: str) -> str:
+        address = f"repos/{{owner}}/{{repo}}/contents/{path}?ref={quote(revision, safe='')}"
+        # Without this, GitHub leaves out the text of a file over 1 MB.
+        output = gh(["api", "-H", "Accept: application/vnd.github.raw+json", address])
+        if output is None:
+            raise NoAnswerError(f"GitHub did not answer about {address}")
+        return output
+
+    return read
+
+
+def _committed_file(root: Path, git: Git, commit: str) -> Read:
+    """Return how to read a file as it is in a local commit."""
+
+    def read(path: str) -> str:
+        text = git(["show", f"{commit}:{path}"], root)
+        if text is None:
+            raise NoAnswerError(f"Git could not read {path} in {commit}")
+        return text
+
+    return read
 
 
 def _maintainer_allows_size(gh: Gh, pull: dict[str, Any], number: int) -> bool:
@@ -91,7 +119,9 @@ def _pull_request_problems(gh: Gh, number: int) -> list[str] | None:
     oversize = rules.size_problems(lines)
     if oversize and not _maintainer_allows_size(gh, pull, number):
         problems += oversize
-    return problems
+    # The base branch is read as it is now, which may be ahead of where this pull request left it.
+    proposed, current = (_file_on_github(gh, revision) for revision in (pull["head"]["sha"], pull["base"]["ref"]))
+    return problems + version_problems(proposed, current)
 
 
 def _local_problems(root: Path, git: Git) -> list[str]:
@@ -105,7 +135,9 @@ def _local_problems(root: Path, git: Git) -> list[str]:
         added, deleted, path = line.split("\t", 2)
         # Git counts no lines in a binary file.
         files.append((path, int(added.replace("-", "0")), int(deleted.replace("-", "0"))))
-    return rules.branch_problems(branch) + rules.size_problems(rules.changed_lines(files))
+    problems = rules.branch_problems(branch) + rules.size_problems(rules.changed_lines(files))
+    proposed, current = (_committed_file(root, git, commit) for commit in ("HEAD", "origin/master"))
+    return problems + version_problems(proposed, current)
 
 
 def main(arguments: Sequence[str], root: Path, git: Git, gh: Gh) -> int:
