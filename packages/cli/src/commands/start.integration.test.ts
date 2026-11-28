@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { recordingTerminal } from "../recording-terminal.ts";
 import { findServer } from "../server/running-server.ts";
-import { freePort, readyDatabase, useStandInServers } from "../server/stand-in-server.ts";
+import { freePort } from "../server/free-port.ts";
+import { readyDatabase, useStandInServers } from "../server/stand-in-server.ts";
 import { startServer, type StartOptions } from "./start.ts";
 import { stopServer } from "./stop.ts";
 

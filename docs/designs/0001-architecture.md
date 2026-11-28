@@ -350,7 +350,7 @@ or a `core.hooksPath` setting keeps its own setup.
 workflows. The rules for `master` require every job of both workflows to pass before a merge. They name each
 required job, so renaming a job or adding one also means changing the rules.
 
-The CI workflow, in `.github/workflows/ci.yml`, has five kinds of job:
+The CI workflow, in `.github/workflows/ci.yml`, has six kinds of job:
 
 - **Static checks** run the format check, the linters, and the type checks, and confirm that `requirements.txt`
   matches `requirements.in`.
@@ -358,6 +358,14 @@ The CI workflow, in `.github/workflows/ci.yml`, has five kinds of job:
   The two Node.js suites together, and the Python suite, each require coverage of at least 80%.
 - **Component tests** run the web page's tests in Chromium on Linux only. They require coverage of at least 80% of
   the page's code, which the other Node.js suites therefore leave out of their minimum for each package.
+- **End-to-end tests** show what only the whole application can. They install it into a temporary data directory,
+  start the installed command's server on a free port, and use the page in Chromium on Linux. They count toward no
+  coverage. Their time limit is Playwright's own, not the launcher's. The launcher ends only the command that it
+  started, which could leave the server and the browser running. When time runs out during a test, Playwright
+  instead lets the tests stop the server and delete their directory, which can finish a moment after it reports
+  that time ran out. It skips that cleanup if setting up the studio used all of the setup's time, so each command
+  has a shorter limit of its own. Stopping a command does not stop the programs that it started, so an install
+  that runs out of time can leave its temporary directory behind.
 - **Secret scan** reads the whole Git history with gitleaks. The repository is public, so a committed secret is
   exposed even if a later commit removes it.
 - **Dependency audit** checks the npm and Python packages for known vulnerabilities. It runs on all three

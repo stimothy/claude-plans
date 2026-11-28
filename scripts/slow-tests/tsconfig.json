@@ -1,0 +1,11 @@
+// Apart from the other scripts, so that only this one sees the browser's types.
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    // Playwright's types name the browser's types.
+    "lib": ["es2024", "dom"]
+  },
+  "include": ["**/*.ts"],
+  // The parent project leaves this directory out.
+  "exclude": []
+}

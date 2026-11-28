@@ -4,7 +4,8 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { runRecorded } from "./recording-terminal.ts";
-import { freePort, readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
+import { freePort } from "./server/free-port.ts";
+import { readyDatabase, useStandInServers } from "./server/stand-in-server.ts";
 import { type Surroundings, surroundingsOf } from "./surroundings.ts";
 
 const servers = useStandInServers();
