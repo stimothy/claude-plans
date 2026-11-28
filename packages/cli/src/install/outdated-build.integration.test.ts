@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { runRecorded } from "../recording-terminal.ts";
 import type { Surroundings } from "../surroundings.ts";
-import { commitAll, databaseActions, useFakeRepository, writeInto } from "./fake-repository.ts";
+import { commitAll, databaseActions, fakeManifest, useFakeRepository, writeInto } from "./fake-repository.ts";
 import { runGit } from "./run-program.ts";
 
 const fake = useFakeRepository();
@@ -26,7 +26,7 @@ function writeVersion(manifest: string): void {
 }
 
 function commitVersion(version: string): void {
-  writeVersion(JSON.stringify({ name: "fake", version, private: true, workspaces: ["packages/*"] }));
+  writeVersion(fakeManifest(version));
   commitAll(fake.repository());
 }
 

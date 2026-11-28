@@ -20,6 +20,8 @@ export interface ServerProgram {
   readonly arguments: readonly string[];
   /** The application's version, which the health report gives. */
   readonly version: string;
+  /** The directory that holds the built web page. */
+  readonly pageDirectory: string;
   /** Tells whoever started the program whether the server is ready. */
   readonly report: (report: ServerStartReport) => void;
   /** Calls stop whenever the system asks the program to stop. */
@@ -59,7 +61,9 @@ function readOptions(given: readonly string[]): Options {
   };
 }
 
-async function start(options: Options, version: string): Promise<Started> {
+type Application = Pick<ServerProgram, "version" | "pageDirectory">;
+
+async function start(options: Options, { version, pageDirectory }: Application): Promise<Started> {
   const { dataDirectory } = options;
   const logger = (level: LogLevel): Logger => createLogger({ dataDirectory, program: "backend", level });
   let settings;
@@ -71,15 +75,15 @@ async function start(options: Options, version: string): Promise<Started> {
     throw error;
   }
   const log = logger(settings.logLevel);
-  const serving = { dataDirectory, version, port: settings.port, log, checkDataDirectory: requireCurrentDatabase };
-  return { server: await startServer(serving), log };
+  const serving = { dataDirectory, version, pageDirectory, port: settings.port, log };
+  return { server: await startServer({ ...serving, checkDataDirectory: requireCurrentDatabase }), log };
 }
 
 /** Starts a server, reports whether that worked, and returns the program's exit code once the server has stopped. */
 export async function runServerProgram(program: ServerProgram): Promise<number> {
   let started: Started;
   try {
-    started = await start(readOptions(program.arguments), program.version);
+    started = await start(readOptions(program.arguments), program);
   } catch (error) {
     program.report({ state: "failed", message: error instanceof Error ? error.message : String(error) });
     return 1;

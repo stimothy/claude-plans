@@ -6,8 +6,12 @@ import { configDefaults, defineConfig } from "vitest/config";
 const minimumCoverage = { lines: 80, branches: 80, functions: 80, statements: 80 };
 
 // Each package must meet the minimum by itself, so that a well-tested one cannot make up for another.
+// The web page's code runs in a browser, so its component tests hold it to the same minimum, in a suite of their
+// own.
 const packageMinimums = Object.fromEntries(
-  readdirSync(join(import.meta.dirname, "packages")).map((name) => [`packages/${name}/**`, minimumCoverage]),
+  readdirSync(join(import.meta.dirname, "packages"))
+    .filter((name) => name !== "frontend")
+    .map((name) => [`packages/${name}/**`, minimumCoverage]),
 );
 
 const tests = ["scripts/**/*.test.ts", "packages/*/src/**/*.test.ts"];

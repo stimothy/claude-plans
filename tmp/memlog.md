@@ -232,3 +232,8 @@
 | 2026-11-27 19:34 UTC | [A]000228 | Applies D000106: only a copy that a plain install saved is compared with local master's committed package.json, and start and health depend on it. Other installs come from branches with other versions. |
 | 2026-11-27 19:34 UTC | [A]000229 | If master's version cannot be read, such as after the repository moves, the command warns and carries on, since no difference is known. |
 | 2026-11-27 19:34 UTC | [A]000230 | Applies A000081: health compares the running server's version with the command's own. A second start already refuses while a server runs. |
+| 2026-11-28 04:50 UTC | [D]000231 | #30 is one pull request with size:override, although it passes 400 changed lines. |
+| 2026-11-28 04:50 UTC | [A]000232 | Applies D000136: install builds the web page inside the new build, from its copied code and locked packages, so Vite and React are runtime dependencies of frontend. |
+| 2026-11-28 04:50 UTC | [A]000233 | A server whose copy has no built page answers at the top address that it must be built. |
+| 2026-11-28 04:50 UTC | [A]000234 | Applies A000097: npm run dev keeps its data in .claude-plans-development/, takes no data directory option, and runs the server and Vite in one program. Vite gives the server's origin only to requests from its own page. |
+| 2026-11-28 04:50 UTC | [A]000235 | Applies D000022: component tests are a CI job on Linux, not yet required to merge. They hold frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |

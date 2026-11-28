@@ -11,7 +11,10 @@ import { z } from "zod";
 
 import { runServerProgram } from "./server-program.ts";
 
-const manifest = join(import.meta.dirname, "..", "..", "..", "..", "package.json");
+const packages = join(import.meta.dirname, "..", "..", "..");
+const manifest = join(packages, "..", "package.json");
+// Building the application puts the web page here. The backend may not import the frontend, so it only reads it.
+const pageDirectory = join(packages, "frontend", "dist");
 const { version } = z.object({ version: z.string().min(1) }).parse(JSON.parse(readFileSync(manifest, "utf8")));
 
 function report(started: ServerStartReport): void {
@@ -32,6 +35,7 @@ function report(started: ServerStartReport): void {
 process.exitCode = await runServerProgram({
   arguments: process.argv.slice(2),
   version,
+  pageDirectory,
   report,
   onStopRequest: (stop) => {
     // A closing terminal sends SIGHUP.

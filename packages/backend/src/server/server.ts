@@ -20,6 +20,8 @@ export interface ServerStartOptions {
   readonly dataDirectory: string;
   /** The application's version, which the health report gives. */
   readonly version: string;
+  /** The directory that holds the built web page. */
+  readonly pageDirectory: string;
   /** The port to listen on, or 0 for any free port. */
   readonly port: number;
   readonly log: Logger;
@@ -53,7 +55,7 @@ function stopping(stop: () => Promise<void>): Pick<RunningServer, "close" | "clo
 
 // Runs while this program holds the lock on the data directory.
 async function serve(options: ServerStartOptions, release: () => void): Promise<RunningServer> {
-  const { dataDirectory, version, log } = options;
+  const { dataDirectory, version, pageDirectory, log } = options;
   // A server that crashed may have left its record, which no longer leads to a server.
   removeServerRecord(dataDirectory);
   const token = randomBytes(tokenBytes).toString("hex");
@@ -72,7 +74,7 @@ async function serve(options: ServerStartOptions, release: () => void): Promise<
       log.error("The server did not stop cleanly", error);
     });
   };
-  const application = createApplication({ dataDirectory, version, token, log, shutDown });
+  const application = createApplication({ dataDirectory, version, pageDirectory, token, log, shutDown });
   try {
     const { address, port } = await listenLocally(application, options.port);
     writeServerRecord(dataDirectory, { port, token });

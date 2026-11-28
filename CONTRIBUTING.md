@@ -10,10 +10,20 @@ You need Node.js 24, at version 24.15 or newer, Python 3.12 or newer, and
 [gitleaks](https://github.com/gitleaks/gitleaks) 8.19 or newer. Install the Node.js dependencies with
 `npm ci`, then run `npm run setup:python`. That creates `.venv` and installs the Python tools. If setup does not
 find your Python, set the `PYTHON` environment variable to its path. Run setup again when `requirements.txt` changes.
-Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions.
+Setup keeps the Python that `.venv` already has, so delete `.venv` to change versions. The web page's component
+tests need a browser, which `npx playwright install chromium` downloads. Run it again after Playwright is updated.
 
-- `npm run check` runs the format check, both linters, the type checks, the tests, a secret scan, and a dependency
-  audit. Run it before you open a pull request. GitHub runs the same checks, with tests on Linux, Windows, and macOS.
+- `npm run check` runs the format check, both linters, the type checks, the tests, the component tests, a secret
+  scan, and a dependency audit. Run it before you open a pull request. GitHub runs the same checks, with tests on
+  Linux, Windows, and macOS, and component tests on Linux.
+- `npm run dev` runs the server, with the web page in front of it, which shows your changes to the page as you save
+  them. It prints the page's address. It keeps its data in `.claude-plans-development/` in your copy and takes free
+  ports. Start it again after changing the server's code.
+- `npm run storybook` shows the page's components one at a time, at `http://localhost:6006`.
+- `npm run test:components` runs the stories and the page's other tests in Chromium, and requires at least 80%
+  coverage of the page's code. The whole run is stopped after 2 minutes.
+- `npm run build:page` builds the web page, which the server serves. `install` builds its own, so you need this
+  only before starting your copy's server with `npm run claude-plans`.
 - `npm run lock:python` updates `requirements.txt`, which locks every Python package with hashes. Run it after you
   change `requirements.in`, and do not edit `requirements.txt` by hand.
 - `npm run format` rewrites files to match the formatters.

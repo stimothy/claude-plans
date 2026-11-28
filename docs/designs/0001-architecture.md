@@ -5,10 +5,10 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 
 ## Overview
 
-claude-plans is meant to be a planning studio for plans made with Claude. So far it is a server and the command
-that installs, starts, checks, and stops it. Around the application is the repository: the scripts that set it up
-and keep its documents, the safeguards for Claude, and the checks that run on pull requests. This document
-describes what exists.
+claude-plans is meant to be a planning studio for plans made with Claude. So far it is a server, a web page that
+says hello, and the command that installs, starts, checks, and stops the server. Around the application is the
+repository: the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run
+on pull requests. This document describes what exists.
 [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
 
 ```mermaid
@@ -28,14 +28,15 @@ exists only in clones where it could be installed.
 
 ## Packages
 
-The application's code lives in npm workspaces under `packages/`. So far there are four: `domain`, `backend`,
-`cli`, and `logging`. `domain` defines the health report, the color settings, and what a client needs to start,
-find, and stop the server, with the path and method of each API. Nothing serves the color settings yet. The
-definitions of the data are Zod schemas, so a program can check what it receives and get its TypeScript type from
-the same place.
+The application's code lives in npm workspaces under `packages/`. So far there are five: `domain`, `backend`,
+`cli`, `logging`, and `frontend`. `domain` defines the health report, the color settings, and what a client needs
+to start, find, and stop the server, with the path and method of each API. Nothing serves the color settings yet.
+The definitions of the data are Zod schemas, so a program can check what it receives and get its TypeScript type
+from the same place.
 
-The planned web page will run in a browser, so `domain` must not depend on Node.js. One type check covers its
-source without the Node.js types, and another covers its tests, which do use them. The package exports its
+`frontend` is the web page, written in React and built with Vite. So far it only says hello. Styles are CSS
+Modules. It runs in a browser, so `domain` must not depend on Node.js. One type check covers the source of
+`domain` without the Node.js types, and another covers its tests, which do use them. `domain` exports its
 TypeScript source and has no build step.
 
 A lint rule in `scripts/boundaries` keeps imports between packages pointing one way. `backend`, `cli`, and
@@ -117,8 +118,13 @@ write is interrupted, the report says the same until something opens the databas
 There is no login, and any page in a browser can send requests to the local computer. The server therefore listens
 only on `127.0.0.1`, and checks every request. Its `Host` header must be `127.0.0.1` or `localhost` with the
 server's port, which stops a website whose name was made to point at this computer. An `Origin` header, which
-browsers add to say which website is asking, must be the server's own. A development server on another port will
-have to allow for this. These checks do not stop other programs on the computer.
+browsers add to say which website is asking, must be the server's own. These checks do not stop other programs on
+the computer.
+
+The server also serves the built web page, from `packages/frontend/dist/` beside its own code, with the same checks.
+The backend may not import `frontend`, so it only reads those files. A copy of the repository may not have built
+the page, and the top address then says how to. `@fastify/static` serves the files, and gives nothing from outside
+that directory.
 
 While it runs, the server records its port and a random token in `server.json`, which only the file's owner can
 read. On Windows, the data directory's permissions apply instead. A request to shut down must give the token. The
@@ -160,9 +166,11 @@ the server gave it.
 ## Install
 
 `install` saves a copy of the application in a data directory, so that the copy in use does not change when the
-repository does. Node.js runs the TypeScript as it is, so nothing is compiled. A build is a copy of the root
-package files and the packages without their tests. `npm ci` then installs what it needs to run, without
-development dependencies or package scripts.
+repository does. Node.js runs the TypeScript as it is, so only the web page is compiled. A build is a copy of the
+root package files, the base TypeScript settings, and the packages without their tests. `npm ci` then installs
+what it needs, without development dependencies or package scripts, and Vite builds the page from the copy. A page
+that the repository had built is left behind. Building inside the copy means that the page comes from the same code
+and locked packages as the rest. For that reason, Vite and React are runtime dependencies of `frontend`.
 
 Each build has its own directory in `app/builds/`, and never moves, because npm on Windows links packages by their
 full paths. `app/current.json` names the current build, and is replaced by renaming a new file over it. The
@@ -208,6 +216,24 @@ carries on.
 A server also keeps running the code that it started with. `health` refuses a server whose version is not the
 command's own, and says to stop it, install, and start it again. It reads the version before the rest of the
 report, which another version may shape differently.
+
+## Development
+
+`npm run dev`, in `scripts/development`, migrates a database in `.claude-plans-development/` in the repository,
+which Git ignores, then runs the server and Vite. It takes no option for the data directory, so it cannot be aimed
+at the real data. Both run in one program, so that neither can be left running without the other. The server takes
+any free port, and Vite takes the next one if its usual port is in use. Vite serves the page's source and updates
+the open page as it changes. A change to the server's code needs a restart.
+
+Vite passes requests under `/api` to the server. The page there has Vite's origin, which the server would refuse,
+so the proxy gives the server's own origin to a request whose `Origin` matches its `Host`, which is a request from
+Vite's own page. It passes every other `Origin` on unchanged, because replacing them all would let any website
+through. Vite refuses a `Host` that is not this computer's before it passes anything on, which covers a website
+whose name was made to point here.
+
+Storybook shows the page's components apart from the page. Each story's play function is also its test, which
+Vitest runs in Chromium, with the few tests of the page that are not stories. Storybook's usage reports are off.
+Its React types do not pass the project's strict type check, so the stories do without them.
 
 ## Logging
 
@@ -284,15 +310,18 @@ or a `core.hooksPath` setting keeps its own setup.
 ## Checks
 
 `npm run check` runs most quality checks locally. On a pull request, GitHub Actions runs checks in two
-workflows. The rules for `master` require every job of the CI workflow to pass before a merge. They do not
-require the Pull request workflow, so its failure is reported but does not block a merge.
+workflows. The rules for `master` require every job of the CI workflow except the component tests to pass before a
+merge. They do not require the component tests or the Pull request workflow, so a failure there is reported but
+does not block a merge.
 
-The CI workflow, in `.github/workflows/ci.yml`, has four kinds of job:
+The CI workflow, in `.github/workflows/ci.yml`, has five kinds of job:
 
 - **Static checks** run the format check, the linters, and the type checks, and confirm that `requirements.txt`
   matches `requirements.in`.
 - **Tests** run the test suites on Linux, Windows, and macOS, because the project is meant to run on all three.
   The two Node.js suites together, and the Python suite, each require coverage of at least 80%.
+- **Component tests** run the web page's tests in Chromium on Linux only. They require coverage of at least 80% of
+  the page's code, which the other Node.js suites therefore leave out of their minimum for each package.
 - **Secret scan** reads the whole Git history with gitleaks. The repository is public, so a committed secret is
   exposed even if a later commit removes it.
 - **Dependency audit** checks the npm and Python packages for known vulnerabilities. It runs on all three

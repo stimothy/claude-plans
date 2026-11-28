@@ -1,5 +1,7 @@
 # Local application data: database, settings, logs, backups, and the installed application
 .claude-plans/
+# The data that npm run dev uses
+.claude-plans-development/
 
 # Claude and other tools
 .claude/settings.local.json
