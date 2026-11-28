@@ -33,4 +33,15 @@ describe("the saved colors in development", () => {
     await expect(colored()).resolves.toBe(page);
     expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("default colors"), expect.any(Error));
   });
+
+  it("are left out when the server has not answered within 2 seconds", async () => {
+    // A limit that has already run out ends the request as soon as it is made.
+    const over = new Error("The wait is over.");
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(AbortSignal.abort(over));
+
+    await expect(colored()).resolves.toBe(page);
+
+    expect(timeout).toHaveBeenCalledWith(2000);
+    expect(console.warn).toHaveBeenCalledWith(expect.any(String), over);
+  });
 });

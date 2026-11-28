@@ -21,8 +21,11 @@ function heldSaves() {
   });
   // A save is sent only once the one before it has finished.
   const sent = (index: number) => vi.waitUntil(() => held[index]);
+  const refuse = async (index: number) => {
+    (await sent(index)).answer.reject(new Error("The server is not running."));
+  };
   const failed = vi.fn();
-  return { save, sent, failed, choose: colorSaver(root, save, failed) };
+  return { save, sent, refuse, failed, choose: colorSaver(root, save, failed) };
 }
 
 const dark = { theme: "dark", colorVision: "default" } as const;
@@ -42,14 +45,19 @@ describe("saving a choice of colors", () => {
     expect(failed).toHaveBeenLastCalledWith(false);
   });
 
-  it("goes back to the saved colors, and says so, when saving fails", async () => {
-    const { choose, sent, failed } = heldSaves();
+  // Something else, such as Storybook's toolbar, may change what the element shows between two choices.
+  it.each([
+    ["it started with", defaultColorSettings],
+    ["something else has shown since", { theme: "light", colorVision: "deutan" }],
+  ] as const)("goes back to the colors %s, and says so, when saving fails", async (_, before) => {
+    const { choose, refuse, failed } = heldSaves();
+    showColors(root, before);
 
     const finished = choose({ theme: "dark" });
-    (await sent(0)).answer.reject(new Error("The server is not running."));
+    await refuse(0);
     await finished;
 
-    expect(readColors(root)).toEqual(defaultColorSettings);
+    expect(readColors(root)).toEqual(before);
     expect(failed).toHaveBeenLastCalledWith(true);
   });
 
@@ -73,11 +81,11 @@ describe("saving a choice of colors", () => {
   });
 
   it("undoes only the choice that could not be saved", async () => {
-    const { choose, sent } = heldSaves();
+    const { choose, sent, refuse } = heldSaves();
 
     const first = choose({ theme: "dark" });
     const second = choose({ colorVision: "protan" });
-    (await sent(0)).answer.reject(new Error("The server is not running."));
+    await refuse(0);
     await first;
     const between = readColors(root);
     (await sent(1)).answer.resolve({ theme: "system", colorVision: "protan" });
@@ -85,5 +93,22 @@ describe("saving a choice of colors", () => {
 
     expect(between).toEqual({ theme: "system", colorVision: "protan" });
     expect(readColors(root)).toEqual({ theme: "system", colorVision: "protan" });
+  });
+
+  // The message says why a choice was undone, so it stays until nothing is left to choose again.
+  it.each([
+    ["stops saying so once a later choice of the same setting is saved", { theme: "light" }, false],
+    ["still says so after a later choice of another setting is saved", { colorVision: "protan" }, true],
+  ] as const)("after a failure, %s", async (_, later, stillSaid) => {
+    const { choose, sent, refuse, failed } = heldSaves();
+
+    const first = choose({ theme: "dark" });
+    const second = choose(later);
+    await refuse(0);
+    await first;
+    (await sent(1)).answer.resolve({ ...defaultColorSettings, ...later });
+    await second;
+
+    expect(failed).toHaveBeenLastCalledWith(stillSaid);
   });
 });

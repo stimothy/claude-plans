@@ -39,6 +39,8 @@ export const Choosing = {
     await expect(root).toHaveAttribute("data-color-vision", "tritan");
     await waitFor(() => expect(args.save).toHaveBeenLastCalledWith({ colorVision: "tritan" }));
     await expect(form.queryByRole("alert")).toBeNull();
+    // In some browsers, pressing Enter on a choice inside a form would send the form and reload the page.
+    await expect(chosen(canvasElement, "Dark")).toHaveProperty("form", null);
   },
 };
 

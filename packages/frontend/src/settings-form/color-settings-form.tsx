@@ -42,7 +42,8 @@ export function ColorSettingsForm({ save }: { readonly save: SaveColors }): Reac
   const [choose] = useState(() => colorSaver(root, save, setFailed));
   const colors = useShownColors();
   return (
-    <form className={styles["settings"]}>
+    // Not a form, which pressing Enter on a choice would send in some browsers, reloading the page.
+    <div className={styles["settings"]}>
       {groups.map(({ name, legend, choices }) => (
         <fieldset key={name} className={styles["group"]}>
           <legend>{legend}</legend>
@@ -51,6 +52,7 @@ export function ColorSettingsForm({ save }: { readonly save: SaveColors }): Reac
               <input
                 type="radio"
                 name={name}
+                value={choice}
                 checked={colors[name] === choice}
                 onChange={() => void choose({ [name]: choice })}
               />
@@ -64,6 +66,6 @@ export function ColorSettingsForm({ save }: { readonly save: SaveColors }): Reac
           Your choice could not be saved. Check that the server is running, then try again.
         </p>
       )}
-    </form>
+    </div>
   );
 }

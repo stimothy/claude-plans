@@ -21,7 +21,19 @@ describe("saving colors through the server", () => {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: '{"theme":"dark"}',
+      signal: expect.any(AbortSignal) as AbortSignal,
     });
+  });
+
+  // Later choices wait for this one, so it cannot wait for an answer without end.
+  it("gives up on a server that does not answer", async () => {
+    // A limit that has already run out ends the request as soon as it is made.
+    const over = AbortSignal.abort(new Error("The wait is over."));
+    const timeout = vi.spyOn(AbortSignal, "timeout").mockReturnValue(over);
+
+    await expect(saveColors({ theme: "dark" })).rejects.toThrow("The wait is over.");
+
+    expect(timeout).toHaveBeenCalledWith(10_000);
   });
 
   it("fails when the server refuses the change", async () => {

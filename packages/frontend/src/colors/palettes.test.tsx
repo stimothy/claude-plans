@@ -14,12 +14,19 @@ const palettes: readonly ColorSettings[] = (["light", "dark"] as const).flatMap(
   colorVisionSchema.options.map((colorVision) => ({ theme, colorVision })),
 );
 
-// The browser turns each variable into the color that it shows.
+// No palette has this color.
+const unset = "rgb(1, 2, 3)";
+
+// The browser turns each variable into the color that it shows. For a variable that is missing or is not a color,
+// it shows the color around the probe, which must then not pass for one of the palette's.
 function shown(name: string): string {
-  const probe = document.body.appendChild(document.createElement("div"));
+  const around = document.body.appendChild(document.createElement("div"));
+  around.style.color = unset;
+  const probe = around.appendChild(document.createElement("div"));
   probe.style.color = `var(--color-${name})`;
   const { color } = getComputedStyle(probe);
-  probe.remove();
+  around.remove();
+  expect(color, `--color-${name}`).not.toBe(unset);
   return color;
 }
 
