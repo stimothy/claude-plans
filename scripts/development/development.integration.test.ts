@@ -1,14 +1,14 @@
-import { EventEmitter } from "node:events";
+import { EventEmitter, once } from "node:events";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
+import { type AddressInfo, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 
 import { migrate } from "../../packages/backend/src/database/migrate.ts";
-import { freePort } from "../../packages/backend/src/server/test-servers.ts";
 import { type Development, developmentData, runUntilStopped, startDevelopment } from "./development.ts";
 
 const repository = resolve(import.meta.dirname, "..", "..");
@@ -109,7 +109,13 @@ describe("development", () => {
 
   // The real server's port comes from its settings, so a port from the development settings must not be used either.
   it("gives its server a free port, whatever the settings say", async () => {
-    const chosen = await freePort();
+    // The port stays taken, so that the system cannot give it out as a free one.
+    const holder = createServer().listen(0, "127.0.0.1");
+    await once(holder, "listening");
+    onTestFinished(() => {
+      holder.close();
+    });
+    const { port: chosen } = holder.address() as AddressInfo;
     mkdirSync(data());
     writeFileSync(join(data(), "settings.yaml"), `port: ${String(chosen)}\n`);
 
