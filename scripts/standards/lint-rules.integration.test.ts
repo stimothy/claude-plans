@@ -102,6 +102,8 @@ describe("the lint rules", () => {
     "test.runIf(false)('a', run);",
     "test.describe.only('a', run);",
     "test.fixme('a', run);",
+    "test.fail('a', run);",
+    "test('a', () => { test.fail(); });",
     "it['only']('a', run);",
     "it('a', (context) => context.skip());",
     "it('a', ({ skip }) => skip());",

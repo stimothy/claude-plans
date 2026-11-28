@@ -30,6 +30,8 @@ const skipRestrictions = [
   "MemberExpression[property.name=/^(skip|skipIf|runIf|only|todo|fails|fixme)$/]",
   "MemberExpression[property.value=/^(skip|skipIf|runIf|only|todo|fails|fixme)$/]",
   "ObjectPattern > Property[key.name=/^(skip|only|todo)$/]",
+  // Playwright's test.fail passes a test that fails. Elsewhere, "fail" is an ordinary name.
+  "MemberExpression[object.name=/^(it|test)$/][property.name='fail']",
   `CallExpression:matches(${testCall}) > ObjectExpression > Property[key.name=/^(skip|only|todo|fails)$/]`,
   "CallExpression[callee.name=/^(xit|xtest|xdescribe|fit|fdescribe)$/]",
 ].map((selector) => ({ selector, message: skipMessage }));

@@ -15,8 +15,13 @@ import { test as base } from "@playwright/test";
 import { freePort } from "../packages/cli/src/server/free-port.ts";
 
 const repository = join(import.meta.dirname, "..");
-// Installing runs npm and builds the page.
-const installTimeLimit = 120_000;
+// Playwright skips a fixture's cleanup when setting it up uses all of the fixture's time. Each command therefore
+// has a shorter limit of its own, so that one that hangs fails while there is still time to clean up. Setting up
+// runs an install and a start, and cleaning up a stop. Installing runs npm and builds the page. Starting and
+// stopping give up by themselves sooner than their limit.
+const installTimeLimit = 90_000;
+const commandTimeLimit = 40_000;
+const studioTimeLimit = installTimeLimit + 2 * commandTimeLimit + 10_000;
 const run = promisify(execFile);
 
 /** A studio that is installed and running. */
@@ -29,30 +34,41 @@ export interface Studio {
   readonly restart: () => Promise<void>;
 }
 
-// Waiting without blocking lets Playwright's time limits end a command that hangs.
-async function node(program: string, given: readonly string[]): Promise<string> {
-  const { stdout } = await run(process.execPath, [program, ...given], { cwd: repository });
+// Waiting without blocking lets Playwright's time limits end the wait.
+async function node(program: string, given: readonly string[], timeout = commandTimeLimit): Promise<string> {
+  const options = { cwd: repository, timeout, killSignal: "SIGKILL" } as const;
+  const { stdout } = await run(process.execPath, [program, ...given], options);
   return stdout;
 }
 
 async function withStudio(dataDirectory: string, use: (studio: Studio) => Promise<void>): Promise<void> {
   const cli = join(repository, "packages", "cli", "src", "main.ts");
-  await node(cli, ["install", `--data-directory=${dataDirectory}`]);
+  await node(cli, ["install", `--data-directory=${dataDirectory}`], installTimeLimit);
   const installed = join(dataDirectory, "app", "command", "main.js");
   const command = (...given: string[]): Promise<string> => node(installed, given);
   const port = String(await freePort());
   const start = async (): Promise<void> => {
     await command("start", "--detached", `--port=${port}`);
   };
-  await start();
   const restart = async (): Promise<void> => {
     await command("stop");
     await start();
   };
   try {
+    await start();
     await use({ url: `http://127.0.0.1:${port}`, command, restart });
   } finally {
     await command("stop");
+  }
+}
+
+// Stopping a command does not stop the programs that it started, so an install that ran out of time may still be
+// writing here. Failing to delete must not take the place of the failure that says why.
+function remove(directory: string): void {
+  try {
+    rmSync(directory, { recursive: true, force: true });
+  } catch (error) {
+    console.warn(`Could not delete ${directory}.`, error);
   }
 }
 
@@ -66,9 +82,9 @@ export const test = base.extend<object, { studio: Studio }>({
       try {
         await withStudio(join(directory, "data"), use);
       } finally {
-        rmSync(directory, { recursive: true, force: true });
+        remove(directory);
       }
     },
-    { scope: "worker", timeout: installTimeLimit },
+    { scope: "worker", timeout: studioTimeLimit },
   ],
 });
