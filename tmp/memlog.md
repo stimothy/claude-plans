@@ -251,3 +251,4 @@
 | 2026-11-28 06:31 UTC | [D]000247 | Replaces A000245: end-to-end tests are end-to-end/*.spec.ts files that use an installed copy in a temporary data directory. The maintainer wants each test over 5 seconds named, which a reporter in scripts/ does. |
 | 2026-11-28 18:12 UTC | [A]000248 | The shared version is three numbers, such as 1.2.3. The root package.json, each package, and the lockfile give it, so packages now have one. npm run set:version sets them all. |
 | 2026-11-28 18:12 UTC | [A]000249 | The Pull request rules check covers versions, so the master rules do not change. It compares with the tip of the base branch when it runs. |
+| 2026-11-28 18:52 UTC | [A]000250 | A Release workflow, with write access, runs on each merge. It releases only a version higher than the parent commit's, from 0.1.0, tags that commit, and uses GitHub's generated notes. A failed run is run again. |
