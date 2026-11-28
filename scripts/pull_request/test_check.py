@@ -9,10 +9,19 @@ import pytest
 
 from scripts.pull_request.check import main, run_gh
 from scripts.pull_request.test_rules import DESCRIPTION
+from scripts.pull_request.test_versions import package_files
 
 PULL = "repos/{owner}/{repo}/pulls/51"
 ISSUE = "repos/{owner}/{repo}/issues/14"
 EVENTS = "repos/{owner}/{repo}/issues/51/events"
+CONTENTS = "repos/{owner}/{repo}/contents"
+PROPOSED = f"{CONTENTS}/package.json?ref=abc123"
+CURRENT = f"{CONTENTS}/package.json?ref=master"
+
+
+def proposed(version: str) -> dict[str, str]:
+    """Make GitHub's answers about the files that give a pull request's version."""
+    return {f"{CONTENTS}/{path}?ref=abc123": text for path, text in package_files(version).items()}
 
 
 def github(
@@ -26,14 +35,15 @@ def github(
     """Make GitHub's answers about a pull request that follows the rules, with some facts changed."""
     pull = {
         "user": {"login": "someone", "type": "User"},
-        "head": {"ref": "14-check-rules"},
-        "base": {"repo": {"owner": {"login": "maintainer"}}},
+        "head": {"ref": "14-check-rules", "sha": "abc123"},
+        "base": {"ref": "master", "repo": {"owner": {"login": "maintainer"}}},
         "title": "ci: check rules",
         "body": DESCRIPTION,
         "labels": [{"name": name} for name in labels],
         "changed_files": 1,
     }
-    return {
+    return proposed("0.2.0") | {
+        CURRENT: package_files("0.1.9")["package.json"],
         PULL: json.dumps(pull | fields),
         f"{PULL}/files": json.dumps({"filename": "a.py", "additions": changed, "deletions": deleted}),
         ISSUE: json.dumps({"number": 14} if issue is None else issue),
@@ -50,6 +60,10 @@ def check(answers: dict[str, str]) -> int:
         # A list that is read without every page would be cut short.
         if {f"{PULL}/files", EVENTS} & set(arguments) and "--paginate" not in arguments:
             return None
+        # Without this header, GitHub answers about a file with facts about it instead of its text.
+        asks_for_text = "Accept: application/vnd.github.raw+json" in arguments
+        if any(argument.startswith(CONTENTS) for argument in arguments) and not asks_for_text:
+            return None
         return next((answers[argument] for argument in arguments if argument in answers), None)
 
     return main(["51"], Path(), lambda _arguments, _directory: None, gh)
@@ -63,7 +77,7 @@ def test_a_pull_request_that_follows_the_rules_passes(capsys: pytest.CaptureFixt
 
 def test_every_broken_rule_is_listed(capsys: pytest.CaptureFixture[str]) -> None:
     """Check that every broken rule is listed."""
-    answers = github(changed=401, title="Checks", head={"ref": "checks"}, body=None)
+    answers = github(changed=401, title="Checks", head={"ref": "checks", "sha": "abc123"}, body=None)
 
     assert check(answers) == 1
     listed = capsys.readouterr().err
@@ -145,7 +159,7 @@ def test_a_missing_issue_is_listed_with_the_other_problems(capsys: pytest.Captur
         assert expected in listed
 
 
-@pytest.mark.parametrize("missing", [PULL, f"{PULL}/files", EVENTS])
+@pytest.mark.parametrize("missing", [PULL, f"{PULL}/files", EVENTS, PROPOSED, CURRENT])
 def test_the_check_fails_when_github_does_not_answer(missing: str, capsys: pytest.CaptureFixture[str]) -> None:
     """Check that the check fails when GitHub does not answer."""
     answers = github(changed=401, labels=["size:override"], events=[ADDED])
@@ -155,10 +169,70 @@ def test_the_check_fails_when_github_does_not_answer(missing: str, capsys: pytes
     assert "GitHub did not answer" in capsys.readouterr().err
 
 
+def test_a_pull_request_must_raise_the_version(capsys: pytest.CaptureFixture[str]) -> None:
+    """Check that a pull request whose version master already has fails."""
+    assert check(github() | proposed("0.1.9")) == 1
+    assert "must be higher than 0.1.9" in capsys.readouterr().err
+
+
+def test_a_base_branch_s_name_is_encoded_in_the_address() -> None:
+    """Check that a branch name cannot be cut short or change what an address asks for."""
+    answers = github(base={"ref": "release#1", "repo": {"owner": {"login": "maintainer"}}})
+    answers[f"{CONTENTS}/package.json?ref=release%231"] = answers.pop(CURRENT)
+
+    assert check(answers) == 0
+
+
+@pytest.mark.parametrize(
+    ("path", "text", "expected"),
+    [
+        ("package.json", "<<<<<<< HEAD", "package.json does not hold a JSON object"),
+        ("package-lock.json", "[]", "package-lock.json does not hold a JSON object"),
+        ("package-lock.json", '{"version": "0.2.0"}', "for the root package, has no version"),
+        ("packages/cli/package.json", None, "GitHub did not answer about"),
+        ("package-lock.json", '{"packages": null}', "for its packages, does not hold a JSON object"),
+        ("package-lock.json", '{"packages": {"": null}}', "for the root package, does not hold a JSON object"),
+        ("package-lock.json", '{"packages": {"packages/cli": 1}}', "for packages/cli, does not hold a JSON object"),
+    ],
+)
+def test_a_version_file_that_cannot_be_read_hides_no_other_problem(
+    path: str, text: str | None, expected: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Check that a broken or missing version file is listed with the other problems."""
+    answers = github(title="Checks")
+    address = f"{CONTENTS}/{path}?ref=abc123"
+    if text is None:
+        del answers[address]
+    else:
+        answers[address] = text
+
+    assert check(answers) == 1
+    listed = capsys.readouterr().err
+    assert "title 'Checks'" in listed
+    assert expected in listed
+
+
 def test_the_check_fails_when_github_lists_only_some_files(capsys: pytest.CaptureFixture[str]) -> None:
     """Check that a size from a partial file list is not trusted."""
     assert check(github(changed_files=2)) == 1
     assert "listed 1 of 2 files" in capsys.readouterr().err
+
+
+def check_branch(branch: str | None, numstat: str | None, version: str | None = "0.2.0") -> int:
+    """Check a local branch, with Git answering about it and master."""
+    answers: dict[tuple[str, ...], str | None] = {
+        ("rev-parse", "--abbrev-ref", "HEAD"): branch,
+        # Three dots count only what the branch committed since it left master.
+        ("diff", "--numstat", "origin/master...HEAD"): numstat,
+        ("show", "origin/master:package.json"): package_files("0.1.9")["package.json"],
+    }
+    if version is not None:
+        answers |= {("show", f"HEAD:{path}"): text for path, text in package_files(version).items()}
+
+    def git(arguments: Sequence[str], _directory: Path) -> str | None:
+        return answers.get(tuple(arguments))
+
+    return main([], Path(), git, lambda _arguments: None)
 
 
 @pytest.mark.parametrize(
@@ -173,16 +247,19 @@ def test_the_check_fails_when_github_lists_only_some_files(capsys: pytest.Captur
 )
 def test_without_a_number_the_local_branch_is_checked(branch: str | None, numstat: str | None, status: int) -> None:
     """Check that the branch's name and committed size are checked without asking GitHub."""
-    answers: dict[tuple[str, ...], str | None] = {
-        ("rev-parse", "--abbrev-ref", "HEAD"): branch,
-        # Three dots count only what the branch committed since it left master.
-        ("diff", "--numstat", "origin/master...HEAD"): numstat,
-    }
+    assert check_branch(branch, numstat) == status
 
-    def git(arguments: Sequence[str], _directory: Path) -> str | None:
-        return answers[tuple(arguments)]
 
-    assert main([], Path(), git, lambda _arguments: None) == status
+@pytest.mark.parametrize(
+    ("version", "expected"),
+    [("0.1.9", "must be higher than 0.1.9"), (None, "Git could not read package.json in HEAD")],
+)
+def test_the_local_branch_s_committed_version_is_checked(
+    version: str | None, expected: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Check that the branch must have committed a higher version than origin/master has."""
+    assert check_branch("14-check-rules", "", version) == 1
+    assert expected in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("arguments", [["x"], ["1", "2"]])

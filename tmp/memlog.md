@@ -249,3 +249,5 @@
 | 2026-11-28 06:14 UTC | ~~[A]000245~~ | End-to-end tests are end-to-end/*.spec.ts files. They install this copy into a temporary data directory and use the installed command. Playwright names test files that take over 5 seconds. |
 | 2026-11-28 06:14 UTC | [D]000246 | The maintainer wants End-to-end tests required on master. Extends D000237. The ruleset changes once the job passes on its pull request. |
 | 2026-11-28 06:31 UTC | [D]000247 | Replaces A000245: end-to-end tests are end-to-end/*.spec.ts files that use an installed copy in a temporary data directory. The maintainer wants each test over 5 seconds named, which a reporter in scripts/ does. |
+| 2026-11-28 18:12 UTC | [A]000248 | The shared version is three numbers, such as 1.2.3. The root package.json, each package, and the lockfile give it, so packages now have one. npm run set:version sets them all. |
+| 2026-11-28 18:12 UTC | [A]000249 | The Pull request rules check covers versions, so the master rules do not change. It compares with the tip of the base branch when it runs. |
