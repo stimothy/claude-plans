@@ -20,6 +20,18 @@ export function commandDirectory(dataDirectory: string): string {
   return join(dataDirectory, "app", "command");
 }
 
+const manifestSchema = z.object({ version: z.string().min(1) });
+
+/** Returns the version that the text of a package.json gives. */
+export function manifestVersion(manifest: string): string {
+  return manifestSchema.parse(JSON.parse(manifest)).version;
+}
+
+/** Returns the version of the application whose top directory this is. */
+export function versionOf(directory: string): string {
+  return manifestVersion(readFileSync(join(directory, "package.json"), "utf8"));
+}
+
 const currentSchema = z.object({ build: z.string().min(1) });
 const currentFile = (dataDirectory: string): string => join(dataDirectory, "app", "current.json");
 

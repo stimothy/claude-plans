@@ -5,13 +5,11 @@
  * @packageDocumentation
  */
 import { randomBytes } from "node:crypto";
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
-import { z } from "zod";
-
 import { buildsDirectory, commandDirectory, currentBuild, setCurrentBuild } from "./layout.ts";
-import { type InstallationRecord, recordInstallation } from "./layout.ts";
+import { type InstallationRecord, recordInstallation, versionOf } from "./layout.ts";
 import { runNpm, runProgram } from "./run-program.ts";
 
 const uniqueBytes = 4;
@@ -20,11 +18,6 @@ const uniqueBytes = 4;
 export interface Build {
   readonly directory: string;
   readonly version: string;
-}
-
-function versionOf(directory: string): string {
-  const manifest: unknown = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-  return z.object({ version: z.string().min(1) }).parse(manifest).version;
 }
 
 // Installed packages are left out, because the build gets its own, and so are tests.

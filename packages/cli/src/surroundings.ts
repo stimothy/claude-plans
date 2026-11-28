@@ -7,12 +7,14 @@
 import { isAbsolute } from "node:path";
 
 import { isInRealData, realDataDirectory } from "./install/checkout.ts";
-import { type Installation, readInstallation } from "./install/layout.ts";
+import { type Installation, readInstallation, versionOf } from "./install/layout.ts";
 
 /** Where a copy of the command is. */
 export interface Surroundings {
   /** The repository that install builds from. */
   readonly repository: string;
+  /** The copy's own version, which for an installed copy may not be the repository's. */
+  readonly version: string;
   /** What an installed copy knows about itself. The repository's own copy has nothing here. */
   readonly installation?: Pick<Installation, "dataDirectory" | "real">;
 }
@@ -20,11 +22,12 @@ export interface Surroundings {
 /** Returns the surroundings of the copy whose top directory this is. */
 export function surroundingsOf(directory: string): Surroundings {
   const installation = readInstallation(directory);
+  const version = versionOf(directory);
   if (installation === undefined) {
-    return { repository: directory };
+    return { repository: directory, version };
   }
   const { repository, dataDirectory, real } = installation;
-  return { repository, installation: { dataDirectory, real } };
+  return { repository, version, installation: { dataDirectory, real } };
 }
 
 /** The options that say which data directory a command is for. */

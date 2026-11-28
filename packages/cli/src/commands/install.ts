@@ -5,6 +5,7 @@
  */
 import { join } from "node:path";
 
+import { errorMessage } from "../error-message.ts";
 import { activateBuild, type Build, makeBuild, removeBuild, runDatabaseProgram } from "../install/build.ts";
 import { isInRealData, isRealDataDirectory, requirePlainInstall, requireRealSpelling } from "../install/checkout.ts";
 import { commandDirectory } from "../install/layout.ts";
@@ -13,8 +14,6 @@ import { Refusal } from "../install/refusal.ts";
 import { findServer } from "../server/running-server.ts";
 import type { Terminal } from "../terminal.ts";
 import { stopServer } from "./stop.ts";
-
-const message = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
 /** What the install command was asked for. */
 export interface InstallOptions {
@@ -61,7 +60,7 @@ async function replace(build: Build, dataDirectory: string, terminal: Terminal):
     if (!stoppedServer) {
       throw error;
     }
-    throw new Error(`${message(error)}\nThe server was stopped. Start it again once this is solved.`, {
+    throw new Error(`${errorMessage(error)}\nThe server was stopped. Start it again once this is solved.`, {
       cause: error,
     });
   }
@@ -92,7 +91,7 @@ function removeEarlier(previous: string | undefined, terminal: Terminal): void {
   try {
     removeBuild(previous);
   } catch (error) {
-    terminal.printError(`Could not delete the earlier build in ${previous}. ${message(error)}`);
+    terminal.printError(`Could not delete the earlier build in ${previous}. ${errorMessage(error)}`);
   }
 }
 
@@ -104,7 +103,7 @@ function putOnPath(dataDirectory: string, { version, stoppedServer }: Outcome): 
     const launcher = launcherCommand(dataDirectory);
     const next = stoppedServer ? `\nThe server was stopped. Start it again with: ${launcher} start` : "";
     throw new Error(
-      `${message(error)}\nVersion ${version} is installed, but npm could not put the claude-plans command on your ` +
+      `${errorMessage(error)}\nVersion ${version} is installed, but npm could not put the claude-plans command on your ` +
         `path. Once this is solved, install again. Until then, run it with: ${launcher}${next}`,
       { cause: error },
     );
