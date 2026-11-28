@@ -36,6 +36,18 @@ describe("the built page", () => {
     expect(answer.body).toContain(text);
   });
 
+  // A browser names the page that asks for a built script or style, under whichever name it opened it.
+  it.each(["127.0.0.1", "localhost"])("serves its files to its own page opened at %s", async (name) => {
+    buildPage();
+    const { port } = await servers.start();
+    const headers = { host: `${name}:${String(port)}`, origin: `http://${name}:${String(port)}` };
+
+    // A request that is not refused reaches the files, which have no such script.
+    const answer = await servers.send(port, "GET", "/assets/missing.js", headers);
+
+    expect(answer.status).toBe(404);
+  });
+
   it("leaves the APIs as they are", async () => {
     buildPage();
     const { port } = await servers.start();
@@ -72,9 +84,8 @@ describe("the built page", () => {
 
     const answer = await servers.send(port, "GET", "/");
 
-    expect(answer).toEqual({
-      status: 503,
-      body: { message: "The web page has not been built. Run npm run build:page, then start the server again." },
-    });
+    expect(answer.status).toBe(503);
+    // An installed copy, which an earlier version may have installed, cannot be built from the repository.
+    expect(JSON.stringify(answer.body)).toMatch(/claude-plans install again.*npm run build:page.*start the server/);
   });
 });

@@ -10,6 +10,7 @@ import { basename, join } from "node:path";
 
 import { buildsDirectory, commandDirectory, currentBuild, setCurrentBuild } from "./layout.ts";
 import { type InstallationRecord, recordInstallation, versionOf } from "./layout.ts";
+import { Refusal } from "./refusal.ts";
 import { runNpm, runProgram } from "./run-program.ts";
 
 const uniqueBytes = 4;
@@ -45,6 +46,10 @@ export function removeBuild(directory: string): void {
 
 /** Makes a new build of a repository in a data directory, and leaves the current one as it is. */
 export function makeBuild(record: InstallationRecord, dataDirectory: string): Build {
+  // Vite reads these as parts of an address, not of a path.
+  if (/[#?*]/.test(dataDirectory)) {
+    throw new Refusal(`The web page cannot be built in ${dataDirectory}, because its path has #, ?, or *.`);
+  }
   const version = versionOf(record.repository);
   const name = `${version}-${randomBytes(uniqueBytes).toString("hex")}`;
   const directory = join(buildsDirectory(dataDirectory), name);

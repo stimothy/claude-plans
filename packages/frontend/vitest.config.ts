@@ -11,6 +11,8 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 
+import { servedFiles } from "./vite.config.ts";
+
 const minimumCoverage = { lines: 80, branches: 80, functions: 80, statements: 80 };
 
 // Each project needs a browser instance with a name of its own.
@@ -21,6 +23,15 @@ const browser = (name: string) => ({
   instances: [{ browser: "chromium" as const, name }],
 });
 
+// The server that the browser reads from gives out files too, while the tests run. Vitest adds the whole
+// repository to its list, so the list is set once every other setting has been applied.
+const onlyServedFiles = {
+  name: "only-served-files",
+  configResolved: (resolved: { readonly server: { readonly fs: { allow: string[] } } }) => {
+    resolved.server.fs.allow.splice(0, Infinity, ...servedFiles);
+  },
+};
+
 /** Test settings for the stories, and for the page's other tests. */
 export default defineConfig({
   test: {
@@ -28,11 +39,11 @@ export default defineConfig({
     reporters: ["verbose"],
     projects: [
       {
-        plugins: [storybookTest({ configDir: join(import.meta.dirname, ".storybook") })],
+        plugins: [storybookTest({ configDir: join(import.meta.dirname, ".storybook") }), onlyServedFiles],
         test: { name: "stories", browser: browser("stories") },
       },
       {
-        plugins: [react()],
+        plugins: [react(), onlyServedFiles],
         test: { name: "page", include: ["packages/frontend/src/**/*.test.tsx"], browser: browser("page") },
       },
     ],

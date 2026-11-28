@@ -27,6 +27,16 @@ describe("installing the web page", () => {
     expect(existsSync(join(built, "src", "main.test.tsx"))).toBe(false);
   });
 
+  // Vite cannot build in such a directory, and its own failure does not say why.
+  it.each(["c#", "what?", "star*"])("is refused in a directory named %s, before anything is built", async (name) => {
+    const dataDirectory = join(fake.elsewhere(name), "data");
+
+    const installing = installApplication({ dataDirectory, repository: fake.repository() }, recordingTerminal());
+
+    await expect(installing).rejects.toThrow("#, ?, or *");
+    expect(existsSync(dataDirectory)).toBe(false);
+  });
+
   it("keeps the earlier application when the page cannot be built", async () => {
     await install();
     const before = installed(data()).build;

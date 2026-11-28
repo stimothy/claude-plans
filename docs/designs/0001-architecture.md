@@ -170,7 +170,8 @@ repository does. Node.js runs the TypeScript as it is, so only the web page is c
 root package files, the base TypeScript settings, and the packages without their tests. `npm ci` then installs
 what it needs, without development dependencies or package scripts, and Vite builds the page from the copy. A page
 that the repository had built is left behind. Building inside the copy means that the page comes from the same code
-and locked packages as the rest. For that reason, Vite and React are runtime dependencies of `frontend`.
+and locked packages as the rest. For that reason, Vite and React are runtime dependencies of `frontend`. Vite cannot
+build in a directory whose path has `#`, `?`, or `*`, so `install` refuses one before it builds anything.
 
 Each build has its own directory in `app/builds/`, and never moves, because npm on Windows links packages by their
 full paths. `app/current.json` names the current build, and is replaced by renaming a new file over it. The
@@ -230,6 +231,12 @@ so the proxy gives the server's own origin to a request whose `Origin` matches i
 Vite's own page. It passes every other `Origin` on unchanged, because replacing them all would let any website
 through. Vite refuses a `Host` that is not this computer's before it passes anything on, which covers a website
 whose name was made to point here.
+
+Vite also gives files to whoever can reach it, by default any file in the repository, which in the maintainer's own
+copy would include the real data. The page's settings limit it to the page's directory and the installed packages.
+A new directory that the page imports from has to be added there. Storybook and the component tests' server each
+allow more of their own accord, so they set the same list again after their other settings. On `SIGTERM`, Vite
+would end the program without waiting for the server, so the script replaces Vite's listener with its own.
 
 Storybook shows the page's components apart from the page. Each story's play function is also its test, which
 Vitest runs in Chromium, with the few tests of the page that are not stories. Storybook's usage reports are off.

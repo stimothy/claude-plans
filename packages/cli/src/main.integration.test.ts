@@ -53,6 +53,14 @@ function expectAHealthyServerThatStopped(started: Result, health: Result, stoppe
   ]);
 }
 
+// Asks for the page and then for the script that it names, as a browser does.
+async function builtPage(url: string): Promise<{ page: number; script: number }> {
+  const page = await fetch(url);
+  const named = /src="(\/assets\/[^"]+\.js)"/.exec(await page.text())?.[1] ?? "/no-script";
+  const script = await fetch(`${url}${named}`, { headers: { origin: url } });
+  return { page: page.status, script: script.status };
+}
+
 describe("the claude-plans program", () => {
   it("returns from a start in the background, and gives each command's exit code", async () => {
     const started = await run("start", "--detached", `--port=${String(await freePort())}`);
@@ -67,12 +75,15 @@ describe("the claude-plans program", () => {
     const launcher = join(servers.directory(), "app", "command", "main.js");
     const runInstalled = (...given: string[]) => finish(spawn(process.execPath, [launcher, ...given]));
 
-    const started = await runInstalled("start", "--detached", `--port=${String(await freePort())}`);
+    const port = String(await freePort());
+    const started = await runInstalled("start", "--detached", `--port=${port}`);
     const health = await runInstalled("health");
+    const page = await builtPage(`http://127.0.0.1:${port}`);
     const stopped = await runInstalled("stop");
 
     expect(installed).toMatchObject({ code: 0, errors: "" });
     expectAHealthyServerThatStopped(started, health, stopped);
+    expect(page).toEqual({ page: 200, script: 200 });
     // It installs the real repository, so npm unpacks every package that runs, which Windows does slowly.
   }, 90_000);
 

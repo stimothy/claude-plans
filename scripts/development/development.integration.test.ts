@@ -1,11 +1,15 @@
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { EventEmitter } from "node:events";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { type Development, startDevelopment } from "./development.ts";
+import { migrate } from "../../packages/backend/src/database/migrate.ts";
+import { freePort } from "../../packages/backend/src/server/test-servers.ts";
+import { type Development, developmentData, runUntilStopped, startDevelopment } from "./development.ts";
 
 const repository = resolve(import.meta.dirname, "..", "..");
 let temporary = "";
@@ -47,6 +51,8 @@ describe("development", () => {
     const page = await fetch(development.url);
     const health = await fetch(`${development.url}/api/health`);
 
+    // Only this computer may reach the page, whose requests reach the server's APIs.
+    expect(new URL(development.url).hostname).toBe("127.0.0.1");
     expect(await page.text()).toContain("/src/main.tsx");
     expect(await health.json()).toMatchObject({ status: "ok" });
     expect(existsSync(join(data(), "server.json"))).toBe(true);
@@ -88,8 +94,96 @@ describe("development", () => {
   });
 
   it("says why the database could not be prepared", async () => {
-    writeFileSync(data(), "a file where the directory should be");
+    migrate(data(), [{ version: 1, name: "from a later version", apply: () => undefined }]);
 
-    await expect(start()).rejects.toThrow("data");
+    await expect(start()).rejects.toThrow("newer than version 0");
+  });
+
+  it("stops the server when the page cannot start", async () => {
+    // A directory without the page has no settings for Vite.
+    const starting = startDevelopment({ repository: temporary, dataDirectory: data() });
+
+    await expect(starting).rejects.toThrow("vite.config.ts");
+    expect(existsSync(join(data(), "server.json"))).toBe(false);
+  });
+
+  // The real server's port comes from its settings, so a port from the development settings must not be used either.
+  it("gives its server a free port, whatever the settings say", async () => {
+    const chosen = await freePort();
+    mkdirSync(data());
+    writeFileSync(join(data(), "settings.yaml"), `port: ${String(chosen)}\n`);
+
+    await start();
+
+    const record = JSON.parse(readFileSync(join(data(), "server.json"), "utf8")) as { port: number };
+    expect(record.port).not.toBe(chosen);
+  });
+
+  // The page's server could otherwise read out the real data in the maintainer's own copy.
+  it.each(["package.json", "packages/backend/src/server/server.ts"])(
+    "gives out no file of the repository that the page does not use, such as %s",
+    async (file) => {
+      const { url } = await start();
+
+      const answer = await fetch(`${url}/@fs${pathToFileURL(join(repository, file)).pathname}`);
+
+      expect(answer.status).toBe(403);
+    },
+  );
+
+  it("gives out the packages that the page uses", async () => {
+    const { url } = await start();
+
+    const source = await (await fetch(`${url}/src/main.tsx`)).text();
+    const used = [...source.matchAll(/from "(\/[^"]+)"/g)].map((match) => match[1] ?? "");
+    const answers = await Promise.all(used.map(async (path) => (await fetch(`${url}${path}`)).status));
+
+    expect(used.length).toBeGreaterThan(1);
+    expect(answers).toEqual(used.map(() => 200));
+  });
+});
+
+describe("running development until it is stopped", () => {
+  it("keeps its data apart from the real data", () => {
+    expect(developmentData(repository)).toBe(join(repository, ".claude-plans-development"));
+  });
+
+  // Vite adds a listener of its own, which ends the program without waiting for the server to stop.
+  it.each(["SIGINT", "SIGTERM", "SIGHUP"])("stops both servers on %s, and nothing else answers it", async (signal) => {
+    const development = await start();
+    const signals = new EventEmitter();
+    const other = vi.fn();
+    signals.on(signal, other);
+    const finished = runUntilStopped(development, signals);
+
+    signals.emit(signal);
+
+    await finished;
+    await expect(fetch(development.url)).rejects.toThrow();
+    expect(other).not.toHaveBeenCalled();
+  });
+
+  it("stops the page when the server is asked to stop through its API", async () => {
+    const development = await start();
+    const finished = runUntilStopped(development, new EventEmitter());
+    const record = JSON.parse(readFileSync(join(data(), "server.json"), "utf8")) as { port: number; token: string };
+
+    await fetch(`http://127.0.0.1:${String(record.port)}/api/shutdown`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${record.token}` },
+    });
+
+    await finished;
+    await expect(fetch(development.url)).rejects.toThrow();
+  });
+
+  it("stops the page when the server cannot stop cleanly", async () => {
+    const stop = vi.fn(() => Promise.resolve());
+    const failed = Promise.reject(new Error("The record could not be removed."));
+    const broken = { url: "", ended: failed, stop };
+
+    await expect(runUntilStopped(broken, new EventEmitter())).rejects.toThrow("record");
+
+    expect(stop).toHaveBeenCalled();
   });
 });

@@ -9,7 +9,10 @@ import { join } from "node:path";
 import fastifyStatic from "@fastify/static";
 import type { FastifyInstance } from "fastify";
 
-const notBuilt = "The web page has not been built. Run npm run build:page, then start the server again.";
+// The install command of an earlier version builds no page, so installing again can be what an installed copy needs.
+const notBuilt =
+  "The web page has not been built. For an installed copy, run claude-plans install again. In a copy of the " +
+  "repository, run npm run build:page. Then start the server again.";
 
 /**
  * Serves the files in the built page's directory, with index.html at the top address. The repository's own copy

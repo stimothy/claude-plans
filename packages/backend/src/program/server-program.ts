@@ -61,9 +61,7 @@ function readOptions(given: readonly string[]): Options {
   };
 }
 
-type Application = Pick<ServerProgram, "version" | "pageDirectory">;
-
-async function start(options: Options, { version, pageDirectory }: Application): Promise<Started> {
+async function start(options: Options, { version, pageDirectory }: ServerProgram): Promise<Started> {
   const { dataDirectory } = options;
   const logger = (level: LogLevel): Logger => createLogger({ dataDirectory, program: "backend", level });
   let settings;

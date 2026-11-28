@@ -71,8 +71,46 @@ async function startPage(repository: string, serverPort: number) {
     // Vite takes the next port if its usual one is in use.
     server: { host, proxy: { "/api": apiProxy(`http://${host}:${String(serverPort)}`) } },
   });
-  await page.listen();
+  try {
+    await page.listen();
+  } catch (error) {
+    // Vite already watches files, which would keep this program running.
+    await page.close();
+    throw error;
+  }
   return page;
+}
+
+/**
+ * Returns the directory for the development data of a copy of the repository. It is never the real data, which
+ * npm run dev has no way to choose.
+ */
+export function developmentData(repository: string): string {
+  return join(repository, ".claude-plans-development");
+}
+
+/** Where signals arrive, which for a program is the process. */
+export type Signals = Pick<NodeJS.EventEmitter, "on" | "removeAllListeners">;
+
+/**
+ * Keeps development running until a signal arrives or the server stops, as a request to its API makes it do. Both
+ * the page and the server are then stopped.
+ */
+export async function runUntilStopped(development: Development, signals: Signals): Promise<void> {
+  // A closing terminal sends SIGHUP.
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+    // Vite's own listener would end the program without waiting for the server to stop.
+    signals.removeAllListeners(signal);
+    signals.on(signal, () => {
+      // A failure to stop reaches the wait below.
+      development.stop().catch(() => undefined);
+    });
+  }
+  try {
+    await development.ended;
+  } finally {
+    await development.stop();
+  }
 }
 
 /** Prepares the development database, and starts the server and then the page. */
@@ -81,11 +119,12 @@ export async function startDevelopment(options: DevelopmentOptions): Promise<Dev
   const server = await startBackend(options);
   try {
     const page = await startPage(options.repository, server.port);
-    const { port } = page.httpServer?.address() as AddressInfo;
+    // The address is the one that Vite listens on, so it shows whether others than this computer can reach it.
+    const { address, port } = page.httpServer?.address() as AddressInfo;
     const stop = async (): Promise<void> => {
       await Promise.all([page.close(), server.close()]);
     };
-    return { url: `http://${host}:${String(port)}`, ended: server.closed, stop };
+    return { url: `http://${address}:${String(port)}`, ended: server.closed, stop };
   } catch (error) {
     await server.close();
     throw error;
