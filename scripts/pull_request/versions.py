@@ -15,9 +15,19 @@ VERSION = re.compile(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 PACKAGE = re.compile(r"packages/[^/]+")
 
 
+class UnreadableFileError(Exception):
+    """A file that should give a version cannot be understood."""
+
+
 def _parsed(read: Read, path: str) -> dict[str, Any]:
-    """Return what a JSON file holds."""
-    return dict(json.loads(read(path)))
+    """Return the object that a JSON file holds."""
+    try:
+        found = json.loads(read(path))
+    except json.JSONDecodeError:
+        found = None
+    if not isinstance(found, dict):
+        raise UnreadableFileError(f"{path} does not hold a JSON object, so the versions cannot be checked")
+    return found
 
 
 def _numbers(version: object) -> tuple[int, ...] | None:
@@ -29,8 +39,9 @@ def _numbers(version: object) -> tuple[int, ...] | None:
 def _other_versions(read: Read) -> dict[str, object]:
     """Return the version in each place that must match the root package.json, or nothing where there is none."""
     lockfile = _parsed(read, LOCKFILE)
-    entries = lockfile["packages"]
-    found = {LOCKFILE: lockfile.get("version"), f"{LOCKFILE}, for the root package,": entries[""].get("version")}
+    entries = lockfile.get("packages", {})
+    root = entries.get("", {}).get("version")
+    found = {LOCKFILE: lockfile.get("version"), f"{LOCKFILE}, for the root package,": root}
     for directory in filter(PACKAGE.fullmatch, entries):
         path = f"{directory}/{MANIFEST}"
         found[path] = _parsed(read, path).get("version")

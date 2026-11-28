@@ -60,6 +60,10 @@ def check(answers: dict[str, str]) -> int:
         # A list that is read without every page would be cut short.
         if {f"{PULL}/files", EVENTS} & set(arguments) and "--paginate" not in arguments:
             return None
+        # Without this header, GitHub answers about a file with facts about it instead of its text.
+        asks_for_text = "Accept: application/vnd.github.raw+json" in arguments
+        if any(argument.startswith(CONTENTS) for argument in arguments) and not asks_for_text:
+            return None
         return next((answers[argument] for argument in arguments if argument in answers), None)
 
     return main(["51"], Path(), lambda _arguments, _directory: None, gh)
@@ -169,6 +173,40 @@ def test_a_pull_request_must_raise_the_version(capsys: pytest.CaptureFixture[str
     """Check that a pull request whose version master already has fails."""
     assert check(github() | proposed("0.1.9")) == 1
     assert "must be higher than 0.1.9" in capsys.readouterr().err
+
+
+def test_a_base_branch_s_name_is_encoded_in_the_address() -> None:
+    """Check that a branch name cannot be cut short or change what an address asks for."""
+    answers = github(base={"ref": "release#1", "repo": {"owner": {"login": "maintainer"}}})
+    answers[f"{CONTENTS}/package.json?ref=release%231"] = answers.pop(CURRENT)
+
+    assert check(answers) == 0
+
+
+@pytest.mark.parametrize(
+    ("path", "text", "expected"),
+    [
+        ("package.json", "<<<<<<< HEAD", "package.json does not hold a JSON object"),
+        ("package-lock.json", "[]", "package-lock.json does not hold a JSON object"),
+        ("package-lock.json", '{"version": "0.2.0"}', "for the root package, has no version"),
+        ("packages/cli/package.json", None, "GitHub did not answer about"),
+    ],
+)
+def test_a_version_file_that_cannot_be_read_hides_no_other_problem(
+    path: str, text: str | None, expected: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Check that a broken or missing version file is listed with the other problems."""
+    answers = github(title="Checks")
+    address = f"{CONTENTS}/{path}?ref=abc123"
+    if text is None:
+        del answers[address]
+    else:
+        answers[address] = text
+
+    assert check(answers) == 1
+    listed = capsys.readouterr().err
+    assert "title 'Checks'" in listed
+    assert expected in listed
 
 
 def test_the_check_fails_when_github_lists_only_some_files(capsys: pytest.CaptureFixture[str]) -> None:

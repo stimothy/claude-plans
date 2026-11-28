@@ -9,12 +9,14 @@ from scripts.pull_request.versions import version_problems
 
 APPLICATION = "package.json"
 PACKAGE = "packages/cli/package.json"
+LATER_PACKAGE = "packages/logging/package.json"
 LOCKFILE = "package-lock.json"
 
 
 def package_files(version: object = "0.2.0", **others: object) -> dict[str, str]:
     """Make the files that give versions, all at one version except for the places named with another."""
-    places = {name: others.get(name, version) for name in ("root", "package", "lock", "lock_root", "lock_package")}
+    names = ("root", "package", "later", "lock", "lock_root", "lock_package", "lock_later")
+    places = {name: others.get(name, version) for name in names}
 
     def manifest(place: str) -> dict[str, object]:
         return {} if places[place] is None else {"version": places[place]}
@@ -22,6 +24,7 @@ def package_files(version: object = "0.2.0", **others: object) -> dict[str, str]
     entries = {
         "": manifest("lock_root"),
         "packages/cli": manifest("lock_package"),
+        "packages/logging": manifest("lock_later"),
         # Neither is a package of this repository.
         "node_modules/zod": {"version": "4.6.7"},
         "packages/cli/node_modules/zod": {"version": "4.0.0"},
@@ -29,6 +32,7 @@ def package_files(version: object = "0.2.0", **others: object) -> dict[str, str]
     return {
         APPLICATION: json.dumps(manifest("root")),
         PACKAGE: json.dumps(manifest("package")),
+        LATER_PACKAGE: json.dumps(manifest("later")),
         LOCKFILE: json.dumps(manifest("lock") | {"packages": entries}),
     }
 
@@ -58,9 +62,11 @@ def test_a_version_that_is_not_higher_than_master_s_is_a_problem(current: str) -
     ("place", "name"),
     [
         ("package", PACKAGE),
+        ("later", LATER_PACKAGE),
         ("lock", LOCKFILE),
         ("lock_root", f"{LOCKFILE}, for the root package,"),
         ("lock_package", f"{LOCKFILE}, for packages/cli,"),
+        ("lock_later", f"{LOCKFILE}, for packages/logging,"),
     ],
 )
 @pytest.mark.parametrize(("other", "has"), [("0.1.9", "the version '0.1.9'"), (None, "no version")])

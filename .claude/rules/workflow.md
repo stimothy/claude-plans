@@ -20,9 +20,9 @@ merging, and force pushing, and the Quality section, still apply.
   approves it.
 - Give the PR the issue's area label and milestone.
 - Every PR except Dependabot's raises the version with `npm run set:version -- <version>`, not by hand. Stay below
-  0.1.0 until issue #38 releases v0.1.0, which the CI check does not enforce. The check compares with `master` only
-  as it was when it ran, so if `master` reaches the version before the PR merges, raise it again even though the
-  check passed.
+  0.1.0 until issue #38 releases v0.1.0, which the CI check does not enforce. When merging `master` into the branch,
+  if `master` has reached or passed the branch's version, set a higher one with the script instead of resolving
+  the version lines by hand or keeping them as merged, since the check runs again on the push and fails.
 - The maintainer merges, with a squash merge. Never merge a PR, never force push, and never push to `master`.
 - Bring a branch up to date by merging `master` into it. A rebase needs a force push, so rebase only when the
   maintainer asks, and leave the force push to them.

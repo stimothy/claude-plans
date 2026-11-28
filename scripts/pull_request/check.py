@@ -10,7 +10,7 @@ from urllib.parse import quote
 
 from scripts.guard.repository import Git, run_git
 from scripts.pull_request import rules
-from scripts.pull_request.versions import Read, version_problems
+from scripts.pull_request.versions import Read, UnreadableFileError, version_problems
 from scripts.report import report
 
 # Asks GitHub's command-line program, and returns its output, or nothing if it fails.
@@ -76,6 +76,14 @@ def _committed_file(root: Path, git: Git, commit: str) -> Read:
     return read
 
 
+def _version_problems(proposed: Read, current: Read) -> list[str]:
+    """List what is wrong with the version, or why it cannot be checked, which hides no other problem."""
+    try:
+        return version_problems(proposed, current)
+    except (NoAnswerError, UnreadableFileError) as error:
+        return [str(error)]
+
+
 def _maintainer_allows_size(gh: Gh, pull: dict[str, Any], number: int) -> bool:
     """Tell whether the pull request has the override label, added by the repository's owner."""
     if rules.OVERRIDE_LABEL not in [label["name"] for label in pull["labels"]]:
@@ -121,11 +129,11 @@ def _pull_request_problems(gh: Gh, number: int) -> list[str] | None:
         problems += oversize
     # The base branch is read as it is now, which may be ahead of where this pull request left it.
     proposed, current = (_file_on_github(gh, revision) for revision in (pull["head"]["sha"], pull["base"]["ref"]))
-    return problems + version_problems(proposed, current)
+    return problems + _version_problems(proposed, current)
 
 
 def _local_problems(root: Path, git: Git) -> list[str]:
-    """List the problems with the local branch's name and committed size."""
+    """List the problems with the local branch's name, committed size, and committed version."""
     branch = git(["rev-parse", "--abbrev-ref", "HEAD"], root)
     numstat = git(["diff", "--numstat", "origin/master...HEAD"], root)
     if branch is None or numstat is None:
@@ -137,7 +145,7 @@ def _local_problems(root: Path, git: Git) -> list[str]:
         files.append((path, int(added.replace("-", "0")), int(deleted.replace("-", "0"))))
     problems = rules.branch_problems(branch) + rules.size_problems(rules.changed_lines(files))
     proposed, current = (_committed_file(root, git, commit) for commit in ("HEAD", "origin/master"))
-    return problems + version_problems(proposed, current)
+    return problems + _version_problems(proposed, current)
 
 
 def main(arguments: Sequence[str], root: Path, git: Git, gh: Gh) -> int:
