@@ -1,0 +1,46 @@
+/* The colors of the whole page. The attributes on the html element choose among eight palettes: a light and a
+   dark one for each color vision choice. Each light-dark() gives the light color first. With the system theme, or
+   before any theme is named, the operating system decides which of the two shows. */
+
+:root {
+  color-scheme: light dark;
+
+  --color-background: light-dark(#ffffff, #121417);
+  --color-surface: light-dark(#f4f5f7, #1d2025);
+  --color-text: light-dark(#1a1c1f, #eceef1);
+  --color-muted-text: light-dark(#4d535b, #b4bac2);
+  --color-border: light-dark(#6b7280, #868d96);
+  --color-accent: light-dark(#0b57d0, #8ab4f8);
+  --color-danger: light-dark(#b3261e, #ff9e96);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Red and green are hard to tell apart with protan and deutan color vision, so these palettes keep to blue and
+   orange. Protan color vision also sees red as dark, so its danger color does not rely on red. */
+:root[data-color-vision="protan"] {
+  --color-accent: light-dark(#005a94, #7cc4ff);
+  --color-danger: light-dark(#8a4500, #ffc266);
+}
+
+:root[data-color-vision="deutan"] {
+  --color-accent: light-dark(#0047a8, #99c2ff);
+  --color-danger: light-dark(#9c3d00, #ffa352);
+}
+
+/* Blue and yellow are hard to tell apart with tritan color vision, so this palette keeps to teal and red. */
+:root[data-color-vision="tritan"] {
+  --color-accent: light-dark(#00655c, #5fd4c4);
+  --color-danger: light-dark(#a8102a, #ff97a3);
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+}

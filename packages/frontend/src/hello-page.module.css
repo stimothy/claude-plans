@@ -4,3 +4,7 @@
   padding: 2rem 1rem;
   font-family: system-ui, sans-serif;
 }
+
+.introduction {
+  color: var(--color-muted-text);
+}

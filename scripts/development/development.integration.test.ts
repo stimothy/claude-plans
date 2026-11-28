@@ -137,14 +137,26 @@ describe("development", () => {
     },
   );
 
-  it("gives out the packages that the page uses", async () => {
+  it("saves a choice made on its page, and serves the page in it from then on", async () => {
+    const { url } = await start();
+    const headers = { origin: url, "content-type": "application/json" };
+
+    const saved = await fetch(`${url}/api/settings`, { method: "PATCH", headers, body: '{"theme":"dark"}' });
+    const page = await (await fetch(url)).text();
+
+    expect(saved.status).toBe(200);
+    expect(page).toContain('data-theme="dark" data-color-vision="default"');
+  });
+
+  // The page's other package is outside its directory, and is not in node_modules as Vite sees it.
+  it.each(["/src/main.tsx", "/src/colors/document-colors.ts"])("gives out what %s imports", async (module) => {
     const { url } = await start();
 
-    const source = await (await fetch(`${url}/src/main.tsx`)).text();
+    const source = await (await fetch(`${url}${module}`)).text();
     const used = [...source.matchAll(/from "(\/[^"]+)"/g)].map((match) => match[1] ?? "");
     const answers = await Promise.all(used.map(async (path) => (await fetch(`${url}${path}`)).status));
 
-    expect(used.length).toBeGreaterThan(1);
+    expect(used.length).toBeGreaterThan(0);
     expect(answers).toEqual(used.map(() => 200));
   });
 });

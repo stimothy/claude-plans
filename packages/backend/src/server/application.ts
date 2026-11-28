@@ -9,6 +9,7 @@ import { healthContract, serverContract, shutdownContract } from "@claude-plans/
 import type { Logger } from "@claude-plans/logging";
 import fastify, { type FastifyInstance } from "fastify";
 
+import { serveColorSettings } from "../color-settings/color-settings-api.ts";
 import { healthReport } from "../health/health-report.ts";
 import { servePage } from "../page/serve-page.ts";
 import { isFromThisServer } from "./request-protection.ts";
@@ -65,7 +66,8 @@ export function createApplication(options: ApplicationOptions): FastifyInstance 
     }
     return undefined;
   });
-  servePage(application, pageDirectory);
+  servePage(application, { pageDirectory, dataDirectory, log });
+  serveColorSettings(application, dataDirectory);
   application.get(healthContract.path, () => healthReport(dataDirectory, version, log.error));
   application.get(serverContract.path, () => ({ dataDirectory }));
   application.post(shutdownContract.path, async (request, reply) => {
