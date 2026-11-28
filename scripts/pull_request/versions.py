@@ -19,15 +19,20 @@ class UnreadableFileError(Exception):
     """A file that should give a version cannot be understood."""
 
 
+def _object(value: object, place: str) -> dict[str, Any]:
+    """Return a value that has to be a JSON object, found in a place."""
+    if not isinstance(value, dict):
+        raise UnreadableFileError(f"{place} does not hold a JSON object, so the versions cannot be checked")
+    return value
+
+
 def _parsed(read: Read, path: str) -> dict[str, Any]:
     """Return the object that a JSON file holds."""
     try:
         found = json.loads(read(path))
     except json.JSONDecodeError:
         found = None
-    if not isinstance(found, dict):
-        raise UnreadableFileError(f"{path} does not hold a JSON object, so the versions cannot be checked")
-    return found
+    return _object(found, path)
 
 
 def _numbers(version: object) -> tuple[int, ...] | None:
@@ -39,13 +44,14 @@ def _numbers(version: object) -> tuple[int, ...] | None:
 def _other_versions(read: Read) -> dict[str, object]:
     """Return the version in each place that must match the root package.json, or nothing where there is none."""
     lockfile = _parsed(read, LOCKFILE)
-    entries = lockfile.get("packages", {})
-    root = entries.get("", {}).get("version")
-    found = {LOCKFILE: lockfile.get("version"), f"{LOCKFILE}, for the root package,": root}
+    entries = _object(lockfile.get("packages", {}), f"{LOCKFILE}, for its packages,")
+    root = f"{LOCKFILE}, for the root package,"
+    found = {LOCKFILE: lockfile.get("version"), root: _object(entries.get("", {}), root).get("version")}
+    # A package that the lockfile leaves out is not seen here. The required jobs that run npm ci reject that.
     for directory in filter(PACKAGE.fullmatch, entries):
-        path = f"{directory}/{MANIFEST}"
+        path, locked = f"{directory}/{MANIFEST}", f"{LOCKFILE}, for {directory},"
         found[path] = _parsed(read, path).get("version")
-        found[f"{LOCKFILE}, for {directory},"] = entries[directory].get("version")
+        found[locked] = _object(entries[directory], locked).get("version")
     return found
 
 

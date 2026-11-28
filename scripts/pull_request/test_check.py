@@ -190,6 +190,9 @@ def test_a_base_branch_s_name_is_encoded_in_the_address() -> None:
         ("package-lock.json", "[]", "package-lock.json does not hold a JSON object"),
         ("package-lock.json", '{"version": "0.2.0"}', "for the root package, has no version"),
         ("packages/cli/package.json", None, "GitHub did not answer about"),
+        ("package-lock.json", '{"packages": null}', "for its packages, does not hold a JSON object"),
+        ("package-lock.json", '{"packages": {"": null}}', "for the root package, does not hold a JSON object"),
+        ("package-lock.json", '{"packages": {"packages/cli": 1}}', "for packages/cli, does not hold a JSON object"),
     ],
 )
 def test_a_version_file_that_cannot_be_read_hides_no_other_problem(
