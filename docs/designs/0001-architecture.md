@@ -395,10 +395,16 @@ Every workflow names outside actions by commit, so that a moved tag cannot chang
 The Release workflow runs `scripts/release` on each merge to `master`, and its one job may write to the
 repository, which making a release needs. It releases a version only if the merge raised it over the commit
 before, to 0.1.0 or later, so a merge such as Dependabot's releases nothing. The release's tag, such as `v1.2.3`,
-marks the merged commit, and GitHub writes its notes from the titles of the pull requests since the last release.
-A failed run can be run again: it does nothing if the release exists, and stops if the tag exists without a
-release, because GitHub would then release whatever the tag marks. Runs do not wait for one another, because
-GitHub would cancel a waiting run when a newer one arrived, and that version would not be released.
+marks the merged commit, and GitHub writes its notes from the titles of pull requests. The script says which
+release the notes start after, the one with the next lower version, and whether the new one is the latest,
+because GitHub would take a release that is made late to be the latest. It publishes only from GitHub Actions, so
+running it elsewhere releases nothing.
+
+A failed run can be run again: it does nothing if the release exists. It stops if only a draft has the tag, or if
+the tag exists without a release, because GitHub would then release whatever the tag marks. GitHub may refuse the
+workflow's token once the workflow files on `master` differ from those in the commit to release. The maintainer
+then makes that release by hand. Runs do not wait for one another, because GitHub would cancel a waiting run when
+a newer one arrived, and that version would not be released.
 
 ## Documents
 
