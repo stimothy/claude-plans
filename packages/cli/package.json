@@ -1,6 +1,6 @@
 {
   "name": "@claude-plans/cli",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "private": true,
   "description": "The claude-plans command.",
   "license": "MIT",

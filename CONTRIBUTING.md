@@ -75,7 +75,9 @@ catch mistakes and are not a security barrier.
 Every pull request also raises the version, and your branch must be up to date with `master` before it is merged.
 The version is three numbers, such as `1.2.3`, which the root `package.json`, every package, and the lockfile
 share. `npm run set:version -- <version>` sets it in all of them. If `master` reaches your version before your
-pull request merges, raise it again.
+pull request merges, raise it again. From version 0.1.0 on, merging a pull request that raises the version creates
+a [release](https://github.com/stimothy/claude-plans/releases), with notes that GitHub writes from the titles of
+the pull requests.
 
 `npm run check:pull-request` checks your branch's name, and the size and version of its committed changes against
 your copy of `origin/master`, so run `git fetch` first. GitHub also checks the title, the description, and the

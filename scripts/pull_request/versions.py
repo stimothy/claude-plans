@@ -35,7 +35,12 @@ def _parsed(read: Read, path: str) -> dict[str, Any]:
     return _object(found, path)
 
 
-def _numbers(version: object) -> tuple[int, ...] | None:
+def manifest_version(read: Read) -> object:
+    """Return the version that the root package.json gives, or nothing if it gives none."""
+    return _parsed(read, MANIFEST).get("version")
+
+
+def version_numbers(version: object) -> tuple[int, ...] | None:
     """Return a version's three numbers, if it is written as three numbers."""
     match = VERSION.fullmatch(version) if isinstance(version, str) else None
     return tuple(map(int, match.groups())) if match else None
@@ -57,8 +62,8 @@ def _other_versions(read: Read) -> dict[str, object]:
 
 def version_problems(read_proposed: Read, read_current: Read) -> list[str]:
     """List what is wrong with a change's version, given how to read its files and master's."""
-    version = _parsed(read_proposed, MANIFEST).get("version")
-    numbers = _numbers(version)
+    version = manifest_version(read_proposed)
+    numbers = version_numbers(version)
     if numbers is None:
         return [f"{MANIFEST} needs a version like '1.2.3', but has {version!r}"]
     problems = [
@@ -66,8 +71,8 @@ def version_problems(read_proposed: Read, read_current: Read) -> list[str]:
         for place, other in _other_versions(read_proposed).items()
         if other != version
     ]
-    current = _parsed(read_current, MANIFEST).get("version")
-    current_numbers = _numbers(current)
+    current = manifest_version(read_current)
+    current_numbers = version_numbers(current)
     if current_numbers is None:
         problems.append(f"master's version {current!r} cannot be compared with {version}")
     elif numbers <= current_numbers:

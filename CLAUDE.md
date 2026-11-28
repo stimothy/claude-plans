@@ -47,7 +47,7 @@ The rules in `.claude/rules/` load on their own. These two load in every session
 These load when you work with matching files:
 
 - [code.md](.claude/rules/code.md): TypeScript and Python code and tests.
-- [ci.md](.claude/rules/ci.md): files under `.github/`.
+- [ci.md](.claude/rules/ci.md): files under `.github/` and `scripts/release/`.
 - [docs.md](.claude/rules/docs.md): files under `docs/`.
 
 Before creating any file that a path-scoped rule covers, or a script that writes such files, read that rule if

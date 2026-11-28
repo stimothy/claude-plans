@@ -7,8 +7,8 @@ description: "How the repository's tools, safeguards, and checks work, and why."
 
 claude-plans is meant to be a planning studio for plans made with Claude. So far it is a server, a web page that
 says hello, and the command that installs, starts, checks, and stops the server. Around the application is the
-repository: the scripts that set it up and keep its documents, the safeguards for Claude, and the checks that run
-on pull requests. This document describes what exists.
+repository: the scripts that set it up and keep its documents, the safeguards for Claude, the checks that run
+on pull requests, and the releases that follow merges. This document describes what exists.
 [CONTRIBUTING.md](../../CONTRIBUTING.md) explains how to use it.
 
 ```mermaid
@@ -21,6 +21,7 @@ flowchart LR
     request --> proposal["Pull request workflow: how it is proposed"]
     quality -->|required to merge| master["master"]
     proposal -->|required to merge| master
+    master --> release["Release workflow: tagged release"]
 ```
 
 The diagram follows a change made with Claude. A change made without Claude skips the first step. The Git hook
@@ -386,10 +387,24 @@ release tags are. It must be higher than the version at the tip of the base bran
 runs. A pass says nothing about later merges, but a branch must be up to date before it merges, and updating it
 runs the check again.
 
-Both workflows get read-only access, and they name outside actions by commit, so that a moved tag cannot change
-what runs. They run on pull requests only. A branch must be up to date before it merges, so checking `master`
-again would test the same content. A workflow also runs the scripts as the pull request has them. A change to a
-check is therefore judged by its own version, and needs careful review.
+The CI and Pull request workflows get read-only access, and run on pull requests only. A branch must be up to
+date before it merges, so checking `master` again would test the same content. These workflows run the scripts as
+the pull request has them. A change to a check is therefore judged by its own version, and needs careful review.
+Every workflow names outside actions by commit, so that a moved tag cannot change what runs.
+
+The Release workflow runs `scripts/release` on each merge to `master`, and its one job may write to the
+repository, which making a release needs. It releases a version only if the merge raised it over the commit
+before, to 0.1.0 or later, so a merge such as Dependabot's releases nothing. The release's tag, such as `v1.2.3`,
+marks the merged commit, and GitHub writes its notes from the titles of pull requests. The script says which
+release the notes start after, the one with the next lower version, and whether the new one is the latest,
+because GitHub would take a release that is made late to be the latest. It publishes only from GitHub Actions, so
+running it elsewhere releases nothing.
+
+A failed run can be run again: it does nothing if the release exists. It stops if only a draft has the tag, or if
+the tag exists without a release, because GitHub would then release whatever the tag marks. GitHub may refuse the
+workflow's token once the workflow files on `master` differ from those in the commit to release. The maintainer
+then makes that release by hand. Runs do not wait for one another, because GitHub would cancel a waiting run when
+a newer one arrived, and that version would not be released.
 
 ## Documents
 

@@ -64,7 +64,7 @@ def _file_on_github(gh: Gh, revision: str) -> Read:
     return read
 
 
-def _committed_file(root: Path, git: Git, commit: str) -> Read:
+def committed_file(root: Path, git: Git, commit: str) -> Read:
     """Return how to read a file as it is in a local commit."""
 
     def read(path: str) -> str:
@@ -144,7 +144,7 @@ def _local_problems(root: Path, git: Git) -> list[str]:
         # Git counts no lines in a binary file.
         files.append((path, int(added.replace("-", "0")), int(deleted.replace("-", "0"))))
     problems = rules.branch_problems(branch) + rules.size_problems(rules.changed_lines(files))
-    proposed, current = (_committed_file(root, git, commit) for commit in ("HEAD", "origin/master"))
+    proposed, current = (committed_file(root, git, commit) for commit in ("HEAD", "origin/master"))
     return problems + _version_problems(proposed, current)
 
 

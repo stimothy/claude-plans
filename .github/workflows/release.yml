@@ -1,0 +1,33 @@
+name: Release
+
+# Every merge to master runs this. It releases only a version that the merge raised, from 0.1.0 on. Running a failed
+# run again is safe. There is no concurrency group, because GitHub would cancel a waiting run, and lose its release.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      # Making a release also makes its tag.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # The version from before the merge is read from the commit before it.
+          fetch-depth: 2
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      # The script needs only Python's standard library, so nothing is installed.
+      - name: Release the version if the merge raised it
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -m scripts.release.create
