@@ -18,8 +18,9 @@ export default defineConfig({
   retries: 0,
   // The tests share one installed studio, so they run one at a time.
   workers: 1,
-  // Lists every test with its duration, then names the test files that were slow, slowest first.
-  reporter: [["list"]],
-  reportSlowTests: { max: 0, threshold: 5000 },
+  // Lists every test with its duration, then names each slow one, slowest first.
+  reporter: [["list"], ["../scripts/slow-tests/slow-test-reporter.ts", { thresholdMilliseconds: 5000 }]],
+  // Playwright's own report of slow tests names only their files.
+  reportSlowTests: null,
   projects: [{ name: "chromium", use: devices["Desktop Chrome"] }],
 });

@@ -246,5 +246,6 @@
 | 2026-11-28 05:43 UTC | [A]000242 | A choice shows at once, and saves are sent one at a time. One that cannot be saved is undone, and the page says so. |
 | 2026-11-28 05:43 UTC | [A]000243 | Extends A000236: those servers also give out a source file elsewhere that the page imports, such as one of domain's. |
 | 2026-11-28 06:14 UTC | [A]000244 | Resolves O000163 for #32: the end-to-end limit is Playwright's own (D000119), which lets the tests stop their server, and the CI job's 10-minute limit is the backstop. The launcher is unchanged. |
-| 2026-11-28 06:14 UTC | [A]000245 | End-to-end tests are end-to-end/*.spec.ts files. They install this copy into a temporary data directory and use the installed command. Playwright names test files that take over 5 seconds. |
+| 2026-11-28 06:14 UTC | ~~[A]000245~~ | End-to-end tests are end-to-end/*.spec.ts files. They install this copy into a temporary data directory and use the installed command. Playwright names test files that take over 5 seconds. |
 | 2026-11-28 06:14 UTC | [D]000246 | The maintainer wants End-to-end tests required on master. Extends D000237. The ruleset changes once the job passes on its pull request. |
+| 2026-11-28 06:31 UTC | [D]000247 | Replaces A000245: end-to-end tests are end-to-end/*.spec.ts files that use an installed copy in a temporary data directory. The maintainer wants each test over 5 seconds named, which a reporter in scripts/ does. |

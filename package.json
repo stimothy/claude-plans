@@ -44,7 +44,7 @@
     "typecheck:backend": "tsc --project packages/backend/tsconfig.json",
     "typecheck:domain": "tsc --project packages/domain/tsconfig.json && tsc --project packages/domain/tsconfig.platform.json",
     "typecheck:logging": "tsc --project packages/logging/tsconfig.json",
-    "typecheck:node": "tsc --project tsconfig.json && tsc --project scripts/tsconfig.json",
+    "typecheck:node": "tsc --project tsconfig.json && tsc --project scripts/tsconfig.json && tsc --project scripts/slow-tests/tsconfig.json",
     "typecheck:python": "node scripts/launcher/launch.ts python -m mypy",
     "claude-plans": "node packages/cli/src/main.ts",
     "install:studio": "node packages/cli/src/main.ts install --studio",

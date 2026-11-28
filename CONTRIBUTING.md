@@ -25,7 +25,7 @@ is updated.
 - `npm run test:components` runs the stories and the page's other tests in Chromium, and requires at least 80%
   coverage of the page's code. The whole run is stopped after 2 minutes.
 - `npm run test:end-to-end` installs your copy into a temporary data directory, runs the installed studio on a
-  free port, and uses its page in Chromium. It lists each test's time, names the test files that took more than
+  free port, and uses its page in Chromium. It lists each test's time, names each test that took more than
   5 seconds, and stops after 5 minutes.
 - `npm run build:page` builds the web page, which the server serves. `install` builds its own, so you need this
   only before starting your copy's server with `npm run claude-plans`.

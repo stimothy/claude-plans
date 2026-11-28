@@ -6,5 +6,7 @@
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  // It has a project of its own.
+  "exclude": ["slow-tests"]
 }
