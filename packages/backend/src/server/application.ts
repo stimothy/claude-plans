@@ -10,6 +10,7 @@ import type { Logger } from "@claude-plans/logging";
 import fastify, { type FastifyInstance } from "fastify";
 
 import { healthReport } from "../health/health-report.ts";
+import { servePage } from "../page/serve-page.ts";
 import { isFromThisServer } from "./request-protection.ts";
 
 /** What the server's APIs need. */
@@ -17,6 +18,8 @@ export interface ApplicationOptions {
   /** The full path of the data directory, with any links followed. */
   readonly dataDirectory: string;
   readonly version: string;
+  /** The directory that holds the built web page. */
+  readonly pageDirectory: string;
   /** The secret that a request to shut down must give. */
   readonly token: string;
   readonly log: Logger;
@@ -50,7 +53,7 @@ function handleErrors(application: FastifyInstance, log: Logger): void {
 
 /** Makes the server's application, which does not listen yet. */
 export function createApplication(options: ApplicationOptions): FastifyInstance {
-  const { dataDirectory, version, token, log, shutDown } = options;
+  const { dataDirectory, version, pageDirectory, token, log, shutDown } = options;
   // Fastify's own logger stays off, because only the studio's logger may write. Stopping closes every connection,
   // so that one a browser leaves open cannot keep the server from stopping.
   const application = fastify({ logger: false, forceCloseConnections: true });
@@ -62,6 +65,7 @@ export function createApplication(options: ApplicationOptions): FastifyInstance 
     }
     return undefined;
   });
+  servePage(application, pageDirectory);
   application.get(healthContract.path, () => healthReport(dataDirectory, version, log.error));
   application.get(serverContract.path, () => ({ dataDirectory }));
   application.post(shutdownContract.path, async (request, reply) => {

@@ -35,6 +35,7 @@ function run(options: string[], dataDirectory = servers.directory()) {
   const exited = runServerProgram({
     arguments: ["--data-directory", dataDirectory, ...options],
     version: "1.2.3",
+    pageDirectory: servers.page(),
     report: resolve,
     onStopRequest,
   });

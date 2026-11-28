@@ -9,7 +9,14 @@ vi.mock("../health/health-report.ts", () => ({ healthReport: vi.fn() }));
 vi.mock("./request-protection.ts", () => ({ isFromThisServer: vi.fn() }));
 
 const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
-const options = { dataDirectory: "/data", version: "1.2.3", token: "token", log, shutDown: vi.fn() };
+const options = {
+  dataDirectory: "/data",
+  version: "1.2.3",
+  pageDirectory: "/page",
+  token: "token",
+  log,
+  shutDown: vi.fn(),
+};
 
 beforeEach(() => {
   vi.resetAllMocks();

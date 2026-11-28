@@ -52,6 +52,8 @@ function send(port: number, method: string, path: string, headers: Record<string
 export interface TestServers {
   /** The data directory of the current test, which a server creates. */
   readonly directory: () => string;
+  /** Where the servers look for the built web page, which no test has until it makes it. */
+  readonly page: () => string;
   /** A logger that records what is written to it. */
   readonly log: Readonly<Record<"error" | "warn" | "info" | "debug", Mock>>;
   /** Starts a server on the data directory, on any free port unless one is given. */
@@ -68,6 +70,7 @@ export function useTestServers(): TestServers {
   const running = new Set<RunningServer>();
   const log = { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() };
   const directory = (): string => join(temporary, "data");
+  const page = (): string => join(temporary, "page");
   beforeEach(() => {
     temporary = mkdtempSync(join(tmpdir(), "claude-plans-server-"));
     vi.resetAllMocks();
@@ -79,9 +82,10 @@ export function useTestServers(): TestServers {
   });
   return {
     directory,
+    page,
     log,
     start: async (port = 0, dataDirectory = directory()) => {
-      const server = await startServer({ dataDirectory, version: "1.2.3", port, log });
+      const server = await startServer({ dataDirectory, version: "1.2.3", pageDirectory: page(), port, log });
       running.add(server);
       return server;
     },

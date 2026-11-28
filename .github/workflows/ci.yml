@@ -46,6 +46,19 @@ jobs:
       - uses: ./.github/actions/setup
       - run: npm test
 
+  components:
+    name: Component tests
+    # They need a browser, so they run on one system only.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:components
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest

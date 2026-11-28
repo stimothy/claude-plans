@@ -1,12 +1,14 @@
+// The tools' configuration files. The scripts and each package have projects of their own.
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    // Vitest's types for its settings name the browser's types.
+    "lib": ["es2024", "dom"],
     "allowJs": true,
     "checkJs": true,
     "noEmit": true,
-    // Node.js runs the TypeScript scripts directly, so they use only syntax it can strip.
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["*.js", "*.ts", "scripts/**/*.ts"]
+  "include": ["*.js", "*.ts"]
 }

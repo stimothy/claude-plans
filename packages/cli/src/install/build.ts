@@ -1,6 +1,6 @@
 /**
  * Makes a build of the application: a copy of its code with only the packages that it needs to run. Node.js runs
- * the TypeScript as it is, so there is nothing to compile.
+ * the TypeScript as it is, so only the web page, which runs in a browser, has to be built.
  *
  * @packageDocumentation
  */
@@ -10,6 +10,7 @@ import { basename, join } from "node:path";
 
 import { buildsDirectory, commandDirectory, currentBuild, setCurrentBuild } from "./layout.ts";
 import { type InstallationRecord, recordInstallation, versionOf } from "./layout.ts";
+import { Refusal } from "./refusal.ts";
 import { runNpm, runProgram } from "./run-program.ts";
 
 const uniqueBytes = 4;
@@ -20,17 +21,21 @@ export interface Build {
   readonly version: string;
 }
 
-// Installed packages are left out, because the build gets its own, and so are tests.
+// The build installs its own packages and builds its own page, so the repository's are left out. So are tests.
+const madeByTheBuild = new Set(["node_modules", "dist"]);
+
 function isShipped(path: string): boolean {
-  return basename(path) !== "node_modules" && !path.endsWith(".test.ts");
+  return !madeByTheBuild.has(basename(path)) && !/\.test\.tsx?$/.test(path);
 }
 
 function fill(directory: string, record: InstallationRecord): void {
-  for (const name of ["package.json", "package-lock.json", "packages"]) {
+  // The page's TypeScript settings extend the base ones, which building the page reads.
+  for (const name of ["package.json", "package-lock.json", "tsconfig.base.json", "packages"]) {
     cpSync(join(record.repository, name), join(directory, name), { recursive: true, filter: isShipped });
   }
   // No package may run a script of its own, and the repository's own setup script is not part of a build.
   runNpm("npm ci --omit=dev --ignore-scripts --prefer-offline --no-audit --no-fund", directory);
+  runNpm("npm run build:page", directory);
   recordInstallation(directory, record);
 }
 
@@ -41,6 +46,10 @@ export function removeBuild(directory: string): void {
 
 /** Makes a new build of a repository in a data directory, and leaves the current one as it is. */
 export function makeBuild(record: InstallationRecord, dataDirectory: string): Build {
+  // Vite reads these as parts of an address, not of a path.
+  if (/[#?*]/.test(dataDirectory)) {
+    throw new Refusal(`The web page cannot be built in ${dataDirectory}, because its path has #, ?, or *.`);
+  }
   const version = versionOf(record.repository);
   const name = `${version}-${randomBytes(uniqueBytes).toString("hex")}`;
   const directory = join(buildsDirectory(dataDirectory), name);

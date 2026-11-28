@@ -36,6 +36,25 @@ if (existsSync(failure)) {
 }
 `;
 
+// Stands in for building the page, which a real build does with Vite.
+const pageBuild = `
+import { copyFileSync, mkdirSync } from "node:fs";
+
+mkdirSync("packages/frontend/dist", { recursive: true });
+copyFileSync("packages/frontend/page.html", "packages/frontend/dist/index.html");
+`;
+
+const manifest = {
+  name: "fake",
+  version: "1.0.0",
+  private: true,
+  workspaces: ["packages/*"],
+  scripts: { "build:page": "node packages/frontend/build.mjs" },
+};
+
+/** Returns the text of the fake repository's root package.json at a version. */
+export const fakeManifest = (version: string): string => JSON.stringify({ ...manifest, version });
+
 const workspace = (name: string) => ({ name: `fake-${name}`, version: "1.0.0" });
 
 // Written here, because asking npm to make it would slow every test.
@@ -56,7 +75,10 @@ const lockfile = {
 const files = {
   "package-lock.json": JSON.stringify(lockfile),
   ".gitignore": ".claude-plans/\nnode_modules/\n",
-  "package.json": JSON.stringify({ name: "fake", version: "1.0.0", private: true, workspaces: ["packages/*"] }),
+  "package.json": JSON.stringify(manifest),
+  "tsconfig.base.json": "{}",
+  "packages/frontend/build.mjs": pageBuild,
+  "packages/frontend/page.html": "the page",
   "packages/backend/package.json": JSON.stringify({ name: "fake-backend", version: "1.0.0", type: "module" }),
   "packages/backend/src/program/database-main.ts": databaseProgram,
   "packages/backend/src/program/database-main.test.ts": "// A build leaves tests out.\n",
