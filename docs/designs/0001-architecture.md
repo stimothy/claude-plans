@@ -20,7 +20,7 @@ flowchart LR
     request --> quality["CI workflow: quality checks"]
     request --> proposal["Pull request workflow: how it is proposed"]
     quality -->|required to merge| master["master"]
-    proposal -.->|reported, not required| master
+    proposal -->|required to merge| master
 ```
 
 The diagram follows a change made with Claude. A change made without Claude skips the first step. The Git hook
@@ -317,9 +317,8 @@ or a `core.hooksPath` setting keeps its own setup.
 ## Checks
 
 `npm run check` runs most quality checks locally. On a pull request, GitHub Actions runs checks in two
-workflows. The rules for `master` require every job of the CI workflow except the component tests to pass before a
-merge. They do not require the component tests or the Pull request workflow, so a failure there is reported but
-does not block a merge.
+workflows. The rules for `master` require every job of both workflows to pass before a merge. They name each
+required job, so renaming a job or adding one also means changing the rules.
 
 The CI workflow, in `.github/workflows/ci.yml`, has five kinds of job:
 

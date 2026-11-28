@@ -236,5 +236,6 @@
 | 2026-11-28 04:50 UTC | [A]000232 | Applies D000136: install builds the web page inside the new build, from its copied code and locked packages, so Vite and React are runtime dependencies of frontend. |
 | 2026-11-28 04:50 UTC | [A]000233 | A server whose copy has no built page answers at the top address that it must be built. |
 | 2026-11-28 04:50 UTC | [A]000234 | Applies A000097: npm run dev keeps its data in .claude-plans-development/, takes no data directory option, and runs the server and Vite in one program. Vite gives the server's origin only to requests from its own page. |
-| 2026-11-28 04:50 UTC | [A]000235 | Applies D000022: component tests are a CI job on Linux, not yet required to merge. They hold frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |
+| 2026-11-28 04:50 UTC | ~~[A]000235~~ | Applies D000022: component tests are a CI job on Linux, not yet required to merge. They hold frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |
 | 2026-11-28 05:02 UTC | [A]000236 | Vite, Storybook, and the component tests' server give out only the page's files and the installed packages, never the rest of the repository, which can hold the real data. |
+| 2026-11-28 05:30 UTC | [D]000237 | Replaces A000235: the master ruleset requires Component tests, and also Pull request rules. Component tests are still a Linux CI job that holds frontend to its 80% coverage, and a whole run is stopped after 2 minutes. |
